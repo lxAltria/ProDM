@@ -1,0 +1,11 @@
+function(add_my_executable target source)
+    add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE ${MGARDx_INCLUDES} ${SZ3_INCLUDES} ${ZSTD_INCLUDES})
+    target_link_libraries(${target} ${PROJECT_NAME} ${SZ3_LIB} ${ZSTD_LIB})
+endfunction()
+
+add_my_executable(refactor_data refactor_data.cpp)
+add_my_executable(halving_Vtot_general halving_Vtot_general.cpp)
+add_my_executable(halving_Vtot halving_Vtot.cpp)
+add_my_executable(halving_Vtot_sz3delta halving_Vtot_sz3delta.cpp)
+add_my_executable(halving_Vtot_sz3 halving_Vtot_sz3.cpp)
