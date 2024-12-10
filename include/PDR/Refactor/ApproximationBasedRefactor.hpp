@@ -116,7 +116,7 @@ namespace PDR {
         Writer writer;
         std::vector<T> data;
         std::vector<uint32_t> dimensions;
-        T approximator_eb = 0.1;
+        T approximator_eb = 0.001;
         std::vector<T> level_error_bounds;
         std::vector<uint8_t> stopping_indices;
         std::vector<std::vector<uint8_t*>> level_components;

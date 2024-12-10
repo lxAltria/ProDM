@@ -23,12 +23,18 @@ void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int num_bitpl
 }
 
 template <class T, class Approximator, class Encoder, class Compressor, class Writer>
-void test(string filename, const vector<uint32_t>& dims, int num_bitplanes, Approximator approximator, Encoder encoder, Compressor compressor, Writer writer){
-    auto refactor = PDR::ApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
-    refactor.negabinary = negabinary;
+void test(string filename, int option, const vector<uint32_t>& dims, int num_bitplanes, Approximator approximator, Encoder encoder, Compressor compressor, Writer writer){
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
-    evaluate(data, dims, num_bitplanes, refactor);
+    if(option == 0){
+        auto refactor = PDR::ApproximationBasedDeltaRefactor<T, Approximator>(approximator);
+        evaluate(data, dims, num_bitplanes, refactor);        
+    }
+    else{
+        auto refactor = PDR::ApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
+        refactor.negabinary = negabinary;
+        evaluate(data, dims, num_bitplanes, refactor);
+    }
 }
 
 int main(int argc, char ** argv){
@@ -44,6 +50,10 @@ int main(int argc, char ** argv){
     vector<uint32_t> dims(num_dims, 0);
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);
+    }
+    int option = 0;
+    if(argc > argv_id){
+        option = atoi(argv[argv_id ++]);
     }
 
     int target_level = 0; // #level = 1 for PDR
@@ -82,6 +92,6 @@ int main(int argc, char ** argv){
     auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
     // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
 
-    test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+    test<T>(filename, option, dims, num_bitplanes, approximator, encoder, compressor, writer);
     return 0;
 }

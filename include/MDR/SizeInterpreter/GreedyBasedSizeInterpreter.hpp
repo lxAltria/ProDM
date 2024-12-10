@@ -88,6 +88,7 @@ namespace MDR {
             for(int i=0; i<num_levels; i++){
                 accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i);
             }
+            if(accumulated_error < tolerance) return retrieve_sizes;
             std::priority_queue<UnitErrorGain, std::vector<UnitErrorGain>, CompareUnitErrorGain> heap;
             // identify minimal level
             double min_error = accumulated_error;
@@ -195,6 +196,7 @@ namespace MDR {
             }
 
             bool tolerance_met = accumulated_error < tolerance;
+            if(tolerance_met) return retrieve_sizes;
             while((!tolerance_met) && (!heap.empty())){
                 auto unit_error_gain = heap.top();
                 heap.pop();

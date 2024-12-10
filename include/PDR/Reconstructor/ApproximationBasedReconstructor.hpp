@@ -1,5 +1,5 @@
-#ifndef _MDR_COMPOSED_RECONSTRUCTOR_HPP
-#define _MDR_COMPOSED_RECONSTRUCTOR_HPP
+#ifndef _PDR_COMPOSED_RECONSTRUCTOR_HPP
+#define _PDR_COMPOSED_RECONSTRUCTOR_HPP
 
 #include "ReconstructorInterface.hpp"
 #include "PDR/Approximator/Approximator.hpp"
@@ -114,7 +114,7 @@ namespace PDR {
         }
 
         size_t get_retrieved_size(){
-            return retriever.get_retrieved_size();
+            return approximator.get_size() + retriever.get_retrieved_size();
         }
 
         std::vector<uint32_t> get_offsets(){
