@@ -22,10 +22,9 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         auto reconstructed_data = reconstructor.progressive_reconstruct(tolerance[i], -1);
         err = clock_gettime(CLOCK_REALTIME, &end);
         cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+        cout << "Retrieval size = " << reconstructor.get_retrieved_size() << endl;
         auto dims = reconstructor.get_dimensions();
         MGARD::print_statistics(data.data(), reconstructed_data, data.size());
-        // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
-        // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
 }
 

@@ -9,12 +9,18 @@ namespace PDR {
     class DummyApproximator : public concepts::ApproximatorInterface<T> {
     public:
         DummyApproximator(){}
-        void refactor_approximate(T * data, const std::vector<uint32_t>& dimensions, T approximator_eb, std::vector<uint32_t> strides=std::vector<uint32_t>()) {
-            return;
+        size_t refactor_approximate(T * data, const std::vector<uint32_t>& dimensions, T approximator_eb, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
+            return 0;
         }
-        void reconstruct_approximate(T * data, const std::vector<uint32_t>& dimensions, std::vector<uint32_t> strides=std::vector<uint32_t>()) const {
+
+        void reconstruct_approximate(T * data, const std::vector<uint32_t>& dimensions, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
         	return;
         }
+
+        size_t get_size() const {
+            return 0;
+        }
+
         void print() const {
             std::cout << "PDR dummy approximator" << std::endl;
         }
