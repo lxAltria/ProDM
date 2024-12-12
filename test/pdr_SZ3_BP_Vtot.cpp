@@ -40,9 +40,6 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 	float max_Vx = 0;
 	float max_Vy = 0;
 	float max_Vz = 0;
-	int max_weight_Vx = 0;
-	int max_weight_Vy = 0;
-	int max_weight_Vz = 0;
 	// int weight_index = 0;
 	// int max_weight_index = 0;
 	for(int i=0; i<n; i++){
@@ -67,15 +64,11 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			max_Vy = Vy[i];
 			max_Vz = Vz[i];
 			max_index = i;
-			max_weight_Vx = weights[0][i];
-			max_weight_Vy = weights[1][i];
-			max_weight_Vz = weights[2][i];
 			// max_weight_index = weight_index;
 		}
 		// if(mask[i]) weight_index++;
 	}
 	std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
-	std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		// estimate
@@ -192,8 +185,6 @@ int main(int argc, char ** argv){
         auto estimator = MaxErrorEstimatorHB<T>();
         auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
         auto retriever = ConcatLevelFileRetriever(metadata_file, files);
-		std::string approximator_path = retriever.get_directory() + "approximator.dat";
-        approximator.approximator_file_name = approximator_path;
         reconstructors.push_back(generateBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
         reconstructors.back().load_metadata();
     }
@@ -209,7 +200,7 @@ int main(int argc, char ** argv){
     	iter ++;
 	    for(int i=0; i<n_variable; i++){
 	        // auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, 4)), -1);
-			auto reconstructed_data = reconstructors[i].   progressive_reconstruct(ebs[i], -1);
+			auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i], -1);
 			total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 	        if(i < 3){
 	            // reconstruct with mask

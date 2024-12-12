@@ -161,7 +161,8 @@ namespace PDR
             // std::cout << "current_level = " << current_level << std::endl;
             if (!reconstructed)
             {
-                approximator.reconstruct_approximate(data.data(), dimensions);
+                std::string approximator_path = retriever.get_directory() + "approximator.dat";
+                approximator.reconstruct_approximate(data.data(), dimensions, approximator_path);
                 reconstructed = true;
             }
             int i = 0;

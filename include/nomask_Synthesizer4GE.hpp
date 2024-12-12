@@ -696,8 +696,6 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
         // auto compressor = MDR::NullLevelCompressor();
 
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-        std::string approximator_path = writer.get_directory() + "approximator.dat";
-        approximator.approximator_file_name = approximator_path;
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);  
@@ -762,8 +760,6 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
         // auto compressor = MDR::NullLevelCompressor();
 
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-        std::string approximator_path = writer.get_directory() + "approximator.dat";
-        approximator.approximator_file_name = approximator_path;
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
         refactor.QoI = Vtot[i];

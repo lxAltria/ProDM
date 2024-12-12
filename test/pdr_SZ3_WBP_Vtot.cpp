@@ -193,8 +193,6 @@ int main(int argc, char ** argv){
         auto estimator = MaxErrorEstimatorHB<T>();
         auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
         auto retriever = ConcatLevelFileRetriever(metadata_file, files);
-		std::string approximator_path = retriever.get_directory() + "approximator.dat";
-        approximator.approximator_file_name = approximator_path;
         reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
         reconstructors.back().load_metadata();
 		reconstructors.back().load_weight();
@@ -213,7 +211,7 @@ int main(int argc, char ** argv){
     	iter ++;
 	    for(int i=0; i<n_variable; i++){
 	        auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, 4)), -1);
-			// auto reconstructed_data = reconstructors[i].   progressive_reconstruct(ebs[i], -1);
+			// auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i], -1);
 			total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 	        if(i < 3){
 	            // reconstruct with mask
