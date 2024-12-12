@@ -26,4 +26,4 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 add_subdirectory(test)
 
-add_subdirectory(app)
+#add_subdirectory(app)

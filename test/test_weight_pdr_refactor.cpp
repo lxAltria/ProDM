@@ -12,23 +12,23 @@ using namespace std;
 bool negabinary = true;
 
 template <class T, class Refactor>
-void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int num_bitplanes, Refactor refactor){
+void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int num_bitplanes, const int block_size, Refactor refactor){
     struct timespec start, end;
     int err = 0;
     cout << "Start refactoring" << endl;
     err = clock_gettime(CLOCK_REALTIME, &start);
-    refactor.refactor(data.data(), dims, 0, num_bitplanes);
+    refactor.refactor(data.data(), dims, 0, num_bitplanes, block_size);
     err = clock_gettime(CLOCK_REALTIME, &end);
     cout << "Refactor time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
 }
 
 template <class T, class Approximator, class Encoder, class Compressor, class Writer>
-void test(string filename, const vector<uint32_t>& dims, int num_bitplanes, Approximator approximator, Encoder encoder, Compressor compressor, Writer writer){
-    auto refactor = PDR::ApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
+void test(string filename, const vector<uint32_t>& dims, int num_bitplanes, const int block_size, Approximator approximator, Encoder encoder, Compressor compressor, Writer writer){
+    auto refactor = PDR::WeightedApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
     refactor.negabinary = negabinary;
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
-    evaluate(data, dims, num_bitplanes, refactor);
+    evaluate(data, dims, num_bitplanes, block_size, refactor);
 }
 
 int main(int argc, char ** argv){
@@ -45,6 +45,7 @@ int main(int argc, char ** argv){
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);
     }
+    int block_size = atoi(argv[argv_id ++]);
 
     int target_level = 0; // #level = 1 for PDR
     string metadata_file = "refactored_data/metadata.bin";
@@ -66,11 +67,11 @@ int main(int argc, char ** argv){
     //     std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
     // }
 
-    auto approximator = PDR::DummyApproximator<T>();
-    // auto approximator = PDR::SZApproximator<T>();
+    // auto approximator = PDR::DummyApproximator<T>();
+    auto approximator = PDR::SZApproximator<T>();
 
     // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
     negabinary = true;
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
     // negabinary = false;
@@ -82,6 +83,6 @@ int main(int argc, char ** argv){
     auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
     // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
 
-    test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+    test<T>(filename, dims, num_bitplanes, block_size, approximator, encoder, compressor, writer);
     return 0;
 }

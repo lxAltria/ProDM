@@ -3,6 +3,9 @@
 
 #include "RetrieverInterface.hpp"
 #include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 namespace MDR {
     // Data retriever for files
@@ -59,6 +62,17 @@ namespace MDR {
         std::vector<uint32_t> get_offsets(){
             return offsets;
         }
+
+        std::string get_directory() const {
+            size_t pos = metadata_file.find_last_of('/');
+
+            if (pos != std::string::npos) {
+                return metadata_file.substr(0, pos + 1);
+            }  
+
+            return metadata_file;
+        }
+
 
         ~ConcatLevelFileRetriever(){}
 

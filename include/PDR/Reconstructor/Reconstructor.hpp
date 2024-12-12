@@ -2,6 +2,6 @@
 #define _PDR_RECONSTRUCTOR_HPP
 
 #include "ApproximationBasedReconstructor.hpp"
-#include "ApproximationBasedDeltaReconstructor.hpp"
+#include "WeightedApproximationBasedReconstructor.hpp"
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef _PDR_COMPOSED_RECONSTRUCTOR_HPP
-#define _PDR_COMPOSED_RECONSTRUCTOR_HPP
+#ifndef _PDR_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
+#define _PDR_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
 
 #include "ReconstructorInterface.hpp"
 #include "PDR/Approximator/Approximator.hpp"
@@ -11,6 +11,7 @@
 #include "MDR/SizeInterpreter/SizeInterpreter.hpp"
 #include "MDR/LosslessCompressor/LevelCompressor.hpp"
 #include "MDR/RefactorUtils.hpp"
+#include "WeightUtils.hpp"
 
 using namespace MDR;
 
@@ -18,10 +19,10 @@ namespace PDR
 {
     // an approximation-based scientific data reconstructor: inverse operator of approximation-based refactor
     template <class T, class Approximator, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator, class Retriever>
-    class ApproximationBasedReconstructor : public concepts::ReconstructorInterface<T>
+    class WeightedApproximationBasedReconstructor : public concepts::ReconstructorInterface<T>
     {
     public:
-        ApproximationBasedReconstructor(Approximator approximator, Encoder encoder, Compressor compressor, SizeInterpreter interpreter, Retriever retriever)
+        WeightedApproximationBasedReconstructor(Approximator approximator, Encoder encoder, Compressor compressor, SizeInterpreter interpreter, Retriever retriever)
             : approximator(approximator), encoder(encoder), compressor(compressor), interpreter(interpreter), retriever(retriever) {}
 
         T *reconstruct(double tolerance)
@@ -124,6 +125,81 @@ namespace PDR
             free(metadata);
         }
 
+        void load_weight()
+        {
+            std::cout << "Loading Weight" << std::endl;
+            string path = retriever.get_directory() + "weight.bin";
+            std::cout << "Path: " << path << std::endl;
+            FILE *file = fopen(path.c_str(), "r");
+            if (file == nullptr)
+            {
+                perror("Error opening file");
+                return;
+            }
+            fseek(file, 0, SEEK_END);
+            uint32_t num_bytes = ftell(file);
+            rewind(file);
+            uint8_t *weight_data = (uint8_t *)malloc(num_bytes);
+            fread(weight_data, 1, num_bytes, file);
+            fclose(file);
+            uint8_t *weight_data_pos = weight_data;
+            memcpy(&block_size, weight_data_pos, sizeof(int));
+            weight_data_pos += sizeof(int);
+            size_t block_weight_size;
+            memcpy(&block_weight_size, weight_data_pos, sizeof(size_t));
+            weight_data_pos += sizeof(size_t);
+            block_weights.clear();
+            block_weights.assign(reinterpret_cast<const int *>(weight_data_pos), reinterpret_cast<const int *>(weight_data_pos) + block_weight_size);
+            {
+                int max_w = block_weights[0];
+                int min_w = block_weights[0];
+                for (int i = 1; i < block_weights.size(); i++)
+                {
+                    if (block_weights[i] > max_w)
+                        max_w = block_weights[i];
+                    if (block_weights[i] < min_w)
+                        min_w = block_weights[i];
+                }
+                std::cout << min_w << " " << max_w << std::endl;
+            }
+            weight_data_pos += block_weight_size * sizeof(int);
+            free(weight_data);
+        }
+
+        void span_weight()
+        {
+            if (dimensions.size() == 1)
+            {
+                int_weights = fill_block_weight_1D(dimensions[0], block_weights, block_size);
+            }
+            else if (dimensions.size() == 2)
+            {
+                int_weights = fill_block_weight_2D(dimensions[0], dimensions[1], block_weights, block_size);
+            }
+            else
+            {
+                int_weights = fill_block_weight_3D(dimensions[0], dimensions[1], dimensions[2], block_weights, block_size);
+            }
+            write_weight_dat(block_size);
+        }
+
+        void write_weight_dat(const int block_size) const {
+            uint32_t weight_size = get_size(int_weights);
+            uint8_t * weight_data = (uint8_t *) malloc(weight_size);
+            uint8_t * weight_data_pos = weight_data;
+            serialize(int_weights, weight_data_pos);
+            string path = retriever.get_directory() + "weight_dec.dat";
+            std::cout << "Path: " << path << std::endl;
+            FILE * file = fopen(path.c_str(), "w");
+            if (file == nullptr) {
+                perror("Error opening file");
+                return;
+            }
+            fwrite(weight_data, 1, weight_size, file);
+            fclose(file);
+            free(weight_data);
+        }
+
         const std::vector<uint32_t> &get_dimensions()
         {
             return dimensions;
@@ -139,7 +215,12 @@ namespace PDR
             return retriever.get_offsets();
         }
 
-        ~ApproximationBasedReconstructor() {}
+        std::vector<int> get_int_weights()
+        {
+            return int_weights;
+        }
+
+        ~WeightedApproximationBasedReconstructor() {}
 
         void print() const
         {
@@ -161,6 +242,8 @@ namespace PDR
             // std::cout << "current_level = " << current_level << std::endl;
             if (!reconstructed)
             {
+                // std::string approximator_path = retriever.get_directory() + "approximator.dat";
+                // approximator.approximator_file_name = approximator_path;
                 approximator.reconstruct_approximate(data.data(), dimensions);
                 reconstructed = true;
             }
@@ -175,7 +258,8 @@ namespace PDR
                     frexp(level_error_bounds[i] / 4, &level_exp);
                 else
                     frexp(level_error_bounds[i], &level_exp);
-                auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
+                int level_max_weight = compute_max_abs_value(int_weights.data(), level_elements[i]);
+                auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, int_weights.data());
                 compressor.decompress_release();
                 for (int i = 0; i < num_elements; i++)
                 {
@@ -194,6 +278,8 @@ namespace PDR
         T approximator_eb;
         size_t num_elements;
         std::vector<T> data;
+        int block_size;
+        std::vector<int> block_weights;
         std::vector<uint32_t> dimensions;
         std::vector<T> level_error_bounds;
         std::vector<uint8_t> level_num_bitplanes;
@@ -205,6 +291,9 @@ namespace PDR
         std::vector<uint32_t> strides;
         bool negabinary = true;
         bool reconstructed = false;
+
+    public:
+        std::vector<int> int_weights;
     };
 }
 #endif

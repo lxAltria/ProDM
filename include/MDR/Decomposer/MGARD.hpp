@@ -46,26 +46,57 @@ namespace MDR {
             MGARD::Decomposer<T> decomposer;
             std::vector<size_t> dims(dimensions.begin(), dimensions.end());
             if(strides.size() == 0){
-                decomposer.decompose(data, dims, target_level, true);
+                decomposer.decompose(data, dims, target_level, true, false);
             }
             else{
                 std::vector<size_t> strs(strides.begin(), strides.end());
-                decomposer.decompose(data, dims, target_level, true, strs);
+                decomposer.decompose(data, dims, target_level, true, false, strs);
             }
         }
         void recompose(T * data, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) const {
             MGARD::Recomposer<T> recomposer;
             std::vector<size_t> dims(dimensions.begin(), dimensions.end());
             if(strides.size() == 0){
-                recomposer.recompose(data, dims, target_level, true);
+                recomposer.recompose(data, dims, target_level, true, false);
             }
             else{
                 std::vector<size_t> strs(strides.begin(), strides.end());
-                recomposer.recompose(data, dims, target_level, true, strs);
+                recomposer.recompose(data, dims, target_level, true, false, strs);
             }
         }
         void print() const {
             std::cout << "MGARD hierarchical decomposer" << std::endl;
+        }
+    };
+    // MGARD decomposer with cubic inperpolation
+    template<class T>
+    class MGARDCubicDecomposer : public concepts::DecomposerInterface<T>{
+    public:
+        MGARDCubicDecomposer(){}
+        void decompose(T * data, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) const {
+            MGARD::Decomposer<T> decomposer;
+            std::vector<size_t> dims(dimensions.begin(), dimensions.end());
+            if(strides.size() == 0){
+                decomposer.decompose(data, dims, target_level, false, true);
+            }
+            else{
+                std::vector<size_t> strs(strides.begin(), strides.end());
+                decomposer.decompose(data, dims, target_level, false, true, strs);
+            }
+        }
+        void recompose(T * data, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) const {
+            MGARD::Recomposer<T> recomposer;
+            std::vector<size_t> dims(dimensions.begin(), dimensions.end());
+            if(strides.size() == 0){
+                recomposer.recompose(data, dims, target_level, false, true);
+            }
+            else{
+                std::vector<size_t> strs(strides.begin(), strides.end());
+                recomposer.recompose(data, dims, target_level, false, true, strs);
+            }
+        }
+        void print() const {
+            std::cout << "MGARD cubic decomposer" << std::endl;
         }
     };
 }

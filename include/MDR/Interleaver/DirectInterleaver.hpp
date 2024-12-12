@@ -16,6 +16,17 @@ namespace MDR {
                     buffer[count ++] = data[i];
                 }
             }
+            else if(dims.size() == 2){
+                uint32_t dim0_offset = strides.size() ? strides[0] : dims[1];
+                uint32_t count = 0;
+                for(int i=0; i<dims_fine[0]; i++){
+                    for(int j=0; j<dims_fine[1]; j++){
+                        if((i < dims_coasre[0]) && (j < dims_coasre[1]))
+                            continue;
+                        buffer[count++] = data[i*dim0_offset + j];
+                    }
+                }
+            }
             else if(dims.size() == 3){
                 uint32_t dim0_offset = strides.size() ? strides[0] : (dims[1] * dims[2]);
                 uint32_t dim1_offset = strides.size() ? strides[1] : dims[2];
@@ -40,6 +51,17 @@ namespace MDR {
                 uint32_t count = 0;
                 for(int i=dims_coasre[0]; i<dims_fine[0]; i++){
                     data[i] = buffer[count ++];
+                }
+            }
+            else if(dims.size() == 2){
+                uint32_t dim0_offset = strides.size() ? strides[0] : dims[1];
+                uint32_t count = 0;
+                for(int i=0; i<dims_fine[0]; i++){
+                    for(int j=0; j<dims_fine[1]; j++){
+                        if((i < dims_coasre[0]) && (j < dims_coasre[1]))
+                            continue;
+                        data[i*dim0_offset + j] = buffer[count++];
+                    }
                 }
             }
             else if(dims.size() == 3){

@@ -2,8 +2,18 @@
 #define _MDR_WEIGHTEDNEGABINARY_BP_ENCODER_HPP
 
 #include "BitplaneEncoderInterface.hpp"
+#include <string>
+
 
 namespace MDR {
+    template<typename Type>
+    void writefile__(const char *file, Type *data, size_t num_elements) {
+    std::ofstream fout(file, std::ios::binary);
+    fout.write(reinterpret_cast<const char *>(&data[0]), num_elements * sizeof(Type));
+    fout.close();
+}
+
+
     // general bitplane encoder that encodes data by block using T_stream type buffer
     template<class T_data, class T_stream>
     class WeightedNegaBinaryBPEncoder : public concepts::BitplaneEncoderInterface<T_data> {
@@ -18,6 +28,69 @@ namespace MDR {
         std::vector<uint8_t *> encode(T_data const * data, int32_t n, int32_t exp, uint8_t num_bitplanes, std::vector<uint32_t>& stream_sizes) const {
             exit(0);
             std::vector<uint8_t *> streams;
+            return streams;
+        }
+
+        std::vector<uint8_t *> encode(T_data const * data, int32_t n, int32_t exp, uint8_t num_bitplanes, std::vector<uint32_t>& stream_sizes, int * weights = NULL) const {
+            // std::string filename = "before_encode" + std::to_string(n) + ".dat";
+            /// writefile__(filename.c_str(), data, n);
+            assert(num_bitplanes > 0);
+            // leave room for negabinary format
+            exp += 2;
+            // leave room for multiplication
+            // exp += max_weight;
+            // determine block size based on bitplane integer type
+            uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
+            std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n - 1)/block_size + 1, 0);
+            stream_sizes = std::vector<uint32_t>(num_bitplanes, 0);
+            // define fixed point type
+            using T_fps = typename std::conditional<std::is_same<T_data, double>::value, int64_t, int32_t>::type;
+            using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
+            std::vector<uint8_t *> streams;
+            for(int i=0; i<num_bitplanes; i++){
+                streams.push_back((uint8_t *) malloc(n / UINT8_BITS + sizeof(T_stream)));
+            }
+            std::vector<T_fp> int_data_buffer(block_size, 0);
+            std::vector<T_stream *> streams_pos(streams.size());
+            for(int i=0; i<streams.size(); i++){
+                streams_pos[i] = reinterpret_cast<T_stream*>(streams[i]);
+            }
+            T_data const * data_pos = data;
+            int const * weights_pos = weights;
+            for(int i=0; i<n - block_size; i+=block_size){
+                for(int j=0; j<block_size; j++){
+                    T_data cur_data = *(data_pos++);//
+                    // std::cout << cur_data << " ";
+                    // int current_weight = *(weights_pos++);
+                    cur_data *= std::pow(2.0, *(weights_pos++)); 
+                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
+                    T_fps signed_int_data = (T_fps) shifted_data;
+                    // std::cout << shifted_data << " ";
+                    int_data_buffer[j] = binary2negabinary(signed_int_data);
+                    // std::cout << negabinary2binary(int_data_buffer[j]) << " " << num_bitplanes - exp << std::endl;
+                }
+                encode_block(int_data_buffer.data(), block_size, num_bitplanes, streams_pos);
+            }
+            // leftover
+            {
+                int rest_size = n % block_size;
+                if(rest_size == 0) rest_size = block_size;
+                for(int j=0; j<rest_size; j++){
+                    T_data cur_data = *(data_pos++);
+                    // std::cout << cur_data << " ";
+                    // int current_weight = *(weights_pos++);
+                    cur_data *= std::pow(2.0, *(weights_pos++)); 
+                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
+                    T_fps signed_int_data = (T_fps) shifted_data;
+                    // std::cout << shifted_data << " ";
+                    int_data_buffer[j] = binary2negabinary(signed_int_data);
+                    // std::cout << negabinary2binary(int_data_buffer[j]) << " " << num_bitplanes - exp << std::endl;
+                }
+                encode_block(int_data_buffer.data(), rest_size, num_bitplanes, streams_pos);
+            }
+            for(int i=0; i<num_bitplanes; i++){
+                stream_sizes[i] = reinterpret_cast<uint8_t*>(streams_pos[i]) - streams[i];
+            }
             return streams;
         }
 
@@ -107,7 +180,7 @@ namespace MDR {
             // leave room for negabinary format
             exp += 2;
             // leave room for multiplication
-            exp += 1;
+            // exp += 1;
             // define fixed point type
             using T_fps = typename std::conditional<std::is_same<T_data, double>::value, int64_t, int32_t>::type;
             using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
@@ -126,7 +199,11 @@ namespace MDR {
                     memset(int_data_buffer.data(), 0, block_size * sizeof(T_fp));
                     decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<block_size; j++){
-                        *(data_pos++) = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / 2;
+                        // int current_weight = *(weights_pos++);
+                        // std::cout << negabinary2binary(int_data_buffer[j]) << " ";
+                        T_data x = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        // std::cout << x << " " << - ending_bitplane + exp << std::endl;
+                        *(data_pos++) = x;
                     }
                 }
                 // leftover
@@ -136,7 +213,11 @@ namespace MDR {
                     memset(int_data_buffer.data(), 0, rest_size * sizeof(T_fp));
                     decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<rest_size; j++){
-                        *(data_pos++) = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / 2;
+                        // int current_weight = *(weights_pos++);
+                        // std::cout << negabinary2binary(int_data_buffer[j]) << " ";
+                        T_data x = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        // std::cout << x << " " << - ending_bitplane + exp << std::endl;
+                        *(data_pos++) = x; 
                     }
                 }                
             }
@@ -145,7 +226,11 @@ namespace MDR {
                     memset(int_data_buffer.data(), 0, block_size * sizeof(T_fp));
                     decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<block_size; j++){
-                        *(data_pos++) = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / 2;
+                       //int current_weight = *(weights_pos++);
+                        /// std::cout << negabinary2binary(int_data_buffer[j]) << " ";
+                        T_data x = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        // std::cout << x  << " " << - ending_bitplane + exp << std::endl;
+                        *(data_pos++) = x;
                     }
                 }
                 // leftover
@@ -155,10 +240,16 @@ namespace MDR {
                     memset(int_data_buffer.data(), 0, rest_size * sizeof(T_fp));
                     decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<rest_size; j++){
-                        *(data_pos++) = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / 2;
+                        // int current_weight = *(weights_pos++);
+                        // std::cout << negabinary2binary(int_data_buffer[j]) << " ";
+                        T_data x = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        // std::cout << x << " " << - ending_bitplane + exp << std::endl;
+                        *(data_pos++) = x;
                     }
                 }                
             }
+            // std::string filename = "after_decode" + std::to_string(n) + ".dat";
+            // writefile__(filename.c_str(), data, n);
             return data;
         }
 

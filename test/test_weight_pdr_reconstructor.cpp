@@ -19,20 +19,22 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
     for(int i=0; i<tolerance.size(); i++){
         cout << "Start reconstruction" << endl;
         err = clock_gettime(CLOCK_REALTIME, &start);
-        auto reconstructed_data = reconstructor.progressive_reconstruct(tolerance[i], -1);
+        auto reconstructed_data = reconstructor.progressive_reconstruct(tolerance[i] / std::pow(2.0, 4), -1);
+        cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         err = clock_gettime(CLOCK_REALTIME, &end);
         cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
         auto dims = reconstructor.get_dimensions();
-        cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size());
     }
 }
 
 template <class T, class Approximator, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
 void test(string filename, const vector<double>& tolerance, Approximator approximator, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
-    auto reconstructor = PDR::ApproximationBasedReconstructor<T, Approximator, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(approximator, encoder, compressor, interpreter, retriever);
+    auto reconstructor = PDR::WeightedApproximationBasedReconstructor<T, Approximator, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(approximator, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
+    reconstructor.load_weight();
+    reconstructor.span_weight();
 
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
@@ -73,10 +75,10 @@ int main(int argc, char ** argv){
     // using T = double;
     // using T_stream = uint64_t;
 
-    auto approximator = PDR::DummyApproximator<T>();
-    // auto approximator = PDR::SZApproximator<T>();
+    // auto approximator = PDR::DummyApproximator<T>();
+    auto approximator = PDR::SZApproximator<T>();
 
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
     // auto compressor = MDR::DefaultLevelCompressor();

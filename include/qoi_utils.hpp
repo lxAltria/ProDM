@@ -1,5 +1,5 @@
-#ifndef _PRODM_QOI_UTILS_HPP
-#define _PRODM_QOI_UTILS_HPP
+#ifndef _MDR_QOI_UTILS_HPP
+#define _MDR_QOI_UTILS_HPP
 
 #include <iostream>
 #include <ctime>
@@ -10,7 +10,7 @@
 #include <numeric>
 
 
-namespace QoI{
+namespace MDR{
 
 const std::vector<std::string> names{"V_TOT", "T", "C", "Mach", "PT", "mu"};
 
@@ -32,12 +32,15 @@ inline double compute_bound_square_root_x(T x, T eb){
 	if(x == 0) {
 		return sqrt(eb);
 	}
+	double error = 0;
 	if(x > eb){
-		return eb / (sqrt(x - eb) + sqrt(x));
+		error = eb / (sqrt(x - eb) + sqrt(x));
 	}
 	else{
-		return eb / sqrt(x);
+		error = eb / sqrt(x);
 	}
+	// return error;
+	return (error > sqrt(x + eb)) ? sqrt(x + eb) : error;
 }
 
 // f(x) = sqrt(x)
