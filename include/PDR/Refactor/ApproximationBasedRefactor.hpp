@@ -48,6 +48,7 @@ namespace PDR {
 
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
+                            + sizeof(size_t)
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
                             + get_size(level_sizes) // level information
                             + get_size(stopping_indices) + get_size(level_num) + 1 + sizeof(T); // one byte for whether negabinary encoding is used 
@@ -55,6 +56,8 @@ namespace PDR {
             uint8_t * metadata_pos = metadata;
             *(metadata_pos ++) = (uint8_t) dimensions.size();
             serialize(dimensions, metadata_pos);
+            *reinterpret_cast<size_t*>(metadata_pos) = approximator_size;
+            metadata_pos += sizeof(size_t);
             *(metadata_pos ++) = (uint8_t) 1; // level = 1
             serialize(level_error_bounds, metadata_pos);
             serialize(level_sizes, metadata_pos);
@@ -85,7 +88,7 @@ namespace PDR {
             }
             approximator_eb *= (max_val - min_val);
             std::string approximator_path = writer.get_directory() + "approximator.dat";
-            approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);
+            approximator_size = approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);
 
             level_error_bounds.clear();
             level_components.clear();
@@ -118,6 +121,7 @@ namespace PDR {
         std::vector<T> data;
         std::vector<uint32_t> dimensions;
         T approximator_eb = 0.001;
+        size_t approximator_size = 0;
         std::vector<T> level_error_bounds;
         std::vector<uint8_t> stopping_indices;
         std::vector<std::vector<uint8_t*>> level_components;

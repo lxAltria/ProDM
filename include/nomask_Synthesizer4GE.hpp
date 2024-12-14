@@ -595,23 +595,28 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
             mask[i] = 1;
         }
         if(mask[i]){
-            Vtot[0][i] = fabs(velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            Vtot[1][i] = fabs(velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            Vtot[2][i] = fabs(velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            double temp = sqrt(Vtot[0][i]*Vtot[0][i] + Vtot[1][i]*Vtot[1][i] + Vtot[2][i]*Vtot[2][i]);
-            Vtot[0][i] = temp;
-            Vtot[1][i] = temp;
-            Vtot[2][i] = temp;
+            // Vtot[0][i] = fabs(velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
+            // Vtot[1][i] = fabs(velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
+            // Vtot[2][i] = fabs(velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
+            // double temp = sqrt(Vtot[0][i]*Vtot[0][i] + Vtot[1][i]*Vtot[1][i] + Vtot[2][i]*Vtot[2][i]);
+            // Vtot[0][i] = temp;
+            // Vtot[1][i] = temp;
+            // Vtot[2][i] = temp;
             // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
+            double V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.1);
+            Vtot[0][i] = 1.0/V;
+            Vtot[1][i] = 1.0/V;
+            Vtot[2][i] = 1.0/V;
         }
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        if(i == 567082){
-            std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
-        }
+        // if(i == 567082){
+        //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
+        // }
         // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
@@ -622,6 +627,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
         std::vector<std::string> files;
+        std::cout << "metadata location: " << metadata_file << std::endl;
         int num_levels = target_level + 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
@@ -723,12 +729,16 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
             mask[i] = 1;
         }
         if(mask[i]){
-            Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            double V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.1);
+            Vtot[0][i] = 1.0/V;
+            Vtot[1][i] = 1.0/V;
+            Vtot[2][i] = 1.0/V;
         }
         else{
-            Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 1;
+            Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
         // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);

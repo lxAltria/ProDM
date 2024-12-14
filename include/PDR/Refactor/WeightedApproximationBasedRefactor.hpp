@@ -63,6 +63,8 @@ namespace PDR {
             uint8_t * metadata_pos = metadata;
             *(metadata_pos ++) = (uint8_t) dimensions.size();
             serialize(dimensions, metadata_pos);
+            *reinterpret_cast<size_t*>(metadata_pos) = approximator_size;
+            metadata_pos += sizeof(size_t);
             *(metadata_pos ++) = (uint8_t) 1; // level = 1
             serialize(level_error_bounds, metadata_pos);
             serialize(level_sizes, metadata_pos);
@@ -142,11 +144,11 @@ namespace PDR {
                 assign_block_value_3D(dimensions[0], dimensions[1], dimensions[2], dimensions[1]*dimensions[2], dimensions[2], block_size, weights.data());
             }
             int_weights = normalize_weights(weights);
-            size_t num = 0;
-            std::string filename("/Users/wenboli/uky/ProDM/Hurricane_f32/new_weight.dat");
-            int_weights = MGARD::readfile<int>(filename.c_str(), num);
+            // size_t num = 0;
+            // std::string filename("/Users/wenboli/uky/ProDM/Hurricane_f32/new_weight.dat");
+            // int_weights = MGARD::readfile<int>(filename.c_str(), num);
             {
-                std::cout << "num = " << num << std::endl;
+                // std::cout << "num = " << num << std::endl;
                 std::cout << "Normalizing Weights" << std::endl;
                 int max_w = int_weights[0];
                 int min_w = int_weights[0];
@@ -175,7 +177,7 @@ namespace PDR {
             }
             approximator_eb *= (max_val - min_val);
             std::string approximator_path = writer.get_directory() + "approximator.dat";
-            approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);
+            approximator_size = approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);
 
             level_error_bounds.clear();
             level_components.clear();
@@ -204,12 +206,13 @@ namespace PDR {
         Encoder encoder;
         Compressor compressor;
         Writer writer;
+        size_t approximator_size = 0;
         std::vector<T> data;
         std::vector<T> weights;
         std::vector<int> int_weights;
         std::vector<int> block_weights;
         std::vector<uint32_t> dimensions;
-        T approximator_eb = 0.1;
+        T approximator_eb = 0.001;
         std::vector<T> level_error_bounds;
         std::vector<uint8_t> stopping_indices;
         std::vector<std::vector<uint8_t*>> level_components;

@@ -336,10 +336,6 @@ void assign_block_value_2D(const size_t n1, const size_t n2, const size_t dim0_o
 template <class T>
 void assign_block_value_3D(const size_t n1, const size_t n2, const size_t n3, const size_t dim0_offset, const size_t dim1_offset, const int block_size, T * data){
     std::cout << "n1 = " << n1 << " n2 = " << n2 << " n3 = " << n3 << " dim0_offset = " << dim0_offset << " dim1_offset = " << dim1_offset << std::endl; 
-    {
-        std::cout << "Assign: derivative[567082] = " << data[567082] << std::endl;
-    }
-
     size_t num_block_1 = (n1 - 1) / block_size + 1;
     size_t num_block_2 = (n2 - 1) / block_size + 1;
     size_t num_block_3 = (n3 - 1) / block_size + 1;
@@ -386,8 +382,9 @@ void assign_block_value_3D(const size_t n1, const size_t n2, const size_t n3, co
 //*
 template <class T>
 std::vector<int> normalize_weights(std::vector<T>& weights, int num_weight_bitplane=0){
+    int debug_index = 4997711;
     {
-        std::cout << "derivative[567082] = " << weights[567082] << std::endl;
+        std::cout << "derivative[" << debug_index << "] = " << weights[debug_index] << std::endl;
     }
     int max_weight = 4;
     std::vector<int> int_weights(weights.size());
@@ -397,6 +394,7 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int num_weight_bitpl
         for(int i=1; i<weights.size(); i++){
             if(weights[i]){
                 min = fabs(weights[i]);
+                break;
             }
         }
     }
@@ -414,7 +412,7 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int num_weight_bitpl
     std::cout << max << " " << min << std::endl;
     // exit(0);
     for(int i=0; i<weights.size(); i++){
-        if(i == 567082){
+        if(i == debug_index){
             std::cout << "derivative = " << weights[i] << std::endl;
         }
         if(!weights[i]){
@@ -425,7 +423,7 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int num_weight_bitpl
             auto weight = sign ? static_cast<int>(log2(max/-weights[i])) : static_cast<int>(log2(max/weights[i]));
             int_weights[i] = (weight > max_weight) ? 0 : (max_weight - weight);
         }
-        if(i == 567082){
+        if(i == debug_index){
             std::cout << "weight = " << int_weights[i] << std::endl;
         }
         // else {

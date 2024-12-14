@@ -104,6 +104,8 @@ namespace PDR
             uint8_t const *metadata_pos = metadata;
             uint8_t num_dims = *(metadata_pos++);
             deserialize(metadata_pos, num_dims, dimensions);
+            approximator_size = *reinterpret_cast<const size_t *>(metadata_pos);
+            metadata_pos += sizeof(size_t);
             uint8_t num_levels = *(metadata_pos++);
             deserialize(metadata_pos, num_levels, level_error_bounds);
             deserialize(metadata_pos, num_levels, level_sizes);
@@ -131,7 +133,7 @@ namespace PDR
 
         size_t get_retrieved_size()
         {
-            return retriever.get_retrieved_size();
+            return retriever.get_retrieved_size() + approximator_size;
         }
 
         std::vector<uint32_t> get_offsets()
@@ -144,7 +146,7 @@ namespace PDR
         void print() const
         {
             std::cout << "Approximation-based reconstructor with the following components." << std::endl;
-            std::cout << "Approximatorr: ";
+            std::cout << "Approximator: ";
             approximator.print();
             std::cout << "Encoder: ";
             encoder.print();
@@ -194,6 +196,7 @@ namespace PDR
         Compressor compressor;
         T approximator_eb;
         size_t num_elements;
+        size_t approximator_size = 0;
         std::vector<T> data;
         std::vector<uint32_t> dimensions;
         std::vector<T> level_error_bounds;
