@@ -56,6 +56,7 @@ namespace PDR {
 
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
+                            + sizeof(size_t)
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
                             + get_size(level_sizes) // level information
                             + get_size(stopping_indices) + get_size(level_num) + 1 + sizeof(T); // one byte for whether negabinary encoding is used 
