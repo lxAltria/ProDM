@@ -22,7 +22,7 @@ namespace MDR {
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){}
 
-        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, const int block_size){
+        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, int max_weight = 4, const int block_size = 1){
             Timer timer;
             timer.start();
             dimensions = dims;
@@ -33,7 +33,7 @@ namespace MDR {
             data = std::vector<T>(data_, data_ + num_elements);
             weights = data;
             // if refactor successfully
-            if(refactor(target_level, num_bitplanes, block_size)){
+            if(refactor(target_level, num_bitplanes, max_weight, block_size)){
                 timer.end();
                 timer.print("Refactor");
                 timer.start();
@@ -131,7 +131,7 @@ namespace MDR {
             std::cout << "Encoder: "; encoder.print();
         }
     private:
-        bool refactor(uint8_t target_level, uint8_t num_bitplanes, const int block_size){
+        bool refactor(uint8_t target_level, uint8_t num_bitplanes, int max_weight, const int block_size){
             uint8_t max_level = log2(*min_element(dimensions.begin(), dimensions.end())) - 1;
             if(target_level > max_level){
                 std::cerr << "Target level is higher than " << max_level << std::endl;
@@ -159,7 +159,7 @@ namespace MDR {
                 }
                 std::cout << min_w << " " << max_w << std::endl;
             }
-            int_weights = normalize_weights(weights);
+            int_weights = normalize_weights(weights, max_weight);
             {
                 std::cout << "Normalizing Weights" << std::endl;
                 int max_w = int_weights[0];

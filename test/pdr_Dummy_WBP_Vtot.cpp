@@ -218,7 +218,7 @@ int main(int argc, char ** argv){
     while((!tolerance_met) && (iter < max_iter)){
     	iter ++;
 	    for(int i=0; i<n_variable; i++){
-	        auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, 4)), -1);
+	        auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[i].get_max_weight())), -1);
 			total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 	        if(i < 3){
 	            // reconstruct with mask
@@ -281,11 +281,13 @@ int main(int argc, char ** argv){
 	std::cout << "iter = " << iter << std::endl;
 
 	size_t total_size = std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0);
+	total_size = total_size + reconstructors[0].get_weight_file_size();
 	double cr = n_variable * num_elements * sizeof(T) * 1.0 / total_size;
 	std::cout << "each retrieved size:";
     for(int i=0; i<n_variable; i++){
         std::cout << total_retrieved_size[i] << ", ";
     }
+	std::cout << "weight_file_size: " << reconstructors[0].get_weight_file_size();
     std::cout << std::endl;
 	// MDR::print_vec(total_retrieved_size);
 	std::cout << "aggregated cr = " << cr << std::endl;

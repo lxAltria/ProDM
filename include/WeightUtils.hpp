@@ -381,12 +381,11 @@ void assign_block_value_3D(const size_t n1, const size_t n2, const size_t n3, co
 }
 //*
 template <class T>
-std::vector<int> normalize_weights(std::vector<T>& weights, int num_weight_bitplane=0){
+std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, int num_weight_bitplane=0){
     int debug_index = 4997711;
     {
         std::cout << "derivative[" << debug_index << "] = " << weights[debug_index] << std::endl;
     }
-    int max_weight = 4;
     std::vector<int> int_weights(weights.size());
     T max = fabs(weights[0]);
     T min;
