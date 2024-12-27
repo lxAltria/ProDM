@@ -575,7 +575,7 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
 }
 
 template<class T>
-void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1){
+void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -606,7 +606,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            double V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.1);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -708,7 +708,7 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
 }
 
 template<class T>
-void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1){
+void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -731,7 +731,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
             // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            double V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.1);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;

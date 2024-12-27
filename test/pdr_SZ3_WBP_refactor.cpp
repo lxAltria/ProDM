@@ -21,9 +21,11 @@ int main(int argc, char** argv){
 	std::string rdata_file_prefix = data_prefix_path + "/refactor/";
 	int max_weight = 4;
 	int block_size = 1;
+	T power = 0.1;
 	if(argc > 3){
 		max_weight = atoi(argv[argv_id++]);
 		block_size = atoi(argv[argv_id++]);
+		power = atof(argv[argv_id++]);
 	}
 
 	struct timespec start, end;
@@ -34,10 +36,10 @@ int main(int argc, char** argv){
 
     if(std::strcmp(data.c_str(), "Hurricane") == 0){
 		uint32_t dims[3] = {100, 500, 500};
-        refactor_velocities_3D_SZ3_WBP<T>(data, dims[0], dims[1], dims[2], data_file_prefix, rdata_file_prefix, max_weight, block_size);
+        refactor_velocities_3D_SZ3_WBP<T>(data, dims[0], dims[1], dims[2], data_file_prefix, rdata_file_prefix, max_weight, block_size, power);
     }
 	else if (std::strcmp(data.c_str(), "NYX") == 0){
-		refactor_velocities_3D_SZ3_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight, block_size);
+		refactor_velocities_3D_SZ3_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight, block_size, power);
 	}
     
 	err = clock_gettime(CLOCK_REALTIME, &end);
