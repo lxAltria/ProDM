@@ -415,7 +415,7 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, 
             std::cout << "derivative = " << weights[i] << std::endl;
         }
         if(!weights[i]){
-            int_weights[i] = 0; ///// 0
+            int_weights[i] = max_weight; ///// 0
         }
         else {
             bool sign = weights[i] < 0;
