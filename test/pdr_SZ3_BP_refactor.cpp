@@ -33,6 +33,9 @@ int main(int argc, char** argv){
 	else if (std::strcmp(data.c_str(), "NYX") == 0){
 		refactor_velocities_3D_SZ3_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix);
 	}
+	else if (std::strcmp(data.c_str(), "GE_small") == 0){
+		refactor_velocities_1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix);
+	}
     
 	err = clock_gettime(CLOCK_REALTIME, &end);
 	elapsed_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000;

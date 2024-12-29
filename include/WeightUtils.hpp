@@ -382,10 +382,10 @@ void assign_block_value_3D(const size_t n1, const size_t n2, const size_t n3, co
 //*
 template <class T>
 std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, int num_weight_bitplane=0){
-    int debug_index = 4997711;
-    {
-        std::cout << "derivative[" << debug_index << "] = " << weights[debug_index] << std::endl;
-    }
+    // int debug_index = 4997711;
+    // {
+    //     std::cout << "derivative[" << debug_index << "] = " << weights[debug_index] << std::endl;
+    // }
     std::vector<int> int_weights(weights.size());
     T max = fabs(weights[0]);
     T min;
@@ -411,9 +411,9 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, 
     std::cout << max << " " << min << std::endl;
     // exit(0);
     for(int i=0; i<weights.size(); i++){
-        if(i == debug_index){
-            std::cout << "derivative = " << weights[i] << std::endl;
-        }
+        // if(i == debug_index){
+        //     std::cout << "derivative = " << weights[i] << std::endl;
+        // }
         if(!weights[i]){
             int_weights[i] = max_weight; ///// 0
         }
@@ -422,9 +422,9 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, 
             auto weight = sign ? static_cast<int>(log2(max/-weights[i])) : static_cast<int>(log2(max/weights[i]));
             int_weights[i] = (weight > max_weight) ? 0 : (max_weight - weight);
         }
-        if(i == debug_index){
-            std::cout << "weight = " << int_weights[i] << std::endl;
-        }
+        // if(i == debug_index){
+        //     std::cout << "weight = " << int_weights[i] << std::endl;
+        // }
         // else {
         //     bool sign = weights[i] < 0;
         //     int_weights[i] = sign ? static_cast<int>(log2(-weights[i]/min)) : static_cast<int>(log2(weights[i]/min));
