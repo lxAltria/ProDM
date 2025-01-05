@@ -29,7 +29,7 @@ std::vector<float> error_est_V_TOT;
 
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const float tau, std::vector<float>& ebs, std::vector<std::vector<int>> weights){
+bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const float tau, std::vector<float>& ebs){
 	float eb_Vx = ebs[0];
 	float eb_Vy = ebs[1];
 	float eb_Vz = ebs[2];
@@ -40,15 +40,12 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 	float max_Vx = 0;
 	float max_Vy = 0;
 	float max_Vz = 0;
-	int max_weight_Vx = 0;
-	int max_weight_Vy = 0;
-	int max_weight_Vz = 0;
 	// int weight_index = 0;
 	// int max_weight_index = 0;
 	for(int i=0; i<n; i++){
 		// error of total velocity square
 		float e_V_TOT_2 = 0;
-		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 		float V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		// error of total velocity
 		float e_V_TOT = 0;
@@ -67,15 +64,11 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			max_Vy = Vy[i];
 			max_Vz = Vz[i];
 			max_index = i;
-			max_weight_Vx = weights[0][i];
-			max_weight_Vy = weights[1][i];
-			max_weight_Vz = weights[2][i];
 			// max_weight_index = weight_index;
 		}
 		// if(mask[i]) weight_index++;
 	}
 	std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
-	std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		// estimate
@@ -91,8 +84,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5;		        		
-			float e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
-			// float e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
+			float e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			// if(ebs[0]/eb_Vx > 5) break;
@@ -180,31 +172,28 @@ int main(int argc, char ** argv){
 	// WeightReconstructor		MGARDHierarchicalDecomposer		WeightedPerBitBPEncoder		//
 	// std::vector<MDR::WeightReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, DirectInterleaver<int>, WeightedPerBitBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 	// ComposedReconstructor	MGARDHierarchicalDecomposer		NegaBinaryBPEncoder			//
-	// std::vector<MDR::ComposedReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+	std::vector<MDR::ComposedReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 	// ComposedReconstructor	MGARDCubicDecomposer		NegaBinaryBPEncoder				//
 	// std::vector<MDR::ComposedReconstructor<T, MGARDCubicDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHBCubic<T>>, MaxErrorEstimatorHBCubic<T>, ConcatLevelFileRetriever>> reconstructors; 
-	std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
-	std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements));
+	// std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 	for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + varlist[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
         std::vector<std::string> files;
-        int num_levels = 1;
+        int num_levels = 5;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
             files.push_back(filename);
         }
-        auto approximator = PDR::SZApproximator<T>();
-        auto encoder = WeightedNegaBinaryBPEncoder<T, T_stream>();
+        auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
+        auto interleaver = DirectInterleaver<T>();
+        auto encoder = NegaBinaryBPEncoder<T, T_stream>();
         auto compressor = AdaptiveLevelCompressor(64);
+        auto retriever = ConcatLevelFileRetriever(metadata_file, files);
         auto estimator = MaxErrorEstimatorHB<T>();
         auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
-        auto retriever = ConcatLevelFileRetriever(metadata_file, files);
-        reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
+        reconstructors.push_back(generateReconstructor<T>(decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever));
         reconstructors.back().load_metadata();
-		reconstructors.back().load_weight();
-		reconstructors.back().span_weight();
-		weights[i] = reconstructors.back().get_int_weights();
     }
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
 
@@ -217,8 +206,8 @@ int main(int argc, char ** argv){
     while((!tolerance_met) && (iter < max_iter)){
     	iter ++;
 	    for(int i=0; i<n_variable; i++){
-	        auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[i].get_max_weight())), -1);
-			// auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i], -1);
+	        // auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, 4)), -1);
+			auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i], -1);
 			total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 	        if(i < 3){
 	            // reconstruct with mask
@@ -252,7 +241,7 @@ int main(int argc, char ** argv){
 	    error_est_V_TOT = std::vector<float>(num_elements);
 		std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 	    MDR::print_vec(ebs);
-	    tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+	    tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 		std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 	    MDR::print_vec(ebs);
 		// /* test
@@ -281,13 +270,11 @@ int main(int argc, char ** argv){
 	std::cout << "iter = " << iter << std::endl;
 
 	size_t total_size = std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0);
-	total_size = total_size + reconstructors[0].get_weight_file_size();
 	double cr = n_variable * num_elements * sizeof(T) * 1.0 / total_size;
 	std::cout << "each retrieved size:";
     for(int i=0; i<n_variable; i++){
         std::cout << total_retrieved_size[i] << ", ";
     }
-	std::cout << "weight_file_size: " << reconstructors[0].get_weight_file_size();
     std::cout << std::endl;
 	// MDR::print_vec(total_retrieved_size);
 	std::cout << "aggregated cr = " << cr << std::endl;

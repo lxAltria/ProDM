@@ -13,6 +13,7 @@
 #include "MDR/RefactorUtils.hpp"
 #include <cstdio>
 #include "WeightUtils.hpp"
+#include "ompSZp_typemanager.h"
 
 namespace MDR {
     // a decomposition-based scientific data reconstructor: inverse operator of weight refactor
@@ -137,6 +138,8 @@ namespace MDR {
             uint8_t const * metadata_pos = metadata;
             uint8_t num_dims = *(metadata_pos ++);
             deserialize(metadata_pos, num_dims, dimensions);
+            weight_file_size = *reinterpret_cast<const size_t *>(metadata_pos);
+            metadata_pos += sizeof(size_t);
             uint8_t num_levels = *(metadata_pos ++);
             deserialize(metadata_pos, num_levels, level_error_bounds);
             // deserialize(metadata_pos, num_levels, level_squared_errors);
@@ -174,41 +177,42 @@ namespace MDR {
 
         void load_weight(){
             std::cout << "Loading Weight" << std::endl;
-            string path = retriever.get_directory() + "/weight.bin";
+            string path = retriever.get_directory() + "weight.bin";
             std::cout << "Path: " << path << std::endl;
-            FILE * file = fopen(path.c_str(), "r");
-            if (file == nullptr) {
+            FILE *file = fopen(path.c_str(), "r");
+            if (file == nullptr)
+            {
                 perror("Error opening file");
                 return;
             }
             fseek(file, 0, SEEK_END);
             uint32_t num_bytes = ftell(file);
             rewind(file);
-            uint8_t * weight_data = (uint8_t *) malloc(num_bytes);
+            uint8_t *weight_data = (uint8_t *)malloc(num_bytes);
             fread(weight_data, 1, num_bytes, file);
             fclose(file);
-            uint8_t * weight_data_pos = weight_data;
+            uint8_t *weight_data_pos = weight_data;
             memcpy(&block_size, weight_data_pos, sizeof(int));
             weight_data_pos += sizeof(int);
-            size_t block_weight_size;
-            memcpy(&block_weight_size, weight_data_pos, sizeof(size_t));
+            memcpy(&bit_count, weight_data_pos, sizeof(unsigned int));
+            weight_data_pos += sizeof(unsigned int);
+            size_t intArrayLength;
+            memcpy(&intArrayLength, weight_data_pos, sizeof(size_t));
             weight_data_pos += sizeof(size_t);
-            block_weights.clear();
-            block_weights.assign(reinterpret_cast<const int*>(weight_data_pos), reinterpret_cast<const int*>(weight_data_pos) + block_weight_size);
-            {
-                int max_w = block_weights[0];
-                int min_w = block_weights[0];
-                for(int i=1; i< block_weights.size(); i++){
-                    if(block_weights[i] > max_w) max_w = block_weights[i];
-                    if(block_weights[i] < min_w) min_w = block_weights[i];
-                }
-                std::cout << min_w << " " << max_w << std::endl;
-            }
-            weight_data_pos += block_weight_size * sizeof(int);
+            size_t compressed_weight_size;
+            memcpy(&compressed_weight_size, weight_data_pos, sizeof(size_t));
+            weight_data_pos += sizeof(size_t);
+            compressed_weights.clear();
+            compressed_weights.assign(weight_data_pos, weight_data_pos + compressed_weight_size);
+            weight_data_pos += compressed_weight_size;
             free(weight_data);
+            block_weights.resize(intArrayLength);
         }
 
         void span_weight(){
+            if (compressed_weights.size() != Jiajun_extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
+                perror("From WeightedApproximationBasedReconstructor: Error: byteLength != weight_size\n");
+            }
             if(dimensions.size() == 1){
                 int_weights = fill_block_weight_1D(dimensions[0], block_weights, block_size);
             }
@@ -218,9 +222,20 @@ namespace MDR {
             else{
                 int_weights = fill_block_weight_3D(dimensions[0], dimensions[1], dimensions[2], block_weights, block_size);
             }
-            for(int i=20153888; i<20153889; i++){
-                std::cout << "int_weights[" << i << "] = " << int_weights[i] << std::endl;
+            {
+                std::cout << "Spanning Weights" << std::endl;
+                int max_w = int_weights[0];
+                int min_w = int_weights[0];
+                for(int i=1; i< int_weights.size(); i++){
+                    if(int_weights[i] > max_w) max_w = int_weights[i];
+                    if(int_weights[i] < min_w) min_w = int_weights[i];
+                }
+                std::cout << min_w << " " << max_w << std::endl;
+                max_weight = max_w;
             }
+            // for(int i=20153888; i<20153889; i++){
+            //     std::cout << "int_weights[" << i << "] = " << int_weights[i] << std::endl;
+            // }
             // using level_error_bounds temporarily
             std::cout << "(int) level_error_bounds.size() = " << (int) level_error_bounds.size() << std::endl;
             propagateWeight(dimensions, (int) level_error_bounds.size() - 1, int_weights);
@@ -241,6 +256,16 @@ namespace MDR {
 
         size_t get_retrieved_size(){
             return retriever.get_retrieved_size();
+        }
+
+        size_t get_weight_file_size()
+        {
+            return weight_file_size;
+        }
+
+        int get_max_weight()
+        {
+            return max_weight;
         }
 
         std::vector<uint32_t> get_offsets(){
@@ -388,8 +413,12 @@ namespace MDR {
         SizeInterpreter interpreter;
         Retriever retriever;
         Compressor compressor;
+        size_t weight_file_size = 0;
+        unsigned int bit_count;
         std::vector<T> data;
         int block_size;
+        int max_weight;
+        std::vector<unsigned char> compressed_weights;
         std::vector<int> block_weights;
         std::vector<uint32_t> dimensions;
         std::vector<uint32_t> current_dimensions;

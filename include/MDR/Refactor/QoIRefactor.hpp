@@ -11,6 +11,7 @@
 #include "MDR/RefactorUtils.hpp"
 #include "WeightUtils.hpp"
 #include <cstdio>
+#include "ompSZp_typemanager.h"
 
 namespace MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
@@ -42,8 +43,8 @@ namespace MDR {
                 timer.print("Write");                
             }
 
-            write_metadata();
             write_weight(block_size);
+            write_metadata();
             for(int i=0; i<level_components.size(); i++){
                 for(int j=0; j<level_components[i].size(); j++){
                     free(level_components[i][j]);                    
@@ -53,6 +54,7 @@ namespace MDR {
 
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
+                            + sizeof(size_t)
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
                             // + get_size(level_squared_errors) 
                             + get_size(level_sizes) // level information
@@ -61,6 +63,8 @@ namespace MDR {
             uint8_t * metadata_pos = metadata;
             *(metadata_pos ++) = (uint8_t) dimensions.size();
             serialize(dimensions, metadata_pos);
+            *reinterpret_cast<size_t*>(metadata_pos) = weight_file_size;
+            metadata_pos += sizeof(size_t);
             *(metadata_pos ++) = (uint8_t) level_error_bounds.size();
             serialize(level_error_bounds, metadata_pos);
             // serialize(level_squared_errors, metadata_pos);
@@ -73,26 +77,31 @@ namespace MDR {
         }
 
         void write_weight(const int block_size) const {
-            {
-                int max_w = block_weights[0];
-                int min_w = block_weights[0];
-                for(int i=1; i< block_weights.size(); i++){
-                    if(block_weights[i] > max_w) max_w = block_weights[i];
-                    if(block_weights[i] < min_w) min_w = block_weights[i];
-                }
-                std::cout << min_w << " " << max_w << std::endl;
-            }
- 
-            uint32_t weight_size = sizeof(int) + sizeof(size_t) + get_size(block_weights);
+            // {
+            //     int max_w = block_weights[0];
+            //     int min_w = block_weights[0];
+            //     for(int i=1; i< block_weights.size(); i++){
+            //         if(block_weights[i] > max_w) max_w = block_weights[i];
+            //         if(block_weights[i] < min_w) min_w = block_weights[i];
+            //     }
+            //     std::cout << min_w << " " << max_w << std::endl;
+            // }
+
+            uint32_t weight_size = sizeof(int) + sizeof(unsigned int) + sizeof(size_t) + sizeof(size_t) + get_size(compressed_weights);
             uint8_t * weight_data = (uint8_t *) malloc(weight_size);
             uint8_t * weight_data_pos = weight_data;
             memcpy(weight_data_pos, &block_size, sizeof(int));
             weight_data_pos += sizeof(int);
-            size_t block_weight_size = block_weights.size();
-            memcpy(weight_data_pos, &block_weight_size, sizeof(size_t));  
+            memcpy(weight_data_pos, &bit_count, sizeof(unsigned int));
+            weight_data_pos += sizeof(unsigned int);
+            size_t intArrayLength = block_weights.size();
+            memcpy(weight_data_pos, &intArrayLength, sizeof(size_t));
             weight_data_pos += sizeof(size_t);
-            serialize(block_weights, weight_data_pos);
-            string path = writer.get_directory() + "/weight.bin";
+            size_t compressed_weight_size = compressed_weights.size();
+            memcpy(weight_data_pos, &compressed_weight_size, sizeof(size_t));  
+            weight_data_pos += sizeof(size_t);
+            serialize(compressed_weights, weight_data_pos);
+            string path = writer.get_directory() + "weight.bin";
             std::cout << "Path: " << path << std::endl;
             FILE * file = fopen(path.c_str(), "w");
             if (file == nullptr) {
@@ -102,6 +111,7 @@ namespace MDR {
             fwrite(weight_data, 1, weight_size, file);
             fclose(file);
             free(weight_data);
+            weight_file_size = static_cast<size_t>(weight_size);
         }
 
         void write_weight_dat(const int block_size) const {
@@ -170,14 +180,23 @@ namespace MDR {
                 }
                 std::cout << min_w << " " << max_w << std::endl;
             }
-            for(int i=20153888; i<20153889; i++){
-                std::cout << "int_weights[" << i << "] = " << int_weights[i] << std::endl;
-            }
             if(dimensions.size() == 1){
                 block_weights = get_block_weight_1D(dimensions[0], int_weights, block_size);
             }
             else if(dimensions.size() == 2){
                 block_weights = get_block_weight_2D(dimensions[0], dimensions[1], int_weights, block_size);
+            }
+            else if(dimensions.size() == 3){
+                block_weights = get_block_weight_3D(dimensions[0], dimensions[1], dimensions[2], int_weights, block_size);
+            }
+            // calculate the space that compressed_weights needs and resize it since we are passing the pointer
+            bit_count = static_cast<unsigned int>(std::ceil(std::log2(max_weight + 1)));
+            unsigned int byte_count = bit_count / 8; // calculate the byte_count
+	        unsigned int remainder_bit = bit_count % 8;
+	        size_t byteLength = byte_count * block_weights.size() + (remainder_bit * block_weights.size() - 1) / 8 + 1;
+            compressed_weights.resize(byteLength);
+            if (byteLength != Jiajun_save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
+                perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
             }
             propagateWeight(dimensions, (int) target_level, int_weights);
             std::cout << "(int) target_level = " << (int) target_level << std::endl;
@@ -270,10 +289,13 @@ namespace MDR {
         Compressor compressor;
         ErrorCollector collector;
         Writer writer;
+        unsigned int bit_count;
+        mutable size_t weight_file_size = 0;
         std::vector<T> data;
         std::vector<T> weights;
         std::vector<int> int_weights;
         std::vector<int> block_weights;
+        std::vector<unsigned char> compressed_weights;
         std::vector<uint32_t> dimensions;
         std::vector<T> level_error_bounds;
         std::vector<uint8_t> stopping_indices;

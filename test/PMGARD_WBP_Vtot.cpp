@@ -172,7 +172,7 @@ int main(int argc, char ** argv){
 	// ComposedReconstructor	MGARDCubicDecomposer			PerBitBPEncoder				//
 	// std::vector<MDR::ComposedReconstructor<T, MGARDCubicDecomposer<T>, DirectInterleaver<T>, PerBitBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHBCubic<T>>, MaxErrorEstimatorHBCubic<T>, ConcatLevelFileRetriever>> reconstructors;
 	// WeightReconstructor		MGARDHierarchicalDecomposer		WeightedNegaBinaryBPEncoder	//
-	// std::vector<MDR::WeightReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, DirectInterleaver<int>, WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+	std::vector<MDR::WeightReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, DirectInterleaver<int>, WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 	// WeightReconstructor		MGARDCubicDecomposer			WeightedNegaBinaryBPEncoder	//
 	// std::vector<MDR::WeightReconstructor<T, MGARDCubicDecomposer<T>, DirectInterleaver<T>, DirectInterleaver<int>, WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHBCubic<T>>, MaxErrorEstimatorHBCubic<T>, ConcatLevelFileRetriever>> reconstructors;
 	// WeightReconstructor		MGARDCubicDecomposer			WeightedPerBitBPEncoder		//
@@ -183,24 +183,26 @@ int main(int argc, char ** argv){
 	// std::vector<MDR::ComposedReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 	// ComposedReconstructor	MGARDCubicDecomposer		NegaBinaryBPEncoder				//
 	// std::vector<MDR::ComposedReconstructor<T, MGARDCubicDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHBCubic<T>>, MaxErrorEstimatorHBCubic<T>, ConcatLevelFileRetriever>> reconstructors; 
-	std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+	// std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 	std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements));
 	for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + varlist[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
         std::vector<std::string> files;
-        int num_levels = 1;
+        int num_levels = 5;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
             files.push_back(filename);
         }
-        auto approximator = PDR::SZApproximator<T>();
+        auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
+        auto interleaver = DirectInterleaver<T>();
+        auto weight_interleaver = DirectInterleaver<int>();
         auto encoder = WeightedNegaBinaryBPEncoder<T, T_stream>();
         auto compressor = AdaptiveLevelCompressor(64);
+        auto retriever = ConcatLevelFileRetriever(metadata_file, files);
         auto estimator = MaxErrorEstimatorHB<T>();
         auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
-        auto retriever = ConcatLevelFileRetriever(metadata_file, files);
-        reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
+        reconstructors.push_back(generateReconstructor<T>(decomposer, interleaver, weight_interleaver, encoder, compressor, estimator, interpreter, retriever));
         reconstructors.back().load_metadata();
 		reconstructors.back().load_weight();
 		reconstructors.back().span_weight();

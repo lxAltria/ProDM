@@ -184,7 +184,7 @@ int main(int argc, char ** argv){
         std::string rdir_prefix = rdata_file_prefix + varlist[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
         std::vector<std::string> files;
-        int num_levels = 5;
+        int num_levels = 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
             files.push_back(filename);
@@ -209,7 +209,7 @@ int main(int argc, char ** argv){
     while((!tolerance_met) && (iter < max_iter)){
     	iter ++;
 	    for(int i=0; i<n_variable; i++){
-			auto reconstructed_data = reconstructors[i].   progressive_reconstruct(ebs[i], -1);
+			auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i], -1);
 			total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 	        if(i < 3){
 	            // reconstruct with mask
