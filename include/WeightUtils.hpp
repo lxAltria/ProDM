@@ -425,6 +425,9 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, 
         // if(i == debug_index){
         //     std::cout << "weight = " << int_weights[i] << std::endl;
         // }
+        // if(!weights[i]){
+        //     int_weights[i] = max_weight; ///// 0
+        // }
         // else {
         //     bool sign = weights[i] < 0;
         //     int_weights[i] = sign ? static_cast<int>(log2(-weights[i]/min)) : static_cast<int>(log2(weights[i]/min));
@@ -436,8 +439,7 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, 
 }//*/
 /*
 template <class T>
-std::vector<int> normalize_weights(std::vector<T>& weights) {
-    int max_weight = 4;
+std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, int num_weight_bitplane=0) {
     std::vector<int> int_weights(weights.size());
 
     T max = -std::numeric_limits<T>::infinity();
@@ -457,11 +459,11 @@ std::vector<int> normalize_weights(std::vector<T>& weights) {
 
     for (size_t i = 0; i < weights.size(); i++) {
         if (weights[i] == 0) {
-            int_weights[i] = 0;
+            int_weights[i] = max_weight;
         } else {
             int_weights[i] = static_cast<int>((fabs(weights[i]) - min) / (max - min) * max_weight);
         }
-        // int_weights[i] = max_weight - int_weights[i];    // for value and QoI, comment it when dQoI
+        int_weights[i] = max_weight - int_weights[i];    // for value and QoI, comment it when dQoI
     }
     return int_weights;
 }//*/

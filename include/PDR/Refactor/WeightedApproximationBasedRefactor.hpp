@@ -181,10 +181,18 @@ namespace PDR {
             bit_count = static_cast<unsigned int>(std::ceil(std::log2(max_weight + 1)));
             unsigned int byte_count = bit_count / 8; // calculate the byte_count
 	        unsigned int remainder_bit = bit_count % 8;
-	        size_t byteLength = byte_count * block_weights.size() + (remainder_bit * block_weights.size() - 1) / 8 + 1;
+            size_t byteLength = 0;
+	        if (remainder_bit == 0) {
+                byteLength = byte_count * block_weights.size() + 1;
+            } 
+            else {
+                size_t tmp = remainder_bit * block_weights.size();
+                byteLength = byte_count * block_weights.size() + (tmp - 1) / 8 + 1;
+            }
+            // std::cout << "bit_count = " << static_cast<size_t>(bit_count) << " byte_count = " << static_cast<size_t>(byte_count) << " remainder_bit = " << static_cast<size_t>(remainder_bit) << " byteLength = " << byteLength << " block_weights.size() = " << block_weights.size() << std::endl;
             compressed_weights.resize(byteLength);
             if (byteLength != Jiajun_save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
-                perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
+                // perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
             }
             auto num_elements = data.size();
             T max_val = data[0];

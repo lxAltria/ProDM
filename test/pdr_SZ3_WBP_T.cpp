@@ -36,6 +36,12 @@ bool halfing_error_T_uniform(const T * P, const T * D, size_t n, const T tau, st
 	T c_1 = 1.0 / R;
 	T max_value = 0;;
 	int max_index = 0;
+    T max_e_T = 0;
+	T max_T = 0;
+	T max_P = 0;
+	T max_D = 0;
+	int max_weight_P = 0;
+	int max_weight_D = 0;
 	for(int i=0; i<n; i++){
 		// error of temperature
 		T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
@@ -48,12 +54,19 @@ bool halfing_error_T_uniform(const T * P, const T * D, size_t n, const T tau, st
 		if(max_value < error_est_Temp[i]){
 			max_value = error_est_Temp[i];
 			max_index = i;
+            max_e_T = e_T;
+            max_T = Temp;
+            max_P = P[i];
+            max_D = D[i];
+            max_weight_P = weights[0][i];
+            max_weight_D = weights[1][i];
 		}
 	}
 	std::cout << "P = " << P[max_index] << " D = " << D[max_index] << std::endl;
 	std::cout << "eb_P = " << eb_P << " eb_D = " << eb_D << std::endl;
 	std::cout << "coeff_P = " << fabs(P[max_index])*eb_D << " coeff_D = " << fabs(D[max_index])*eb_P << std::endl;
-	std::cout << names[1] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+	std::cout << names[1] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
+    std::cout << "max_weight_P = " << max_weight_P << ", max_weight_D = " << max_weight_D << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		auto i = max_index;
@@ -109,6 +122,19 @@ int main(int argc, char ** argv){
     compute_T(P_ori.data(), D_ori.data(), num_elements, Temp.data());
 	Temp_ori = Temp.data();
     T tau = compute_value_range(Temp)*target_rel_eb;
+    // /* test
+    std::string filename = "./Result/Temp_ori.dat";
+    std::ofstream outfile1(filename, std::ios::binary);
+    if (!outfile1.is_open()) {
+        std::cerr << "Failed to open file for writing: " << filename << std::endl;
+		exit(-1);
+    }
+	std::cout << "Temp.size: " << Temp.size() << std::endl;
+    outfile1.write(reinterpret_cast<const char*>(Temp.data()), Temp.size() * sizeof(float));
+    
+    outfile1.close();
+    std::cout << "Data saved successfully to " << filename << std::endl;
+    //*/
 
     std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
     std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
@@ -158,6 +184,19 @@ int main(int argc, char ** argv){
 	    tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
 		std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 	    MDR::print_vec(ebs);
+        // /* test
+    	std::string filename = "./Result/Temp_err.dat";
+    	std::ofstream outfile1(filename, std::ios::binary);
+    	if (!outfile1.is_open()) {
+    	    std::cerr << "Failed to open file for writing: " << filename << std::endl;
+    	    exit(-1);
+    	}
+
+    	outfile1.write(reinterpret_cast<const char*>(error_est_Temp.data()), error_est_Temp.size() * sizeof(float));
+    
+    	outfile1.close();
+    	std::cout << "Data saved successfully to " << filename << std::endl;
+    	//*/
 	    // std::cout << names[1] << " requested error = " << tau << std::endl;
 	    max_act_error = print_max_abs(names[1] + " error", error_Temp);
 	    max_est_error = print_max_abs(names[1] + " error_est", error_est_Temp);   	

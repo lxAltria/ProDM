@@ -211,7 +211,7 @@ namespace MDR {
 
         void span_weight(){
             if (compressed_weights.size() != Jiajun_extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
-                perror("From WeightedApproximationBasedReconstructor: Error: byteLength != weight_size\n");
+                // perror("From WeightedApproximationBasedReconstructor: Error: byteLength != weight_size\n");
             }
             if(dimensions.size() == 1){
                 int_weights = fill_block_weight_1D(dimensions[0], block_weights, block_size);

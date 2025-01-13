@@ -16,6 +16,7 @@
 #include "PDR/Reconstructor/Reconstructor.hpp"
 // #include "PDR/Reconstructor/ApproximationBasedReconstructor.hpp"
 // #include "PDR/Reconstructor/WeightedApproximationBasedReconstructor.hpp"
+#include "ompSZp_typemanager.h"
 
 const std::vector<std::string> varlist = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;
@@ -506,7 +507,7 @@ void refactor_velocities_1D_PMGARD_BP(const std::string data_file_prefix, const 
 
 /* treat 3d data as 1d due to 0-velocity points */
 template<class T>
-void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
+void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight_for_vtot=4, int max_weight_for_pressure=0, int max_weight_for_density=4, int block_size=1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -515,6 +516,7 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
     auto density_vec = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
     std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec, pressure_vec, density_vec};
     std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
+    std::vector<int> max_weights = {max_weight_for_vtot, max_weight_for_vtot, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density};
     int n_variable = var_list.size();
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
@@ -541,7 +543,7 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -549,9 +551,8 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        T temp = pow(pressure_vec[i] / (density_vec[i] * R), power);
-        Temp[0][i] = 1.0/temp;
-        Temp[1][i] = 1.0/temp;
+        Temp[0][i] = 1;
+        Temp[1][i] = pow(density_vec[i], 2.0);
     }
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
@@ -581,7 +582,7 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
         auto refactor = generateRefactor<T>(decomposer, interleaver, weight_interleaver, encoder, compressor, collector, writer, negabinary);
         if(i < 3) refactor.QoI = Vtot[i];
         else refactor.QoI = Temp[i-3];
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);            
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);            
     }
 }
 
@@ -638,7 +639,7 @@ void refactor_velocities_1D_Dummy_BP(const std::string data_file_prefix, const s
 }
 
 template<class T>
-void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
+void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight_for_vtot=4, int max_weight_for_pressure=0, int max_weight_for_density=4, int block_size=1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -647,6 +648,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
     auto density_vec = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements); 
     std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec, pressure_vec, density_vec};
     std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
+    std::vector<int> max_weights = {max_weight_for_vtot, max_weight_for_vtot, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density};
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
@@ -676,7 +678,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -684,9 +686,8 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        T temp = pow(pressure_vec[i] / (density_vec[i] * R), power);
-        Temp[0][i] = 1.0/temp;
-        Temp[1][i] = 1.0/temp;
+        Temp[0][i] = 1;
+        Temp[1][i] = pow(density_vec[i], 2.0);
         // if(i == 567082){
         //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
         // }
@@ -726,7 +727,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
         if(i < 3) refactor.QoI = Vtot[i];
         else refactor.QoI = Temp[i-3];
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);  
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);  
     }
 }
 
@@ -783,7 +784,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
 }
 
 template<class T>
-void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
+void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight_for_vtot=4, int max_weight_for_pressure=0, int max_weight_for_density=4, int block_size=1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -792,6 +793,7 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
     auto density_vec = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
     std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec, pressure_vec, density_vec};
     std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
+    std::vector<int> max_weights = {max_weight_for_vtot, max_weight_for_vtot, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density};
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
@@ -821,7 +823,7 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -829,9 +831,8 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        T temp = pow(pressure_vec[i] / (density_vec[i] * R), power);
-        Temp[0][i] = 1.0/temp;
-        Temp[1][i] = 1.0/temp;
+        Temp[0][i] = 1;
+        Temp[1][i] = pow(density_vec[i], 2.0);
         // if(i == 567082){
         //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
         // }
@@ -870,7 +871,7 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
         if(i < 3) refactor.QoI = Vtot[i];
         else refactor.QoI = Temp[i-3];
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);  
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);  
     }
 }
 
@@ -927,7 +928,7 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
 }
 
 template<class T>
-void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
+void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -958,7 +959,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -1009,6 +1010,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
 
 template<class T>
 void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix){
+    std::cout << "refactor_velocities_3D_SZ3_BP" << std::endl;
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -1036,6 +1038,7 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
         int num_levels = target_level + 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            std::cout << "filename: " << filename << std::endl;
             files.push_back(filename);
         }
         
@@ -1060,7 +1063,8 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
 }
 
 template<class T>
-void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
+void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1){
+    std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -1083,7 +1087,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
             // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -1172,7 +1176,7 @@ void refactor_velocities_3D_PMGARD_BP(std::string dataset, uint32_t n1, uint32_t
 }
 
 template<class T>
-void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1, T power=0.1){
+void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
@@ -1194,7 +1198,7 @@ void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_
             // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], power);
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
