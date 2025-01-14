@@ -121,6 +121,17 @@ vector<vector<size_t>> init_levels(const vector<size_t>& dims, size_t target_lev
     }
     return level_dims;
 }
-
+template <class T>
+inline T interp_cubic(T a, T b, T c, T d) {
+    return (-a + 9 * b + 9 * c - d) / 16;
+}
+template <class T>
+inline T interp_quad_1(T a, T b, T c) {
+    return (3 * a + 6 * b - c) / 8;
+}
+template <class T>
+inline T interp_quad_2(T a, T b, T c) {
+    return (-a + 6 * b + 3 * c) / 8;
+}
 }
 #endif
