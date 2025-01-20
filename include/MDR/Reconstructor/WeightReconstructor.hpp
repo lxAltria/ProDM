@@ -237,7 +237,7 @@ namespace MDR {
             //     std::cout << "int_weights[" << i << "] = " << int_weights[i] << std::endl;
             // }
             // using level_error_bounds temporarily
-            std::cout << "(int) level_error_bounds.size() = " << (int) level_error_bounds.size() << std::endl;
+            // std::cout << "(int) level_error_bounds.size() = " << (int) level_error_bounds.size() << std::endl;
             propagateWeight(dimensions, (int) level_error_bounds.size() - 1, int_weights);
             write_weight_dat(block_size);
         }

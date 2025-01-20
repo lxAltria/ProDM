@@ -182,7 +182,9 @@ namespace PDR
                 compressor.decompress_release();
                 for (int i = 0; i < num_elements; i++)
                 {
+                    // if (i == 1958794) std::cout << "Before: data[" << i << "] = " << data[i] << ", level_decoded_data[" << i << "] = " << level_decoded_data[i] << std::endl;
                     data[i] += level_decoded_data[i];
+                    // if (i == 1958794) std::cout << "After: data[" << i << "] = " << data[i] << std::endl;
                 }
                 free(level_decoded_data);
             }

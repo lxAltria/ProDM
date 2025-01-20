@@ -15,21 +15,21 @@
 #define PMGARD 2
 using namespace MDR;
 
-using T = float;
-using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-std::vector<float> P_ori;
-std::vector<float> D_ori;
-std::vector<float> Vx_ori;
-std::vector<float> Vy_ori;
-std::vector<float> Vz_ori;
-float * P_dec = NULL;
-float * D_dec = NULL;
-float * Vx_dec = NULL;
-float * Vy_dec = NULL;
-float * Vz_dec = NULL;
-float * Temp_ori = NULL;
-std::vector<float> error_Temp;
-std::vector<float> error_est_Temp;
+using T = double;
+using T_stream = uint32_t;
+std::vector<double> P_ori;
+std::vector<double> D_ori;
+std::vector<double> Vx_ori;
+std::vector<double> Vy_ori;
+std::vector<double> Vz_ori;
+double * P_dec = NULL;
+double * D_dec = NULL;
+double * Vx_dec = NULL;
+double * Vy_dec = NULL;
+double * Vz_dec = NULL;
+double * Temp_ori = NULL;
+std::vector<double> error_Temp;
+std::vector<double> error_est_Temp;
 int iter = 0;
 
 
@@ -145,7 +145,7 @@ std::vector<size_t> retrieve_T_Dummy(std::string rdata_file_prefix, T tau, std::
     int max_iter = 10;
     bool tolerance_met = false;
     int n_variable = ebs.size();
-    std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
+    std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
     std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
         std::vector<PDR::ApproximationBasedReconstructor<T, PDR::DummyApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
@@ -178,8 +178,8 @@ std::vector<size_t> retrieve_T_Dummy(std::string rdata_file_prefix, T tau, std::
             D_dec = reconstructed_vars[1].data();
             MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
             MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
-            error_Temp = std::vector<float>(num_elements);
-            error_est_Temp = std::vector<float>(num_elements);
+            error_Temp = std::vector<T>(num_elements);
+            error_est_Temp = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
             tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs);
@@ -226,8 +226,8 @@ std::vector<size_t> retrieve_T_Dummy(std::string rdata_file_prefix, T tau, std::
             D_dec = reconstructed_vars[1].data();
             MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
             MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
-            error_Temp = std::vector<float>(num_elements);
-            error_est_Temp = std::vector<float>(num_elements);
+            error_Temp = std::vector<T>(num_elements);
+            error_est_Temp = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
             tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
@@ -259,7 +259,7 @@ std::vector<size_t> retrieve_T_SZ3(std::string rdata_file_prefix, T tau, std::ve
     int max_iter = 10;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
-	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
+	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
         std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
@@ -292,8 +292,8 @@ std::vector<size_t> retrieve_T_SZ3(std::string rdata_file_prefix, T tau, std::ve
             D_dec = reconstructed_vars[1].data();
             MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
             MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
-            error_Temp = std::vector<float>(num_elements);
-            error_est_Temp = std::vector<float>(num_elements);
+            error_Temp = std::vector<T>(num_elements);
+            error_est_Temp = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
             tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs);
@@ -340,8 +340,8 @@ std::vector<size_t> retrieve_T_SZ3(std::string rdata_file_prefix, T tau, std::ve
             D_dec = reconstructed_vars[1].data();
             MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
             MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
-            error_Temp = std::vector<float>(num_elements);
-            error_est_Temp = std::vector<float>(num_elements);
+            error_Temp = std::vector<T>(num_elements);
+            error_est_Temp = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
             tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
@@ -373,7 +373,7 @@ std::vector<size_t> retrieve_T_PMGARD(std::string rdata_file_prefix, T tau, std:
     int max_iter = 10;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
-	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
+	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
         std::vector<MDR::ComposedReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
@@ -407,8 +407,8 @@ std::vector<size_t> retrieve_T_PMGARD(std::string rdata_file_prefix, T tau, std:
             D_dec = reconstructed_vars[1].data();
             MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
             MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
-            error_Temp = std::vector<float>(num_elements);
-            error_est_Temp = std::vector<float>(num_elements);
+            error_Temp = std::vector<T>(num_elements);
+            error_est_Temp = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
             tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs);
@@ -457,8 +457,8 @@ std::vector<size_t> retrieve_T_PMGARD(std::string rdata_file_prefix, T tau, std:
             D_dec = reconstructed_vars[1].data();
             MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
             MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
-            error_Temp = std::vector<float>(num_elements);
-            error_est_Temp = std::vector<float>(num_elements);
+            error_Temp = std::vector<T>(num_elements);
+            error_est_Temp = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
             tolerance_met = halfing_error_T_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
@@ -486,7 +486,7 @@ std::vector<size_t> retrieve_T_PMGARD(std::string rdata_file_prefix, T tau, std:
 }
 
 int main(int argc, char ** argv){
-    using T = float;
+    using T = double;
 	int argv_id = 1;
     int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
