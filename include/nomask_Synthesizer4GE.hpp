@@ -17,6 +17,7 @@
 // #include "PDR/Reconstructor/ApproximationBasedReconstructor.hpp"
 // #include "PDR/Reconstructor/WeightedApproximationBasedReconstructor.hpp"
 #include "ompSZp_typemanager.h"
+#include <cstdint>
 
 const std::vector<std::string> varlist = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;

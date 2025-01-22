@@ -8,7 +8,7 @@
 #include <cmath>
 #include <bitset>
 #include <numeric>
-
+#include <cstdint>
 
 namespace MDR{
 

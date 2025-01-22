@@ -12,6 +12,7 @@
 #include "MDR/Reconstructor/Reconstructor.hpp"
 #include "MDR/Refactor/Refactor.hpp"
 #include "SZ3/api/sz.hpp"
+#include <cstdint>
 
 const std::vector<std::string> varlist = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;

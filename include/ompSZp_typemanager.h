@@ -7,6 +7,8 @@
 #ifndef OMPSZP_INCLUDE_OMPSZP_TYPEMANAGER_H
 #define OMPSZP_INCLUDE_OMPSZP_TYPEMANAGER_H
 
+#include <cstdint>
+
 size_t Jiajun_save_fixed_length_bits(unsigned int *unsignintArray, size_t intArrayLength, unsigned char *result, unsigned int bit_count);
 size_t Jiajun_convertUInt2Byte_fast_1b_args(unsigned int *intArray, size_t intArrayLength, unsigned char *result);
 size_t Jiajun_convertUInt2Byte_fast_2b_args(unsigned int *timeStepType, size_t timeStepTypeLength, unsigned char *result);

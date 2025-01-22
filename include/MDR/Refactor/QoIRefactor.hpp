@@ -87,7 +87,7 @@ namespace MDR {
             //     std::cout << min_w << " " << max_w << std::endl;
             // }
 
-            uint32_t weight_size = sizeof(int) + sizeof(unsigned int) + sizeof(size_t) + sizeof(size_t) + get_size(compressed_weights);
+            uint32_t weight_size = sizeof(int) + sizeof(unsigned int) + sizeof(size_t) + sizeof(uint32_t) + ZSTD_weight_size;
             uint8_t * weight_data = (uint8_t *) malloc(weight_size);
             uint8_t * weight_data_pos = weight_data;
             memcpy(weight_data_pos, &block_size, sizeof(int));
@@ -97,13 +97,12 @@ namespace MDR {
             size_t intArrayLength = block_weights.size();
             memcpy(weight_data_pos, &intArrayLength, sizeof(size_t));
             weight_data_pos += sizeof(size_t);
-            size_t compressed_weight_size = compressed_weights.size();
-            memcpy(weight_data_pos, &compressed_weight_size, sizeof(size_t));  
-            weight_data_pos += sizeof(size_t);
-            serialize(compressed_weights, weight_data_pos);
+            memcpy(weight_data_pos, &ZSTD_weight_size, sizeof(uint32_t));  
+            weight_data_pos += sizeof(uint32_t);
+            memcpy(weight_data_pos, ZSTD_weights, ZSTD_weight_size);
             string path = writer.get_directory() + "weight.bin";
             std::cout << "Path: " << path << std::endl;
-            FILE * file = fopen(path.c_str(), "w");
+            FILE * file = fopen(path.c_str(), "wb");
             if (file == nullptr) {
                 perror("Error opening file");
                 return;
@@ -111,6 +110,7 @@ namespace MDR {
             fwrite(weight_data, 1, weight_size, file);
             fclose(file);
             free(weight_data);
+            free(ZSTD_weights);
             weight_file_size = static_cast<size_t>(weight_size);
         }
 
@@ -206,6 +206,7 @@ namespace MDR {
             if (byteLength != Jiajun_save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
                 // perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
             }
+            ZSTD_weight_size = ZSTD::compress(compressed_weights.data(), byteLength, &ZSTD_weights);
             propagateWeight(dimensions, (int) target_level, int_weights);
             std::cout << "(int) target_level = " << (int) target_level << std::endl;
             {
@@ -299,6 +300,8 @@ namespace MDR {
         Writer writer;
         unsigned int bit_count;
         mutable size_t weight_file_size = 0;
+        uint8_t* ZSTD_weights = nullptr;
+        uint32_t ZSTD_weight_size;
         std::vector<T> data;
         std::vector<T> weights;
         std::vector<int> int_weights;
