@@ -1,5 +1,6 @@
 #ifndef _MDR_LEVEL_COMPRESSOR_INTERFACE_HPP
 #define _MDR_LEVEL_COMPRESSOR_INTERFACE_HPP
+#include <cstdint>
 
 namespace MDR {
     namespace concepts {

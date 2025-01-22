@@ -1,5 +1,6 @@
 #ifndef _PDR_REFACTOR_INTERFACE_HPP
 #define _PDR_REFACTOR_INTERFACE_HPP
+#include <cstdint>
 
 namespace PDR {
     namespace concepts {

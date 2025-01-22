@@ -155,18 +155,37 @@ namespace PDR
             size_t intArrayLength;
             memcpy(&intArrayLength, weight_data_pos, sizeof(size_t));
             weight_data_pos += sizeof(size_t);
-            size_t compressed_weight_size;
-            memcpy(&compressed_weight_size, weight_data_pos, sizeof(size_t));
-            weight_data_pos += sizeof(size_t);
-            compressed_weights.clear();
-            compressed_weights.assign(weight_data_pos, weight_data_pos + compressed_weight_size);
-            weight_data_pos += compressed_weight_size;
+            memcpy(&ZSTD_weight_size, weight_data_pos, sizeof(uint32_t));
+            weight_data_pos += sizeof(uint32_t);
+            ZSTD_weights = (uint8_t*)malloc(ZSTD_weight_size);
+            memcpy(ZSTD_weights, weight_data_pos, ZSTD_weight_size);
+            weight_data_pos += ZSTD_weight_size;
             free(weight_data);
             block_weights.resize(intArrayLength);
         }
 
         void span_weight()
         {
+            size_t byteLength = 0;
+            unsigned int byte_count = bit_count / 8;
+            unsigned int remainder_bit = bit_count % 8;
+            if (remainder_bit == 0){
+                byteLength = byte_count * block_weights.size() + 1;
+            }
+            else{
+                size_t tmp = remainder_bit * block_weights.size();
+                byteLength = byte_count * block_weights.size() + (tmp - 1) / 8 + 1;
+            }
+            compressed_weights.clear();
+            compressed_weights.resize(byteLength);
+            uint8_t* tmp_data = nullptr;
+            uint32_t tmp_size = ZSTD::decompress(ZSTD_weights, ZSTD_weight_size, &tmp_data);
+
+            if (tmp_data != nullptr) {
+                compressed_weights.assign(tmp_data, tmp_data + tmp_size);
+                free(tmp_data);
+            }
+
             if (compressed_weights.size() != Jiajun_extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
                 // perror("From WeightedApproximationBasedReconstructor: Error: byteLength != weight_size\n");
             }
@@ -194,7 +213,8 @@ namespace PDR
                 std::cout << min_w << " " << max_w << std::endl;
                 max_weight = max_w;
             }
-            write_weight_dat(block_size);
+            // write_weight_dat(block_size);
+            free(ZSTD_weights);
         }
 
         void write_weight_dat(const int block_size) const {
@@ -302,6 +322,8 @@ namespace PDR
         size_t num_elements;
         size_t approximator_size = 0;
         size_t weight_file_size = 0;
+        uint8_t* ZSTD_weights;
+        uint32_t ZSTD_weight_size;
         unsigned int bit_count;
         std::vector<T> data;
         int block_size;

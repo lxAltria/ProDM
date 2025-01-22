@@ -15,47 +15,47 @@
 #define PMGARD 2
 using namespace MDR;
 
-using T = float;
-using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-std::vector<float> P_ori;
-std::vector<float> D_ori;
-std::vector<float> Vx_ori;
-std::vector<float> Vy_ori;
-std::vector<float> Vz_ori;
-float * P_dec = NULL;
-float * D_dec = NULL;
-float * Vx_dec = NULL;
-float * Vy_dec = NULL;
-float * Vz_dec = NULL;
-float * V_TOT_ori = NULL;
-std::vector<float> error_V_TOT;
-std::vector<float> error_est_V_TOT;
+using T = double;
+using T_stream = uint32_t;
+std::vector<double> P_ori;
+std::vector<double> D_ori;
+std::vector<double> Vx_ori;
+std::vector<double> Vy_ori;
+std::vector<double> Vz_ori;
+double * P_dec = NULL;
+double * D_dec = NULL;
+double * Vx_dec = NULL;
+double * Vy_dec = NULL;
+double * Vz_dec = NULL;
+double * V_TOT_ori = NULL;
+std::vector<double> error_V_TOT;
+std::vector<double> error_est_V_TOT;
 int iter = 0;
 
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const float tau, std::vector<float>& ebs){
-	float eb_Vx = ebs[0];
-	float eb_Vy = ebs[1];
-	float eb_Vz = ebs[2];
-	float max_value = 0;
+bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs){
+	T eb_Vx = ebs[0];
+	T eb_Vy = ebs[1];
+	T eb_Vz = ebs[2];
+	T max_value = 0;
 	int max_index = 0;
-	float max_e_V_TOT_2 = 0;
-	float max_V_TOT_2 = 0;
-	float max_Vx = 0;
-	float max_Vy = 0;
-	float max_Vz = 0;
+	T max_e_V_TOT_2 = 0;
+	T max_V_TOT_2 = 0;
+	T max_Vx = 0;
+	T max_Vy = 0;
+	T max_Vz = 0;
 	// int weight_index = 0;
 	// int max_weight_index = 0;
 	for(int i=0; i<n; i++){
 		// error of total velocity square
-		float e_V_TOT_2 = 0;
+		T e_V_TOT_2 = 0;
 		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
-		float V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		// error of total velocity
-		float e_V_TOT = 0;
+		T e_V_TOT = 0;
 		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-		float V_TOT = sqrt(V_TOT_2);
+		T V_TOT = sqrt(V_TOT_2);
 		// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
 
 		error_est_V_TOT[i] = e_V_TOT;
@@ -78,22 +78,22 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 	if(max_value > tau){
 		// estimate
 		auto i = max_index;
-		float estimate_error = max_value;
-		float V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		float V_TOT = sqrt(V_TOT_2);
-		float eb_Vx = ebs[0];
-		float eb_Vy = ebs[1];
-		float eb_Vz = ebs[2];
+		T estimate_error = max_value;
+		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		T V_TOT = sqrt(V_TOT_2);
+		T eb_Vx = ebs[0];
+		T eb_Vy = ebs[1];
+		T eb_Vz = ebs[2];
 		while(estimate_error > tau){
     		std::cout << "uniform decrease\n";
+    		std::cout << "uniform decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5;		        		
-			float e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
+			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-			if(ebs[0] / eb_Vx > 10) break;
-
+			if (ebs[0] / eb_Vx > 10) break;
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -104,17 +104,17 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 }
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const float tau, std::vector<float>& ebs, std::vector<std::vector<int>> weights){
-	float eb_Vx = ebs[0];
-	float eb_Vy = ebs[1];
-	float eb_Vz = ebs[2];
-	float max_value = 0;
+bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
+	T eb_Vx = ebs[0];
+	T eb_Vy = ebs[1];
+	T eb_Vz = ebs[2];
+	T max_value = 0;
 	int max_index = 0;
-	float max_e_V_TOT_2 = 0;
-	float max_V_TOT_2 = 0;
-	float max_Vx = 0;
-	float max_Vy = 0;
-	float max_Vz = 0;
+	T max_e_V_TOT_2 = 0;
+	T max_V_TOT_2 = 0;
+	T max_Vx = 0;
+	T max_Vy = 0;
+	T max_Vz = 0;
 	int max_weight_Vx = 0;
 	int max_weight_Vy = 0;
 	int max_weight_Vz = 0;
@@ -123,13 +123,13 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 	for(int i=0; i<n; i++){
 		if(mask[i]) {
 			// error of total velocity square
-			float e_V_TOT_2 = 0;
+			T e_V_TOT_2 = 0;
 			e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
-			float V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+			T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 			// error of total velocity
-			float e_V_TOT = 0;
+			T e_V_TOT = 0;
 			e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-			float V_TOT = sqrt(V_TOT_2);
+			T V_TOT = sqrt(V_TOT_2);
 			// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
 
 			error_est_V_TOT[i] = e_V_TOT;
@@ -157,18 +157,18 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 	if(max_value > tau){
 		// estimate
 		auto i = max_index;
-		float estimate_error = max_value;
-		float V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		float V_TOT = sqrt(V_TOT_2);
-		float eb_Vx = ebs[0];
-		float eb_Vy = ebs[1];
-		float eb_Vz = ebs[2];
+		T estimate_error = max_value;
+		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		T V_TOT = sqrt(V_TOT_2);
+		T eb_Vx = ebs[0];
+		T eb_Vy = ebs[1];
+		T eb_Vz = ebs[2];
 		while(estimate_error > tau){
     		std::cout << "uniform decrease\n";
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5;		        		
-			float e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
 			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			// if(ebs[0]/eb_Vx > 5) break;
@@ -187,7 +187,7 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
     int max_iter = 10;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
-	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
+	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
 	if(!weighted){
 		std::vector<PDR::ApproximationBasedReconstructor<T, PDR::DummyApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
@@ -242,8 +242,8 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<float>(num_elements);
-			error_est_V_TOT = std::vector<float>(num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
@@ -325,8 +325,8 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<float>(num_elements);
-			error_est_V_TOT = std::vector<float>(num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
@@ -358,7 +358,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
     int max_iter = 10;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
-	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
+	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
 	if(!weighted){
 		std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
@@ -413,8 +413,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<float>(num_elements);
-			error_est_V_TOT = std::vector<float>(num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
@@ -496,8 +496,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<float>(num_elements);
-			error_est_V_TOT = std::vector<float>(num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
@@ -529,7 +529,7 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 	int max_iter = 10;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
-	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<float>(num_elements));
+	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
 	if(!weighted){
 		std::vector<MDR::ComposedReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
@@ -537,9 +537,7 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			std::string rdir_prefix = rdata_file_prefix + varlist[i];
 			std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
 			std::vector<std::string> files;
-			int num_levels;
-			if (rdata_file_prefix.find("GE") != std::string::npos)	num_levels = 9;
-			else	num_levels = 5;
+			int num_levels = 9;
 			for(int i=0; i<num_levels; i++){
 				std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
 				files.push_back(filename);
@@ -587,8 +585,8 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<float>(num_elements);
-			error_est_V_TOT = std::vector<float>(num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
@@ -619,9 +617,7 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			std::string rdir_prefix = rdata_file_prefix + varlist[i];
 			std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
 			std::vector<std::string> files;
-			int num_levels;
-			if (rdata_file_prefix.find("GE") != std::string::npos)	num_levels = 9;
-			else	num_levels = 5;
+			int num_levels = 9;
 			for(int i=0; i<num_levels; i++){
 				std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
 				files.push_back(filename);
@@ -675,8 +671,8 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<float>(num_elements);
-			error_est_V_TOT = std::vector<float>(num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
@@ -704,7 +700,8 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 }
 
 int main(int argc, char ** argv){
-
+	using T = double;
+	using T_stream = uint32_t;
 	int argv_id = 1;
 	int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
@@ -771,13 +768,13 @@ int main(int argc, char ** argv){
 	switch (compressor)
 	{
 	case Dummy:
-		total_retrieved_size = retrieve_V_TOT_Dummy(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
 		break;
 	case SZ3:
-		total_retrieved_size = retrieve_V_TOT_SZ3(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
 		break;
 	case PMGARD:
-		total_retrieved_size = retrieve_V_TOT_PMGARD(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
 		break;
 	default:
 		break;

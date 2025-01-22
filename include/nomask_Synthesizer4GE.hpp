@@ -17,6 +17,7 @@
 // #include "PDR/Reconstructor/ApproximationBasedReconstructor.hpp"
 // #include "PDR/Reconstructor/WeightedApproximationBasedReconstructor.hpp"
 #include "ompSZp_typemanager.h"
+#include <cstdint>
 
 const std::vector<std::string> varlist = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;
@@ -481,8 +482,8 @@ void refactor_velocities_1D_PMGARD_BP(const std::string data_file_prefix, const 
     std::string mask_file = rdata_file_prefix + "mask.bin";
     MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
 
-    uint8_t target_level = 4;   // log2(*min_element(dims.begin(), dims.end())) - 1;
-    uint8_t num_bitplanes = 32;
+    uint8_t target_level = 8;   // log2(*min_element(dims.begin(), dims.end())) - 1;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
 
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
@@ -551,16 +552,16 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        Temp[0][i] = 1;
-        Temp[1][i] = pow(density_vec[i], 2.0);
+        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
     }
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
 
-    uint8_t target_level = 4;   // log2(*min_element(dims.begin(), dims.end())) - 1;
-    uint8_t num_bitplanes = 32;
+    uint8_t target_level = 8;   // log2(*min_element(dims.begin(), dims.end())) - 1;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
 
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
@@ -599,7 +600,7 @@ void refactor_velocities_1D_Dummy_BP(const std::string data_file_prefix, const s
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
 
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
@@ -652,7 +653,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
 
@@ -686,8 +687,8 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        Temp[0][i] = 1;
-        Temp[1][i] = pow(density_vec[i], 2.0);
+        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
         // if(i == 567082){
         //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
         // }
@@ -744,7 +745,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
 
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
@@ -797,7 +798,8 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::cout << "num_bitplanes = " << int(num_bitplanes) << std::endl;
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
 
@@ -831,8 +833,8 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        Temp[0][i] = 1;
-        Temp[1][i] = pow(density_vec[i], 2.0);
+        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
         // if(i == 567082){
         //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
         // }
@@ -886,7 +888,7 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
     std::vector<uint32_t> dims = {n1, n2, n3};
 
     std::vector<unsigned char> mask(num_elements, 0);
@@ -938,7 +940,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
     std::vector<uint32_t> dims = {n1, n2, n3};
 
     std::vector<unsigned char> mask(num_elements, 0);
@@ -1020,7 +1022,7 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
     std::vector<uint32_t> dims = {n1, n2, n3};
 
     std::vector<unsigned char> mask(num_elements, 0);
@@ -1074,7 +1076,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
     int n_variable = var_list.size();
 
     uint8_t target_level = 0;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
     std::vector<uint32_t> dims = {n1, n2, n3};
 
     std::vector<unsigned char> mask(num_elements, 0);
@@ -1143,7 +1145,7 @@ void refactor_velocities_3D_PMGARD_BP(std::string dataset, uint32_t n1, uint32_t
     int n_variable = var_list.size();
     std::vector<uint32_t> dims = {n1, n2, n3};
     uint8_t target_level = 4;// log2(*min_element(dims.begin(), dims.end())) - 1;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
 
     std::vector<unsigned char> mask(num_elements, 0);
     for(int i=0; i<num_elements; i++){
@@ -1186,7 +1188,7 @@ void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_
     int n_variable = var_list.size();
     std::vector<uint32_t> dims = {n1, n2, n3};
     uint8_t target_level = 4; // log2(*min_element(dims.begin(), dims.end())) - 1;
-    uint8_t num_bitplanes = 32;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
 
     std::vector<unsigned char> mask(num_elements, 0);
     std::vector<std::vector<T>> Vtot(n_variable, std::vector<T>(num_elements));

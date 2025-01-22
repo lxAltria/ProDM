@@ -8,7 +8,7 @@
 #include <cmath>
 #include <bitset>
 #include <numeric>
-
+#include <cstdint>
 
 namespace MDR{
 
@@ -42,6 +42,18 @@ inline double compute_bound_square_root_x(T x, T eb){
 	// return error;
 	return (error > sqrt(x + eb)) ? sqrt(x + eb) : error;
 }
+// template <class T>
+// inline double compute_bound_square_root_x(T x, T eb){
+// 	if(x == 0) {
+// 		return sqrt(eb);
+// 	}
+// 	if(x > eb){
+// 		return eb / (sqrt(x - eb) + sqrt(x));
+// 	}
+// 	else{
+// 		return eb / sqrt(x);
+// 	}
+// }
 
 // f(x) = sqrt(x)
 template <class T>
@@ -99,16 +111,30 @@ inline double compute_bound_multiplication(T x, T y, T eb_x, T eb_y){
 // f(x, y) = x/y
 template <class T>
 inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
+	double error = 0;
 	if(eb_y < fabs(y)){
-		double e = fabs(x)*eb_y + fabs(y)*eb_x;
-		if(y > 0) return e / (y*(y - eb_y));
-		else return e/ (y*(y + eb_y));
+		error = fabs(x)*eb_y + fabs(y)*eb_x;
+		if(y > 0) error = error / (y*(y - eb_y));
+		else error = error / (y*(y + eb_y));
 	}
 	else{
 		std::cout << "Warning: cannot control error in x/y\n";
 		return 0;
 	}
+	return (error > fabs(x + eb_x)/fabs(y - eb_y)) ? fabs(x + eb_x)/fabs(y - eb_y) : error;
 }
+// template <class T>
+// inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
+// 	if(eb_y < fabs(y)){
+// 		double e = fabs(x)*eb_y + fabs(y)*eb_x;
+// 		if(y > 0) return e / (y*(y - eb_y));
+// 		else return e / (y*(y + eb_y));
+// 	}
+// 	else{
+// 		std::cout << "Warning: cannot control error in x/y\n";
+// 		return 0;
+// 	}
+// }
 
 template <class T>
 void print_error(std::string varname, T dec, T ori, T est){

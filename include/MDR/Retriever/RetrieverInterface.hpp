@@ -1,6 +1,6 @@
 #ifndef _MDR_RETRIEVER_INTERFACE_HPP
 #define _MDR_RETRIEVER_INTERFACE_HPP
-
+#include <cstdint>
 #include <cassert>
 
 namespace MDR {
