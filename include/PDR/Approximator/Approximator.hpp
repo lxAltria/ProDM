@@ -3,5 +3,6 @@
 
 #include "DummyApproximator.hpp"
 #include "SZApproximator.hpp"
+#include "GEApproximator.hpp"
 
 #endif
