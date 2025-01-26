@@ -371,7 +371,7 @@ std::vector<size_t> retrieve_Mach_Dummy(std::string rdata_file_prefix, T tau, st
             reconstructors.back().span_weight();
             weights[i] = reconstructors.back().get_int_weights();
         }
-        weight_file_size = reconstructors[n_variable - 1].get_weight_file_size();
+        weight_file_size = reconstructors[0].get_weight_file_size() + reconstructors[n_variable - 1].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
@@ -527,7 +527,7 @@ std::vector<size_t> retrieve_Mach_SZ3(std::string rdata_file_prefix, T tau, std:
             reconstructors.back().span_weight();
             weights[i] = reconstructors.back().get_int_weights();
         }    
-        weight_file_size = reconstructors[n_variable - 1].get_weight_file_size();
+        weight_file_size = reconstructors[0].get_weight_file_size() + reconstructors[n_variable - 1].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
@@ -686,7 +686,7 @@ std::vector<size_t> retrieve_Mach_PMGARD(std::string rdata_file_prefix, T tau, s
             reconstructors.back().span_weight();
             weights[i] = reconstructors.back().get_int_weights();
         }
-        weight_file_size = reconstructors[n_variable - 1].get_weight_file_size();
+        weight_file_size = reconstructors[0].get_weight_file_size() + reconstructors[n_variable - 1].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
@@ -842,7 +842,7 @@ std::vector<size_t> retrieve_Mach_GE(std::string rdata_file_prefix, T tau, std::
             reconstructors.back().span_weight();
             weights[i] = reconstructors.back().get_int_weights();
         }
-        weight_file_size = reconstructors[n_variable - 1].get_weight_file_size();
+        weight_file_size = reconstructors[0].get_weight_file_size() + reconstructors[n_variable - 1].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){

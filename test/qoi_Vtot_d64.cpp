@@ -895,6 +895,9 @@ int main(int argc, char ** argv){
     // ebs.push_back(max_abs_value*target_rel_eb);
     // ebs.push_back(max_abs_value*target_rel_eb);
     // ebs.push_back(max_abs_value*target_rel_eb);
+	// ebs.push_back(compute_max_abs_value(Vx_ori.data(), Vx_ori.size())*target_rel_eb);
+	// ebs.push_back(compute_max_abs_value(Vy_ori.data(), Vy_ori.size())*target_rel_eb);
+	// ebs.push_back(compute_max_abs_value(Vz_ori.data(), Vz_ori.size())*target_rel_eb);
 	ebs.push_back(compute_value_range(Vx_ori)*target_rel_eb);
 	ebs.push_back(compute_value_range(Vy_ori)*target_rel_eb);
 	ebs.push_back(compute_value_range(Vz_ori)*target_rel_eb);
