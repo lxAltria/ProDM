@@ -3,5 +3,6 @@
 
 #include "ApproximationBasedReconstructor.hpp"
 #include "WeightedApproximationBasedReconstructor.hpp"
+#include "GEReconstructor.hpp"
 
 #endif

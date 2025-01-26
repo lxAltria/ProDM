@@ -3,5 +3,6 @@
 
 #include "ApproximationBasedRefactor.hpp"
 #include "WeightedApproximationBasedRefactor.hpp"
+#include "GERefactor.hpp"
 
 #endif

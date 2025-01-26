@@ -77,6 +77,19 @@ PDR::ApproximationBasedReconstructor<T, Approximator, Encoder, Compressor, SizeI
     return reconstructor;
 }
 
+template <class T, class Approximator, class Encoder, class Compressor, class Writer>
+PDR::GERefactor<T, Approximator, Encoder, Compressor, Writer> generateWBPRefactor_GE(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer, bool negabinary){
+    auto refactor = PDR::GERefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
+    refactor.negabinary = negabinary;
+    return refactor;
+}
+
+template <class T, class Approximator, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
+PDR::GEReconstructor<T, Approximator, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever> generateWBPReconstructor_GE(Approximator approximator, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
+    auto reconstructor = PDR::GEReconstructor<T, Approximator, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(approximator, encoder, compressor, interpreter, retriever);
+    return reconstructor;
+}
+
 const int target_level = 8;
 const int num_bitplanes = 60;
 
@@ -588,6 +601,149 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
 }
 
 template<class T>
+void refactor_velocities_1D_GE_BP(const std::string data_file_prefix, const std::string rdata_file_prefix){
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    auto pressure_vec = MGARD::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
+    auto density_vec = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec, pressure_vec, density_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+
+    std::vector<uint32_t> dims;
+    dims.push_back(num_elements);
+    // compute masks
+    std::vector<unsigned char> mask(num_elements, 0);
+    int num_valid_data = 0;
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+            num_valid_data ++;
+        }
+    }
+
+    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    num_valid_data = num_elements;
+
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            files.push_back(filename);
+        }
+        auto approximator = PDR::GEApproximator<T>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
+    }
+}
+
+template<class T>
+void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight_for_vtot=4, int max_weight_for_pressure=0, int max_weight_for_density=4){
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    auto pressure_vec = MGARD::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
+    auto density_vec = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements); 
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec, pressure_vec, density_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
+    std::vector<int> max_weights = {max_weight_for_vtot, max_weight_for_vtot, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims;
+    dims.push_back(num_elements);
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    int num_valid_data = 0;
+    std::vector<std::vector<T>> Vtot(3, std::vector<T>(num_elements));
+    std::vector<std::vector<T>> Temp(2, std::vector<T>(num_elements));
+    T R = 287.1;
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+            num_valid_data++;
+        }
+        if(mask[i]){
+            // Vtot[0][i] = fabs(velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
+            // Vtot[1][i] = fabs(velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
+            // Vtot[2][i] = fabs(velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
+            // double temp = sqrt(Vtot[0][i]*Vtot[0][i] + Vtot[1][i]*Vtot[1][i] + Vtot[2][i]*Vtot[2][i]);
+            // Vtot[0][i] = temp;
+            // Vtot[1][i] = temp;
+            // Vtot[2][i] = temp;
+            // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
+            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            Vtot[0][i] = 1.0/V;
+            Vtot[1][i] = 1.0/V;
+            Vtot[2][i] = 1.0/V;
+        }
+        else{
+            Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
+        }
+        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
+        // if(i == 567082){
+        //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
+        // }
+        // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+    }
+    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        std::cout << "metadata location: " << metadata_file << std::endl;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            files.push_back(filename);
+        }
+        
+        auto approximator = PDR::GEApproximator<T>();
+        // auto approximator = PDR::SZApproximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateWBPRefactor_GE<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i < 3) refactor.QoI = Vtot[i];
+        else refactor.QoI = Temp[i-3];
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i]);  
+    }
+}
+
+template<class T>
 void refactor_velocities_1D_Dummy_BP(const std::string data_file_prefix, const std::string rdata_file_prefix){
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
@@ -629,8 +785,7 @@ void refactor_velocities_1D_Dummy_BP(const std::string data_file_prefix, const s
             files.push_back(filename);
         }
         auto approximator = PDR::DummyApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
@@ -712,11 +867,10 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         
         auto approximator = PDR::DummyApproximator<T>();
         // auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
-        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
         // negabinary = false;
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -774,8 +928,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
             files.push_back(filename);
         }
         auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
@@ -857,11 +1010,10 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         }
         
         auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
-        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
         // negabinary = false;
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -911,11 +1063,10 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
         
         auto approximator = PDR::DummyApproximator<T>();
         // auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
-        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
         // negabinary = false;
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -991,11 +1142,10 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
         
         auto approximator = PDR::DummyApproximator<T>();
         // auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
-        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
         // negabinary = false;
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -1046,11 +1196,10 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
         
         // auto approximator = PDR::DummyApproximator<T>();
         auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
-        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
         // negabinary = false;
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -1115,11 +1264,10 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
         
         // auto approximator = PDR::DummyApproximator<T>();
         auto approximator = PDR::SZApproximator<T>();
-        using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
-        // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
-        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
         // negabinary = false;
 
         // auto compressor = MDR::DefaultLevelCompressor();

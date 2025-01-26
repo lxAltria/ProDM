@@ -281,6 +281,24 @@ void propagateWeight(const vector<uint32_t>& dims, int target_level, vector<T>& 
     }
 }
 template <class T>
+void assigen_block_value_GE(const std::vector<int> blocks, T * data){
+    T * data_x_pos = data;
+    for(int i=0; i<blocks.size(); i++){
+        T * cur_data_pos = data_x_pos;
+        T block_max = *cur_data_pos;
+        int block_size = blocks[i];
+        for(int ii=0; ii<block_size; ii++){
+            if(*cur_data_pos > block_max) block_max = *cur_data_pos;
+            cur_data_pos++;
+        }
+        cur_data_pos = data_x_pos;
+        for(int ii=0; ii<block_size; ii++){
+            *(cur_data_pos ++) = block_max;
+        }
+        data_x_pos += block_size;
+    }
+}
+template <class T>
 void assign_block_value_1D(const size_t n1, const int block_size, T * data){
     size_t num_block_1 = (n1 - 1) / block_size + 1;
     T * data_x_pos = data;
@@ -506,6 +524,15 @@ std::vector<int> normalize_weights(std::vector<T>& weights) {
 
     return int_weights;
 }//*/
+std::vector<int> get_block_weight_GE(const std::vector<int> blocks, std::vector<int>& weights){
+    int pos = 0;
+    std::vector<int> int_weights(blocks.size());
+    for(int i=0; i<blocks.size(); i++){
+        int_weights[i] = weights[pos];
+        pos += blocks[i];
+    }
+    return int_weights;
+}
 std::vector<int> get_block_weight_1D(const size_t n1, std::vector<int>& weights, int block_size){
     size_t num_block_1 = (n1 - 1) / block_size + 1;
     std::vector<int> int_weights(num_block_1);
@@ -539,7 +566,18 @@ std::vector<int> get_block_weight_3D(const size_t n1, const size_t n2, const siz
     }
     return int_weights;
 }
-std::vector<int> fill_block_weight_1D(const size_t n1, std::vector<int> weights, int block_size){
+std::vector<int> fill_block_weight_GE(const std::vector<int> blocks, std::vector<int>& weights){
+    std::vector<int> filled_weight(std::accumulate(blocks.begin(), blocks.end(), 0));
+    int pos = 0;
+    for(int i=0; i<blocks.size(); i++){
+        for(int ii=0; ii<blocks[i]; ii++){
+            filled_weight[pos + ii] = weights[i];
+        }
+        pos+=blocks[i];
+    }
+    return filled_weight;
+}
+std::vector<int> fill_block_weight_1D(const size_t n1, std::vector<int>& weights, int block_size){
     size_t num_block_1 = (n1 - 1) / block_size + 1;
     std::vector<int> filled_weight(n1);
     for(int i=0; i<num_block_1; i++){

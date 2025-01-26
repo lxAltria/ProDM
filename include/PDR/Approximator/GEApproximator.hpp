@@ -15,8 +15,19 @@ namespace PDR {
         size_t refactor_approximate(T * data, const std::vector<uint32_t>& dimensions, T approximator_eb, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
 
             // block size file
+            size_t pos = filename.find_last_of('/');
+            std::string tmp_path = filename.substr(0, pos);
+            pos = tmp_path.find_last_of('/');
+            tmp_path = tmp_path.substr(0, pos);
+            pos = tmp_path.find_last_of('/');
+            tmp_path = tmp_path.substr(0, pos+1);
+            std::string block_path;
+            block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
+            std::cout << "block_path: " <<  block_path << std::endl;
             size_t num_blocks = 0;
-            auto block_sizes = MGARD::readfile<int>("/Users/xliang/Github/ProDM_wenbo/GE_small/data/block_sizes.dat", num_blocks);
+            auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
+            // size_t num_blocks = 0;
+            // auto block_sizes = MGARD::readfile<int>("/Users/wenboli/Downloads/block_sizes.dat", num_blocks);
             std::vector<T> means(num_blocks);
             const T * data_pos = data;
             for(int i=0; i<num_blocks; i++){
@@ -64,8 +75,17 @@ namespace PDR {
         void reconstruct_approximate(T * data, const std::vector<uint32_t>& dimensions, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
             if(filename.size()) approximator_file_name = filename;
         	SZ3::Config conf;
+            size_t pos = filename.find_last_of('/');
+            std::string tmp_path = filename.substr(0, pos);
+            pos = tmp_path.find_last_of('/');
+            tmp_path = tmp_path.substr(0, pos);
+            pos = tmp_path.find_last_of('/');
+            tmp_path = tmp_path.substr(0, pos+1);
+            std::string block_path;
+            block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
+            std::cout << "block_path: " <<  block_path << std::endl;
             size_t num_blocks = 0;
-            auto block_sizes = MGARD::readfile<int>("/Users/xliang/Github/ProDM_wenbo/GE_small/data/block_sizes.dat", num_blocks);
+            auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
             size_t num = 0;
             auto cmpData = MGARD::readfile<char>(approximator_file_name.c_str(), num);
             approximator_file_size = num;

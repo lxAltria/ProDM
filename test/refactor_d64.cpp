@@ -10,7 +10,7 @@
 #define Dummy 0
 #define SZ3 1
 #define PMGARD 2
-
+#define GE 3
 using namespace MDR;
 
 int main(int argc, char** argv){
@@ -115,6 +115,14 @@ int main(int argc, char** argv){
             else if (std::strcmp(data.c_str(), "GE_small") == 0){
                 refactor_velocities_1D_PMGARD_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density, block_size);
             }
+        }
+        break;
+    case GE:
+        if(!weighted){
+            refactor_velocities_1D_GE_BP<T>(data_file_prefix, rdata_file_prefix);
+        }
+        else{
+            refactor_velocities_1D_GE_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density);
         }
         break;
     default:
