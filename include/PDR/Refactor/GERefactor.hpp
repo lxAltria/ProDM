@@ -48,6 +48,7 @@ namespace PDR {
 
             write_weight();
             write_metadata();
+            // write_weight_dat();
             for(int i=0; i<level_components.size(); i++){
                 for(int j=0; j<level_components[i].size(); j++){
                     free(level_components[i][j]);                    
@@ -116,22 +117,22 @@ namespace PDR {
             weight_file_size = static_cast<size_t>(weight_size);
         }
 
-        // void write_weight_dat() const {
-        //     uint32_t weight_size = get_size(int_weights);
-        //     uint8_t * weight_data = (uint8_t *) malloc(weight_size);
-        //     uint8_t * weight_data_pos = weight_data;
-        //     serialize(int_weights, weight_data_pos);
-        //     string path = writer.get_directory() + "weight.dat";
-        //     std::cout << "Path: " << path << std::endl;
-        //     FILE * file = fopen(path.c_str(), "w");
-        //     if (file == nullptr) {
-        //         perror("Error opening file");
-        //         return;
-        //     }
-        //     fwrite(weight_data, 1, weight_size, file);
-        //     fclose(file);
-        //     free(weight_data);
-        // }
+        void write_weight_dat() const {
+            uint32_t weight_size = get_size(int_weights);
+            uint8_t * weight_data = (uint8_t *) malloc(weight_size);
+            uint8_t * weight_data_pos = weight_data;
+            serialize(int_weights, weight_data_pos);
+            string path = writer.get_directory() + "weight.dat";
+            std::cout << "Path: " << path << std::endl;
+            FILE * file = fopen(path.c_str(), "w");
+            if (file == nullptr) {
+                perror("Error opening file");
+                return;
+            }
+            fwrite(weight_data, 1, weight_size, file);
+            fclose(file);
+            free(weight_data);
+        }
 
         ~GERefactor(){}
 

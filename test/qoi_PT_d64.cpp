@@ -50,6 +50,23 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 	int C7i[8] = {1, 7, 21, 35, 35, 21, 7, 1};
 	T max_value = 0;
 	int max_index = 0;
+    T max_Vx = 0;
+    T max_Vy = 0;
+    T max_Vz = 0;
+    T max_P = 0;
+    T max_D = 0;
+    T max_e_VTOT_2 = 0;
+    T max_VTOT_2 = 0;
+    T max_e_T = 0;
+    T max_T = 0;
+    T max_C = 0;
+    T max_e_C = 0;
+    T max_e_Mach = 0;
+    T max_Mach = 0;
+    T max_e_Mach_tmp_mi = 0;
+    T max_Mach_tmp_mi = 0;
+    T max_e_PT = 0;
+    T max_PT = 0;
 	int n_variable = ebs.size();
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
@@ -79,9 +96,32 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		if(max_value < error_est_PT[i]){
 			max_value = error_est_PT[i];
 			max_index = i;
+            max_Vx = Vx[i];
+            max_Vy = Vy[i];
+            max_Vz = Vz[i];
+            max_P = P[i];
+            max_D = D[i];
+            max_e_VTOT_2 = e_V_TOT_2;
+            max_VTOT_2 = V_TOT_2;
+            max_e_T = e_T;
+            max_T = Temp;
+            max_e_C = e_C;
+            max_C = C;
+            max_e_Mach = e_Mach;
+            max_Mach = Mach;
+            max_e_Mach_tmp_mi = e_Mach_tmp_mi;
+            max_Mach_tmp_mi = Mach_tmp_mi;
+            max_e_PT = e_PT;
+            max_PT = PT;
 		}
 	}
-	std::cout << names[3] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+	std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+    std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
+    std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
+    std::cout << "e_Mach = " << max_e_Mach << " Mach = " << max_Mach << std::endl;
+    std::cout << "e_C = " << max_e_C << " C = " << max_C << std::endl;
+    std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+    std::cout << "e_T = " << max_e_T << " T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		auto i = max_index;
@@ -148,6 +188,23 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 	int C7i[8] = {1, 7, 21, 35, 35, 21, 7, 1};
 	T max_value = 0;
 	int max_index = 0;
+    T max_Vx = 0;
+    T max_Vy = 0;
+    T max_Vz = 0;
+    T max_P = 0;
+    T max_D = 0;
+    T max_e_VTOT_2 = 0;
+    T max_VTOT_2 = 0;
+    T max_e_T = 0;
+    T max_T = 0;
+    T max_C = 0;
+    T max_e_C = 0;
+    T max_e_Mach = 0;
+    T max_Mach = 0;
+    T max_e_Mach_tmp_mi = 0;
+    T max_Mach_tmp_mi = 0;
+    T max_e_PT = 0;
+    T max_PT = 0;
 	int n_variable = ebs.size();
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
@@ -177,9 +234,32 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		if(max_value < error_est_PT[i]){
 			max_value = error_est_PT[i];
 			max_index = i;
+            max_Vx = Vx[i];
+            max_Vy = Vy[i];
+            max_Vz = Vz[i];
+            max_P = P[i];
+            max_D = D[i];
+            max_e_VTOT_2 = e_V_TOT_2;
+            max_VTOT_2 = V_TOT_2;
+            max_e_T = e_T;
+            max_T = Temp;
+            max_e_C = e_C;
+            max_C = C;
+            max_e_Mach = e_Mach;
+            max_Mach = Mach;
+            max_e_Mach_tmp_mi = e_Mach_tmp_mi;
+            max_Mach_tmp_mi = Mach_tmp_mi;
+            max_e_PT = e_PT;
+            max_PT = PT;
 		}
 	}
-	std::cout << names[3] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+	std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+    std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
+    std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
+    std::cout << "e_Mach = " << max_e_Mach << " Mach = " << max_Mach << std::endl;
+    std::cout << "e_C = " << max_e_C << " C = " << max_C << std::endl;
+    std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+    std::cout << "e_T = " << max_e_T << " T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		auto i = max_index;
@@ -874,16 +954,11 @@ int main(int argc, char ** argv){
     Vy_ori = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
     Vz_ori = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
     std::vector<T> ebs;
-    // T max_abs_values[3] = {compute_max_abs_value(Vx_ori.data(), Vx_ori.size()), compute_max_abs_value(Vy_ori.data(), Vy_ori.size()), compute_max_abs_value(Vz_ori.data(), Vz_ori.size())};
-    // T max_abs_value = max_abs_values[0];
-    // if(max_abs_value < max_abs_values[1]) max_abs_value = max_abs_values[1];
-    // if(max_abs_value < max_abs_values[2]) max_abs_value = max_abs_values[2];
-    // ebs.push_back(max_abs_value*target_rel_eb);
-    // ebs.push_back(max_abs_value*target_rel_eb);
-    // ebs.push_back(max_abs_value*target_rel_eb);
     ebs.push_back(compute_value_range(Vx_ori)*target_rel_eb);
     ebs.push_back(compute_value_range(Vy_ori)*target_rel_eb);
     ebs.push_back(compute_value_range(Vz_ori)*target_rel_eb);
+    // ebs.push_back(compute_value_range(P_ori)*target_rel_eb);
+    // ebs.push_back(compute_value_range(D_ori)*target_rel_eb);
     ebs.push_back(compute_max_abs_value(P_ori.data(), P_ori.size())*target_rel_eb);
     ebs.push_back(compute_max_abs_value(D_ori.data(), D_ori.size())*target_rel_eb);
 	int n_variable = ebs.size();

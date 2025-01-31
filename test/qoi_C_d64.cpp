@@ -609,6 +609,8 @@ int main(int argc, char ** argv){
     P_ori = MGARD::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
     D_ori = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
     std::vector<double> ebs;
+    // ebs.push_back(compute_value_range(P_ori)*target_rel_eb);
+    // ebs.push_back(compute_value_range(D_ori)*target_rel_eb);
     ebs.push_back(compute_max_abs_value(P_ori.data(), P_ori.size())*target_rel_eb);
     ebs.push_back(compute_max_abs_value(D_ori.data(), D_ori.size())*target_rel_eb);
 	int n_variable = ebs.size();

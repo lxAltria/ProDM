@@ -887,17 +887,6 @@ int main(int argc, char ** argv){
     Vy_ori = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
     Vz_ori = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
     std::vector<T> ebs;
-    // T max_abs_values[3] = {compute_max_abs_value(Vx_ori.data(), Vx_ori.size()), compute_max_abs_value(Vy_ori.data(), Vy_ori.size()), compute_max_abs_value(Vz_ori.data(), Vz_ori.size())};
-	// T max_abs_values[3] = {compute_value_range(Vx_ori), compute_value_range(Vy_ori), compute_value_range(Vz_ori)};
-    // T max_abs_value = max_abs_values[0];
-    // if(max_abs_value < max_abs_values[1]) max_abs_value = max_abs_values[1];
-    // if(max_abs_value < max_abs_values[2]) max_abs_value = max_abs_values[2];
-    // ebs.push_back(max_abs_value*target_rel_eb);
-    // ebs.push_back(max_abs_value*target_rel_eb);
-    // ebs.push_back(max_abs_value*target_rel_eb);
-	// ebs.push_back(compute_max_abs_value(Vx_ori.data(), Vx_ori.size())*target_rel_eb);
-	// ebs.push_back(compute_max_abs_value(Vy_ori.data(), Vy_ori.size())*target_rel_eb);
-	// ebs.push_back(compute_max_abs_value(Vz_ori.data(), Vz_ori.size())*target_rel_eb);
 	ebs.push_back(compute_value_range(Vx_ori)*target_rel_eb);
 	ebs.push_back(compute_value_range(Vy_ori)*target_rel_eb);
 	ebs.push_back(compute_value_range(Vz_ori)*target_rel_eb);

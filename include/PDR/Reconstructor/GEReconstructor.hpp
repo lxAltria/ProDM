@@ -216,24 +216,25 @@ namespace PDR
             }
             // write_weight_dat(block_size);
             free(ZSTD_weights);
+            write_weight_dat();
         }
 
-        // void write_weight_dat() const {
-        //     uint32_t weight_size = get_size(int_weights);
-        //     uint8_t * weight_data = (uint8_t *) malloc(weight_size);
-        //     uint8_t * weight_data_pos = weight_data;
-        //     serialize(int_weights, weight_data_pos);
-        //     string path = retriever.get_directory() + "weight_dec.dat";
-        //     std::cout << "Path: " << path << std::endl;
-        //     FILE * file = fopen(path.c_str(), "w");
-        //     if (file == nullptr) {
-        //         perror("Error opening file");
-        //         return;
-        //     }
-        //     fwrite(weight_data, 1, weight_size, file);
-        //     fclose(file);
-        //     free(weight_data);
-        // }
+        void write_weight_dat() const {
+            uint32_t weight_size = get_size(int_weights);
+            uint8_t * weight_data = (uint8_t *) malloc(weight_size);
+            uint8_t * weight_data_pos = weight_data;
+            serialize(int_weights, weight_data_pos);
+            string path = retriever.get_directory() + "weight_dec.dat";
+            std::cout << "Path: " << path << std::endl;
+            FILE * file = fopen(path.c_str(), "w");
+            if (file == nullptr) {
+                perror("Error opening file");
+                return;
+            }
+            fwrite(weight_data, 1, weight_size, file);
+            fclose(file);
+            free(weight_data);
+        }
 
         const std::vector<uint32_t> &get_dimensions()
         {
