@@ -216,7 +216,7 @@ namespace PDR
             }
             // write_weight_dat(block_size);
             free(ZSTD_weights);
-            write_weight_dat();
+            // write_weight_dat();
         }
 
         void write_weight_dat() const {
