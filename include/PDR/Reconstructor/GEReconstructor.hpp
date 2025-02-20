@@ -297,20 +297,47 @@ namespace PDR
             level_elements.push_back(num_elements);
             if (level_num_bitplanes[i] - prev_level_num_bitplanes[i] > 0)
             {
-                compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
-                int level_exp = 0;
-                if (negabinary)
-                    frexp(level_error_bounds[i] / 4, &level_exp);
-                else
-                    frexp(level_error_bounds[i], &level_exp);
-                int level_max_weight = compute_max_abs_value(int_weights.data(), level_elements[i]);
-                auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, int_weights.data());
-                compressor.decompress_release();
-                for (int i = 0; i < num_elements; i++)
-                {
-                    data[i] += level_decoded_data[i];
+                if (mask.empty()){
+                    compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
+                    int level_exp = 0;
+                    if (negabinary)
+                        frexp(level_error_bounds[i] / 4, &level_exp);
+                    else
+                        frexp(level_error_bounds[i], &level_exp);
+                    int level_max_weight = compute_max_abs_value(int_weights.data(), level_elements[i]);
+                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, int_weights.data());
+                    compressor.decompress_release();
+                    for (int i = 0; i < num_elements; i++)
+                    {
+                        data[i] += level_decoded_data[i];
+                    }
+                    free(level_decoded_data);
                 }
-                free(level_decoded_data);
+                else{
+                    int num_valid_data = std::accumulate(mask.begin(), mask.end(), 0);
+                    std::vector<int> filtered_int_weights(num_valid_data);
+                    int filtered_index = 0;
+                    for(int i=0; i<mask.size(); i++){
+                        if(mask[i]){
+                            filtered_int_weights[filtered_index++]=int_weights[i];
+                        }
+                    }
+                    compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
+                    int level_exp = 0;
+                    if (negabinary)
+                        frexp(level_error_bounds[i] / 4, &level_exp);
+                    else
+                        frexp(level_error_bounds[i], &level_exp);
+                    int level_max_weight = compute_max_abs_value(filtered_int_weights.data(), level_elements[i]);
+                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, filtered_int_weights.data());
+                    compressor.decompress_release();
+                    filtered_index = 0;
+                    for (int i = 0; i < mask.size(); i++){
+                        if (mask[i]) data[i] += level_decoded_data[filtered_index++];
+                        else data[i] = 0;
+                    }
+                    free(level_decoded_data);
+                }
             }
             return true;
         }
@@ -346,6 +373,7 @@ namespace PDR
 
     public:
         std::vector<int> int_weights;
+        std::vector<unsigned char> mask;
     };
 }
 #endif

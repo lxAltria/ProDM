@@ -93,6 +93,56 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
 		ebs[1] = eb_D;
 		return false;
 	}
+
+    // ************************************************ P and D ************************************************
+    // if(max_value > tau){
+	// 	auto i = max_index;
+	// 	T estimate_error = max_value;
+	// 	T eb_P = ebs[0];
+	// 	T eb_D = ebs[1];
+	// 	while(estimate_error > tau){
+    // 		std::cout << "coordinate decrease\n";
+    //         T estimate_error_P = 0;
+	// 		{
+    //             T eb_P_ = eb_P / 1.5;
+    //             T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_, eb_D);
+    //             T Temp = P[i] / (D[i] * R);
+    //             T e_TrS_TS = c_3 * compute_bound_radical(Temp, S, e_T);
+    //             double TrS_TS = c_3 / (Temp + S);
+    //             double e_T_Tr_3 = 3*pow(Temp/T_r, 2)*(e_T/T_r) + 3*Temp/T_r*(e_T/T_r)*(e_T/T_r) + (e_T/T_r)*(e_T/T_r)*(e_T/T_r);
+    //             double T_Tr_3 = pow(Temp/T_r, 3);
+    //             double e_T_Tr_3_sqrt = compute_bound_square_root_x(T_Tr_3, e_T_Tr_3);
+    //             double T_Tr_3_sqrt = sqrt(T_Tr_3);
+    //             estimate_error_P = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
+    //         }
+    //         T estimate_error_D = 0;
+	// 		{
+    //             T eb_D_ = eb_D / 1.5;
+    //             T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P, eb_D_);
+    //             T Temp = P[i] / (D[i] * R);
+    //             T e_TrS_TS = c_3 * compute_bound_radical(Temp, S, e_T);
+    //             double TrS_TS = c_3 / (Temp + S);
+    //             double e_T_Tr_3 = 3*pow(Temp/T_r, 2)*(e_T/T_r) + 3*Temp/T_r*(e_T/T_r)*(e_T/T_r) + (e_T/T_r)*(e_T/T_r)*(e_T/T_r);
+    //             double T_Tr_3 = pow(Temp/T_r, 3);
+    //             double e_T_Tr_3_sqrt = compute_bound_square_root_x(T_Tr_3, e_T_Tr_3);
+    //             double T_Tr_3_sqrt = sqrt(T_Tr_3);
+    //             estimate_error_D = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
+    //         }
+    //         if(estimate_error_P < estimate_error_D){
+    //             estimate_error = estimate_error_P;
+    //             eb_P /= 1.5;
+    //         }
+    //         else{
+    //             estimate_error = estimate_error_D;
+    //             eb_D /= 1.5;
+    //         }
+    //         if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
+	// 	}
+	// 	ebs[0] = eb_P;
+	// 	ebs[1] = eb_D;
+	// 	return false;
+	// }
+    
 	return true;
 }
 
@@ -134,36 +184,86 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
 	}
 	std::cout << names[3] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
 	// estimate error bound based on maximal errors
-	if(max_value > tau){
+	// if(max_value > tau){
+	// 	auto i = max_index;
+	// 	T estimate_error = max_value;
+	// 	T eb_P = ebs[0];
+	// 	T eb_D = ebs[1];
+	// 	while(estimate_error > tau){
+    // 		std::cout << "uniform decrease\n";
+	// 		eb_P = eb_P / 1.5;
+	// 		eb_D = eb_D / 1.5;
+	// 		T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+	// 		T Temp = P[i] / (D[i] * R);
+	// 		T e_TrS_TS = c_3 * compute_bound_radical(Temp, S, e_T);
+	// 		double TrS_TS = c_3 / (Temp + S);
+	// 		double e_T_Tr_3 = 3*pow(Temp/T_r, 2)*(e_T/T_r) + 3*Temp/T_r*(e_T/T_r)*(e_T/T_r) + (e_T/T_r)*(e_T/T_r)*(e_T/T_r);
+	// 		double T_Tr_3 = pow(Temp/T_r, 3);
+	// 		double e_T_Tr_3_sqrt = compute_bound_square_root_x(T_Tr_3, e_T_Tr_3);
+	// 		double T_Tr_3_sqrt = sqrt(T_Tr_3);
+	// 		estimate_error = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
+    //         if (ebs[0] / eb_P > 10) break;
+	// 	}
+	// 	ebs[0] = eb_P;
+	// 	ebs[1] = eb_D;
+	// 	return false;
+	// }
+
+    // ************************************************ P and D ************************************************
+    if(max_value > tau){
 		auto i = max_index;
 		T estimate_error = max_value;
 		T eb_P = ebs[0];
 		T eb_D = ebs[1];
 		while(estimate_error > tau){
-    		std::cout << "uniform decrease\n";
-			eb_P = eb_P / 1.5;
-			eb_D = eb_D / 1.5;
-			T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
-			T Temp = P[i] / (D[i] * R);
-			T e_TrS_TS = c_3 * compute_bound_radical(Temp, S, e_T);
-			double TrS_TS = c_3 / (Temp + S);
-			double e_T_Tr_3 = 3*pow(Temp/T_r, 2)*(e_T/T_r) + 3*Temp/T_r*(e_T/T_r)*(e_T/T_r) + (e_T/T_r)*(e_T/T_r)*(e_T/T_r);
-			double T_Tr_3 = pow(Temp/T_r, 3);
-			double e_T_Tr_3_sqrt = compute_bound_square_root_x(T_Tr_3, e_T_Tr_3);
-			double T_Tr_3_sqrt = sqrt(T_Tr_3);
-			estimate_error = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
-            if (ebs[0] / eb_P > 10) break;
+    		std::cout << "coordinate decrease\n";
+            T estimate_error_P = 0;
+			{
+                T eb_P_ = eb_P / 1.5;
+                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_ / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+                T Temp = P[i] / (D[i] * R);
+                T e_TrS_TS = c_3 * compute_bound_radical(Temp, S, e_T);
+                double TrS_TS = c_3 / (Temp + S);
+                double e_T_Tr_3 = 3*pow(Temp/T_r, 2)*(e_T/T_r) + 3*Temp/T_r*(e_T/T_r)*(e_T/T_r) + (e_T/T_r)*(e_T/T_r)*(e_T/T_r);
+                double T_Tr_3 = pow(Temp/T_r, 3);
+                double e_T_Tr_3_sqrt = compute_bound_square_root_x(T_Tr_3, e_T_Tr_3);
+                double T_Tr_3_sqrt = sqrt(T_Tr_3);
+                estimate_error_P = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
+            }
+            T estimate_error_D = 0;
+			{
+                T eb_D_ = eb_D / 1.5;
+                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D_ / static_cast<T>(std::pow(2.0, weights[1][i])));
+                T Temp = P[i] / (D[i] * R);
+                T e_TrS_TS = c_3 * compute_bound_radical(Temp, S, e_T);
+                double TrS_TS = c_3 / (Temp + S);
+                double e_T_Tr_3 = 3*pow(Temp/T_r, 2)*(e_T/T_r) + 3*Temp/T_r*(e_T/T_r)*(e_T/T_r) + (e_T/T_r)*(e_T/T_r)*(e_T/T_r);
+                double T_Tr_3 = pow(Temp/T_r, 3);
+                double e_T_Tr_3_sqrt = compute_bound_square_root_x(T_Tr_3, e_T_Tr_3);
+                double T_Tr_3_sqrt = sqrt(T_Tr_3);
+                estimate_error_D = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
+            }
+            if(estimate_error_P < estimate_error_D){
+                estimate_error = estimate_error_P;
+                eb_P /= 1.5;
+            }
+            else{
+                estimate_error = estimate_error_D;
+                eb_D /= 1.5;
+            }
+            if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
 		}
 		ebs[0] = eb_P;
 		ebs[1] = eb_D;
 		return false;
 	}
+
 	return true;
 }
 
 template<class T>
 std::vector<size_t> retrieve_mu_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
-    int max_iter = 10;
+    int max_iter = 30;
     bool tolerance_met = false;
     int n_variable = ebs.size();
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
@@ -277,7 +377,7 @@ std::vector<size_t> retrieve_mu_Dummy(std::string rdata_file_prefix, T tau, std:
 
 template<class T>
 std::vector<size_t> retrieve_mu_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
-    int max_iter = 10;
+    int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
@@ -391,7 +491,7 @@ std::vector<size_t> retrieve_mu_SZ3(std::string rdata_file_prefix, T tau, std::v
 
 template<class T>
 std::vector<size_t> retrieve_mu_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
-    int max_iter = 10;
+    int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
@@ -508,7 +608,7 @@ std::vector<size_t> retrieve_mu_PMGARD(std::string rdata_file_prefix, T tau, std
 
 template<class T>
 std::vector<size_t> retrieve_mu_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
-    int max_iter = 10;
+    int max_iter = 30;
     bool tolerance_met = false;
     int n_variable = ebs.size();
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
@@ -635,10 +735,10 @@ int main(int argc, char ** argv){
     P_ori = MGARD::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
     D_ori = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
     std::vector<T> ebs;
-    // ebs.push_back(compute_value_range(P_ori)*target_rel_eb);
-    // ebs.push_back(compute_value_range(D_ori)*target_rel_eb);
-    ebs.push_back(compute_max_abs_value(P_ori.data(), P_ori.size())*target_rel_eb);
-    ebs.push_back(compute_max_abs_value(D_ori.data(), D_ori.size())*target_rel_eb);
+    ebs.push_back(compute_value_range(P_ori)*target_rel_eb);
+    ebs.push_back(compute_value_range(D_ori)*target_rel_eb);
+    // ebs.push_back(compute_max_abs_value(P_ori.data(), P_ori.size())*target_rel_eb);
+    // ebs.push_back(compute_max_abs_value(D_ori.data(), D_ori.size())*target_rel_eb);
 	int n_variable = ebs.size();
     std::vector<std::vector<T>> vars_vec = {P_ori, D_ori};
     std::vector<double> var_range(n_variable);

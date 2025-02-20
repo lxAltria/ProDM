@@ -27,21 +27,6 @@ inline double compute_inverse_bound_x_square(T x, T eb, T tau){
 }
 
 // f(x) = sqrt(x)
-template <class T>
-inline double compute_bound_square_root_x(T x, T eb){
-	if(x == 0) {
-		return sqrt(eb);
-	}
-	double error = 0;
-	if(x > eb){
-		error = eb / (sqrt(x - eb) + sqrt(x));
-	}
-	else{
-		error = eb / sqrt(x);
-	}
-	// return error;
-	return (error > sqrt(x + eb)) ? sqrt(x + eb) : error;
-}
 // template <class T>
 // inline double compute_bound_square_root_x(T x, T eb){
 // 	if(x == 0) {
@@ -51,9 +36,24 @@ inline double compute_bound_square_root_x(T x, T eb){
 // 		return eb / (sqrt(x - eb) + sqrt(x));
 // 	}
 // 	else{
-// 		return eb / sqrt(x);
+// 		// return eb / sqrt(x);
+// 		T tau_1 = sqrt(x + eb) - sqrt(x);
+// 		T tau_2 = sqrt(x);
+// 		return (tau_1 > tau_2) ? tau_1 : tau_2;
 // 	}
 // }
+template <class T>
+inline double compute_bound_square_root_x(T x, T eb){
+	if(x == 0) {
+		return sqrt(eb);
+	}
+	if(x > eb){
+		return eb / (sqrt(x - eb) + sqrt(x));
+	}
+	else{
+		return eb / sqrt(x);
+	}
+}
 
 // f(x) = sqrt(x)
 template <class T>
@@ -111,29 +111,16 @@ inline double compute_bound_multiplication(T x, T y, T eb_x, T eb_y){
 // f(x, y) = x/y
 template <class T>
 inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
-	double error = 0;
 	if(eb_y < fabs(y)){
-		error = fabs(x)*eb_y + fabs(y)*eb_x;
-		if(y > 0) error = error / (y*(y - eb_y));
-		else error = error / (y*(y + eb_y));
+		double e = fabs(x)*eb_y + fabs(y)*eb_x;
+		if(y > 0) return e / (y*(y - eb_y));
+		else return e / (y*(y + eb_y));
 	}
 	else{
-		return fabs(x + eb_x)/fabs(y + eb_y);
+		std::cout << "Warning: cannot control error in x/y\n";
+		return 0;
 	}
-	return (error > fabs(x + eb_x)/fabs(y + eb_y)) ? fabs(x + eb_x)/fabs(y + eb_y) : error;
 }
-// template <class T>
-// inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
-// 	if(eb_y < fabs(y)){
-// 		double e = fabs(x)*eb_y + fabs(y)*eb_x;
-// 		if(y > 0) return e / (y*(y - eb_y));
-// 		else return e / (y*(y + eb_y));
-// 	}
-// 	else{
-// 		std::cout << "Warning: cannot control error in x/y\n";
-// 		return 0;
-// 	}
-// }
 
 template <class T>
 void print_error(std::string varname, T dec, T ori, T est){

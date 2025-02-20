@@ -210,21 +210,50 @@ namespace PDR {
             level_components.clear();
             level_sizes.clear();
             
-            T level_max_error = compute_max_abs_value(data.data(), num_elements);
-            int level_max_weight = compute_max_abs_value(int_weights.data(), num_elements);
-            // encoding
-            if(negabinary) level_error_bounds.push_back(level_max_error * 4);
-            else level_error_bounds.push_back(level_max_error);
-            int level_exp = 0;
-            frexp(level_max_error, &level_exp);
-            std::vector<uint32_t> stream_sizes;
-            auto streams = encoder.encode(data.data(), num_elements, level_exp + level_max_weight, num_bitplanes, stream_sizes, int_weights.data());
+            if (mask.empty()){
+                T level_max_error = compute_max_abs_value(data.data(), num_elements);
+                int level_max_weight = compute_max_abs_value(int_weights.data(), num_elements);
+                // encoding
+                if(negabinary) level_error_bounds.push_back(level_max_error * 4);
+                else level_error_bounds.push_back(level_max_error);
+                int level_exp = 0;
+                frexp(level_max_error, &level_exp);
+                std::vector<uint32_t> stream_sizes;
+                auto streams = encoder.encode(data.data(), num_elements, level_exp + level_max_weight, num_bitplanes, stream_sizes, int_weights.data());
 
-            // lossless
-            uint8_t stopping_index = compressor.compress_level(streams, stream_sizes);
-            stopping_indices.push_back(stopping_index);
-            level_components.push_back(streams);
-            level_sizes.push_back(stream_sizes);
+                // lossless
+                uint8_t stopping_index = compressor.compress_level(streams, stream_sizes);
+                stopping_indices.push_back(stopping_index);
+                level_components.push_back(streams);
+                level_sizes.push_back(stream_sizes);
+            }
+            else{
+                int num_valid_data = std::accumulate(mask.begin(), mask.end(), 0);
+                std::vector<T> filtered_data(num_valid_data);
+                std::vector<int> filtered_int_weights(num_valid_data);
+                int filtered_index = 0;
+                for(int i=0; i<mask.size(); i++){
+                    if(mask[i]){
+                        filtered_data[filtered_index]=data[i];
+                        filtered_int_weights[filtered_index++]=int_weights[i];
+                    }
+                }
+                T level_max_error = compute_max_abs_value(filtered_data.data(), num_valid_data);
+                int level_max_weight = compute_max_abs_value(filtered_int_weights.data(), num_valid_data);
+                // encoding
+                if(negabinary) level_error_bounds.push_back(level_max_error * 4);
+                else level_error_bounds.push_back(level_max_error);
+                int level_exp = 0;
+                frexp(level_max_error, &level_exp);
+                std::vector<uint32_t> stream_sizes;
+                auto streams = encoder.encode(filtered_data.data(), num_valid_data, level_exp + level_max_weight, num_bitplanes, stream_sizes, filtered_int_weights.data());
+
+                // lossless
+                uint8_t stopping_index = compressor.compress_level(streams, stream_sizes);
+                stopping_indices.push_back(stopping_index);
+                level_components.push_back(streams);
+                level_sizes.push_back(stream_sizes);
+            }
 
             return true;
         }
@@ -253,6 +282,7 @@ namespace PDR {
     public:
         bool negabinary = false;
         std::vector<T> QoI;
+        std::vector<unsigned char> mask;
     };
 }
 #endif

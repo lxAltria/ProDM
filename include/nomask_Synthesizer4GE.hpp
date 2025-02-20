@@ -14,8 +14,6 @@
 #include "SZ3/api/sz.hpp"
 #include "PDR/Refactor/Refactor.hpp"
 #include "PDR/Reconstructor/Reconstructor.hpp"
-// #include "PDR/Reconstructor/ApproximationBasedReconstructor.hpp"
-// #include "PDR/Reconstructor/WeightedApproximationBasedReconstructor.hpp"
 #include "ompSZp_typemanager.h"
 #include <cstdint>
 
@@ -23,6 +21,106 @@ const std::vector<std::string> varlist = {"VelocityX", "VelocityY", "VelocityZ",
 const int n_vars = 5;
 
 namespace MDR {
+
+template <class T>
+void writemask(const char *filepath, T *data, size_t num_elements) {
+    unsigned int bit_count = 1;
+    unsigned int byte_count = bit_count / 8;
+    unsigned int remainder_bit = bit_count % 8;
+    size_t byteLength = 0;
+    if (remainder_bit == 0) {
+        byteLength = byte_count * num_elements + 1;
+    } 
+    else {
+        size_t tmp = remainder_bit * num_elements;
+        byteLength = byte_count * num_elements + (tmp - 1) / 8 + 1;
+    }
+    std::vector<unsigned int> int_mask(num_elements, 0);
+    for(int i=0; i<num_elements; i++){
+        int_mask[i] = data[i];
+    }
+    std::vector<unsigned char> compressed_mask(byteLength, 0);
+    if (byteLength != Jiajun_save_fixed_length_bits(int_mask.data(), num_elements, compressed_mask.data(), bit_count)){}
+    uint8_t * ZSTD_mask = nullptr;
+    uint32_t ZSTD_mask_size = ZSTD::compress(compressed_mask.data(), byteLength, &ZSTD_mask);
+    uint32_t mask_size = sizeof(size_t) + sizeof(uint32_t) + ZSTD_mask_size;
+    uint8_t * mask_data = (uint8_t *) malloc(mask_size);
+    uint8_t * mask_data_pos = mask_data;
+    memcpy(mask_data_pos, &num_elements, sizeof(size_t));
+    mask_data_pos += sizeof(size_t);
+    memcpy(mask_data_pos, &ZSTD_mask_size, sizeof(uint32_t));
+    mask_data_pos += sizeof(uint32_t);
+    memcpy(mask_data_pos, ZSTD_mask, ZSTD_mask_size);
+    FILE * file = fopen(filepath, "wb");
+    if (file == nullptr) {
+        perror("Error opening file");
+        return;
+    }
+    fwrite(mask_data, 1, mask_size, file);
+    fclose(file);
+    free(mask_data);
+    free(ZSTD_mask);
+    std::cout << "byteLength = " << byteLength << std::endl;
+    std::string path = "/Users/wenboli/uky/test/ProDM/GE_small_reordered/original_mask.bin";
+    MGARD::writefile(path.c_str(), data, num_elements);
+    // MGARD::writefile(path.c_str(), int_mask.data(), int_mask.size());
+}
+
+std::vector<unsigned char> readmask(const char *filepath, uint32_t & mask_file_size){
+    FILE * file = fopen(filepath, "rb");
+    if (file == nullptr){
+        perror("Error opening file\n");
+        return {};
+    }
+    fseek(file, 0, SEEK_END);
+    uint32_t num_bytes = ftell(file);
+    mask_file_size = num_bytes;
+    rewind(file);
+    uint8_t * mask_data = (uint8_t *)malloc(num_bytes);
+    fread(mask_data, 1, num_bytes, file);
+    fclose(file);
+    uint8_t * mask_data_pos = mask_data;
+    size_t num_elements;
+    uint32_t ZSTD_mask_size;
+    memcpy(&num_elements, mask_data_pos, sizeof(size_t));
+    mask_data_pos += sizeof(size_t);
+    memcpy(&ZSTD_mask_size, mask_data_pos, sizeof(uint32_t));
+    mask_data_pos += sizeof(uint32_t);
+    uint8_t * ZSTD_mask = (uint8_t *)malloc(ZSTD_mask_size);
+    memcpy(ZSTD_mask, mask_data_pos, ZSTD_mask_size);
+    mask_data_pos += ZSTD_mask_size;
+    free(mask_data);
+    size_t byteLength = 0;
+    unsigned int bit_count = 1;
+    unsigned int byte_count = bit_count / 8;
+    unsigned remainder_bit = bit_count % 8;
+    if (remainder_bit == 0){
+        byteLength = byte_count * num_elements + 1;
+    }
+    else{
+        size_t tmp = remainder_bit * num_elements;
+        byteLength = byte_count * num_elements + (tmp - 1) / 8 + 1;
+    }
+    std::vector<unsigned char> compressed_mask(byteLength, 0);
+    uint8_t * tmp_data = nullptr;
+    uint32_t tmp_size = ZSTD::decompress(ZSTD_mask, ZSTD_mask_size, &tmp_data);
+
+    if (tmp_data != nullptr){
+        compressed_mask.assign(tmp_data, tmp_data + tmp_size);
+        free(tmp_data);
+    }
+    std::cout << "byteLength = " << byteLength << std::endl;
+    std::vector<unsigned int> int_mask(num_elements, 0);
+    std::vector<unsigned char> mask(num_elements, 0);
+    if (compressed_mask.size() != Jiajun_extract_fixed_length_bits(compressed_mask.data(), num_elements, int_mask.data(), bit_count)){}
+    for(int i=0; i<num_elements; i++){
+        mask[i] = int_mask[i];
+    }
+    std::string path = "/Users/wenboli/uky/test/ProDM/GE_small_reordered/decoded_mask.bin";
+    MGARD::writefile(path.c_str(), mask.data(), mask.size());
+    // MGARD::writefile(path.c_str(), int_mask.data(), int_mask.size());
+    return mask;
+}
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
 MDR::ComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer> generateRefactor(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer, bool negabinary){
@@ -493,7 +591,7 @@ void refactor_velocities_1D_PMGARD_BP(const std::string data_file_prefix, const 
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
 
     uint8_t target_level = 8;   // log2(*min_element(dims.begin(), dims.end())) - 1;
     uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
@@ -571,7 +669,7 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
 
     uint8_t target_level = 8;   // log2(*min_element(dims.begin(), dims.end())) - 1;
     uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
@@ -594,7 +692,9 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
         auto collector = MDR::SquaredErrorCollector<T>();
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         auto refactor = generateRefactor<T>(decomposer, interleaver, weight_interleaver, encoder, compressor, collector, writer, negabinary);
-        if(i < 3) refactor.QoI = Vtot[i];
+        if(i < 3){
+            refactor.QoI = Vtot[i];
+        }
         else refactor.QoI = Temp[i-3];
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);            
     }
@@ -623,7 +723,7 @@ void refactor_velocities_A1D_PMGARD_BP(const std::string data_file_prefix, const
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
 
     uint8_t target_level = 8;   // log2(*min_element(dims.begin(), dims.end())) - 1;
     uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
@@ -645,6 +745,7 @@ void refactor_velocities_A1D_PMGARD_BP(const std::string data_file_prefix, const
         auto collector = MDR::SquaredErrorCollector<T>();
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         auto refactor = generateRefactor<T>(decomposer, interleaver, encoder, compressor, collector, writer, negabinary);
+        refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
@@ -678,7 +779,8 @@ void refactor_velocities_1D_GE_BP(const std::string data_file_prefix, const std:
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    // MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
     num_valid_data = num_elements;
 
     for(int i=0; i<n_variable; i++){
@@ -696,6 +798,7 @@ void refactor_velocities_1D_GE_BP(const std::string data_file_prefix, const std:
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i < 3) refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
@@ -759,7 +862,7 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
     }
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -786,7 +889,10 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor_GE<T>(approximator, encoder, compressor, writer, negabinary);
-        if(i < 3) refactor.QoI = Vtot[i];
+        if(i < 3){
+            refactor.QoI = Vtot[i];
+            refactor.mask = mask;
+        }
         else refactor.QoI = Temp[i-3];
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i]);  
     }
@@ -821,7 +927,7 @@ void refactor_velocities_1D_Dummy_BP(const std::string data_file_prefix, const s
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     num_valid_data = num_elements;
 
     for(int i=0; i<n_variable; i++){
@@ -839,6 +945,7 @@ void refactor_velocities_1D_Dummy_BP(const std::string data_file_prefix, const s
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i < 3) refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
@@ -902,7 +1009,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
     }
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -929,7 +1036,10 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        if(i < 3) refactor.QoI = Vtot[i];
+        if(i < 3) {
+            refactor.QoI = Vtot[i];
+            refactor.mask = mask;
+        }
         else refactor.QoI = Temp[i-3];
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);  
     }
@@ -964,7 +1074,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     num_valid_data = num_elements;
 
     for(int i=0; i<n_variable; i++){
@@ -982,6 +1092,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i < 3) refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
@@ -1046,7 +1157,7 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
     }
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1072,7 +1183,10 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        if(i < 3) refactor.QoI = Vtot[i];
+        if(i < 3) {
+            refactor.QoI = Vtot[i];
+            refactor.mask = mask;
+        }
         else refactor.QoI = Temp[i-3];
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);  
     }
@@ -1105,7 +1219,7 @@ void refactor_velocities_A1D_SZ3_BP(const std::string data_file_prefix, const st
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     num_valid_data = num_elements;
 
     for(int i=0; i<n_variable; i++){
@@ -1123,6 +1237,7 @@ void refactor_velocities_A1D_SZ3_BP(const std::string data_file_prefix, const st
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
@@ -1148,7 +1263,7 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
         }
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1174,6 +1289,7 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);  
     }
 }
@@ -1226,7 +1342,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
         // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1254,6 +1370,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
         refactor.QoI = Vtot[i];
+        refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);  
     }
 }
@@ -1280,7 +1397,7 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
         }
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1307,6 +1424,7 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);  
     }
 }
@@ -1349,7 +1467,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
         // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1376,6 +1494,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
         refactor.QoI = Vtot[i];
+        refactor.mask = mask;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);  
     }
 }
@@ -1400,7 +1519,7 @@ void refactor_velocities_3D_PMGARD_BP(std::string dataset, uint32_t n1, uint32_t
         }
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1459,7 +1578,7 @@ void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_
         // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";

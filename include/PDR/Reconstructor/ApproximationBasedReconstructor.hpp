@@ -172,21 +172,38 @@ namespace PDR
             level_elements.push_back(num_elements);
             if (level_num_bitplanes[i] - prev_level_num_bitplanes[i] > 0)
             {
-                compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
-                int level_exp = 0;
-                if (negabinary)
-                    frexp(level_error_bounds[i] / 4, &level_exp);
-                else
-                    frexp(level_error_bounds[i], &level_exp);
-                auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
-                compressor.decompress_release();
-                for (int i = 0; i < num_elements; i++)
-                {
-                    // if (i == 1958794) std::cout << "Before: data[" << i << "] = " << data[i] << ", level_decoded_data[" << i << "] = " << level_decoded_data[i] << std::endl;
-                    data[i] += level_decoded_data[i];
-                    // if (i == 1958794) std::cout << "After: data[" << i << "] = " << data[i] << std::endl;
+                if (mask.empty()){
+                    compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
+                    int level_exp = 0;
+                    if (negabinary)
+                        frexp(level_error_bounds[i] / 4, &level_exp);
+                    else
+                        frexp(level_error_bounds[i], &level_exp);
+                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
+                    compressor.decompress_release();
+                    for (int i = 0; i < num_elements; i++)
+                    {
+                        data[i] += level_decoded_data[i];
+                    }
+                    free(level_decoded_data);
                 }
-                free(level_decoded_data);
+                else{
+                    compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
+                    int level_exp = 0;
+                    if (negabinary)
+                        frexp(level_error_bounds[i] / 4, &level_exp);
+                    else
+                        frexp(level_error_bounds[i], &level_exp);
+                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
+                    compressor.decompress_release();
+                    int filtered_index = 0;
+                    for (int i = 0; i < mask.size(); i++)
+                    {
+                        if(mask[i]) data[i] += level_decoded_data[filtered_index++];
+                        else data[i] = 0;
+                    }
+                    free(level_decoded_data);
+                }
             }
             return true;
         }
@@ -211,6 +228,8 @@ namespace PDR
         std::vector<uint32_t> strides;
         bool negabinary = true;
         bool reconstructed = false;
+    public:
+        std::vector<unsigned char> mask;
     };
 }
 #endif
