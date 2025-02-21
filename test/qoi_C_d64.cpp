@@ -103,14 +103,14 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
     //             double Temp = P[i] / (D[i] * R);
     //             estimate_error_D = c_2*compute_bound_square_root_x(Temp, e_T);
     //         }
-    //         if(estimate_error_P < estimate_error_D){
-    //             estimate_error = estimate_error_P;
-    //             eb_P /= 1.5;
-    //         }
-    //         else{
-    //             estimate_error = estimate_error_D;
-    //             eb_D /= 1.5;
-    //         }
+    //         std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+    //         const T epsilon = 1e-6;
+    //         T min_error = std::min({estimate_error_P, estimate_error_D});
+    //         bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+    //         bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+    //         estimate_error = min_error;
+    //         if (close_P)  eb_P /= 1.5;
+    //         if (close_D)  eb_D /= 1.5;
     //         if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
 	// 	}
     //     ebs[0] = eb_P;
@@ -193,14 +193,14 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
                 double Temp = P[i] / (D[i] * R);
                 estimate_error_D = c_2*compute_bound_square_root_x(Temp, e_T);
             }
-            if(estimate_error_P < estimate_error_D){
-                estimate_error = estimate_error_P;
-                eb_P /= 1.5;
-            }
-            else{
-                estimate_error = estimate_error_D;
-                eb_D /= 1.5;
-            }
+            std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+            const T epsilon = 1e-6;
+            T min_error = std::min({estimate_error_P, estimate_error_D});
+            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            estimate_error = min_error;
+            if (close_P)  eb_P /= 1.5;
+            if (close_D)  eb_D /= 1.5;
             if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
 		}
         ebs[0] = eb_P;

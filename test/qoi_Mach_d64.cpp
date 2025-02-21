@@ -418,26 +418,19 @@ bool halfing_error_Mach_uniform(const T * Vx, const T * Vy, const T * Vz, const 
 	// 			estimate_error_D = compute_bound_division(V_TOT, C, e_V_TOT, e_C);    			
     // 		}
     // 		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
-	// 		if((estimate_error_Vx < estimate_error_Vy) && (estimate_error_Vx < estimate_error_Vz) && (estimate_error_Vx < estimate_error_P) && ((estimate_error_Vx < estimate_error_D))){
-    //             estimate_error = estimate_error_Vx;
-    //             eb_Vx /= 1.5;
-    //         }
-    //         else if((estimate_error_Vy < estimate_error_Vx) && (estimate_error_Vy < estimate_error_Vz) && (estimate_error_Vy < estimate_error_P) && ((estimate_error_Vy < estimate_error_D))){
-    //             estimate_error = estimate_error_Vy;
-    //             eb_Vy /= 1.5;
-    //         }
-    //         else if((estimate_error_Vz < estimate_error_Vx) && (estimate_error_Vz < estimate_error_Vy) && (estimate_error_Vz < estimate_error_P) && ((estimate_error_Vz < estimate_error_D))){
-    //             estimate_error = estimate_error_Vz;
-    //             eb_Vz /= 1.5;
-    //         }
-    //         else if((estimate_error_P < estimate_error_Vx) && (estimate_error_P < estimate_error_Vy) && (estimate_error_P < estimate_error_Vz) && ((estimate_error_Vy < estimate_error_D))){
-    //             estimate_error = estimate_error_P;
-    //             eb_P /= 1.5;
-    //         }
-    //         else{
-    //             estimate_error = estimate_error_D;
-    //             eb_D /= 1.5;
-    //         }
+	// 		const T epsilon = 1e-6;
+    //         T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
+    //         bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
+    //         bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
+    //         bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+    //         bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+    //         bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+    //         estimate_error = min_error;
+    //         if (close_Vx) eb_Vx /= 1.5;
+    //         if (close_Vy) eb_Vy /= 1.5;
+    //         if (close_Vz) eb_Vz /= 1.5;
+    //         if (close_P)  eb_P /= 1.5;
+    //         if (close_D)  eb_D /= 1.5;
     //         if ((ebs[0] / eb_Vx > 10) || (ebs[1] / eb_Vy > 10) || (ebs[2] / eb_Vz > 10) || (ebs[3] / eb_P > 10) || (ebs[4] / eb_D > 10)) break;
 	// 	}
 	// 	ebs[0] = eb_Vx;
@@ -829,26 +822,19 @@ bool halfing_error_Mach_uniform(const T * Vx, const T * Vy, const T * Vz, const 
 				estimate_error_D = compute_bound_division(V_TOT, C, e_V_TOT, e_C);    			
     		}
     		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
-			if((estimate_error_Vx < estimate_error_Vy) && (estimate_error_Vx < estimate_error_Vz) && (estimate_error_Vx < estimate_error_P) && ((estimate_error_Vx < estimate_error_D))){
-                estimate_error = estimate_error_Vx;
-                eb_Vx /= 1.5;
-            }
-            else if((estimate_error_Vy < estimate_error_Vx) && (estimate_error_Vy < estimate_error_Vz) && (estimate_error_Vy < estimate_error_P) && ((estimate_error_Vy < estimate_error_D))){
-                estimate_error = estimate_error_Vy;
-                eb_Vy /= 1.5;
-            }
-            else if((estimate_error_Vz < estimate_error_Vx) && (estimate_error_Vz < estimate_error_Vy) && (estimate_error_Vz < estimate_error_P) && ((estimate_error_Vz < estimate_error_D))){
-                estimate_error = estimate_error_Vz;
-                eb_Vz /= 1.5;
-            }
-            else if((estimate_error_P < estimate_error_Vx) && (estimate_error_P < estimate_error_Vy) && (estimate_error_P < estimate_error_Vz) && ((estimate_error_Vy < estimate_error_D))){
-                estimate_error = estimate_error_P;
-                eb_P /= 1.5;
-            }
-            else{
-                estimate_error = estimate_error_D;
-                eb_D /= 1.5;
-            }
+			const T epsilon = 1e-6;
+            T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
+            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
+            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
+            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            estimate_error = min_error;
+            if (close_Vx) eb_Vx /= 1.5;
+            if (close_Vy) eb_Vy /= 1.5;
+            if (close_Vz) eb_Vz /= 1.5;
+            if (close_P)  eb_P /= 1.5;
+            if (close_D)  eb_D /= 1.5;
             if ((ebs[0] / eb_Vx > 10) || (ebs[1] / eb_Vy > 10) || (ebs[2] / eb_Vz > 10) || (ebs[3] / eb_P > 10) || (ebs[4] / eb_D > 10)) break;
 		}
 		ebs[0] = eb_Vx;

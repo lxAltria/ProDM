@@ -128,14 +128,14 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
     //             double T_Tr_3_sqrt = sqrt(T_Tr_3);
     //             estimate_error_D = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
     //         }
-    //         if(estimate_error_P < estimate_error_D){
-    //             estimate_error = estimate_error_P;
-    //             eb_P /= 1.5;
-    //         }
-    //         else{
-    //             estimate_error = estimate_error_D;
-    //             eb_D /= 1.5;
-    //         }
+    //         std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+    //         const T epsilon = 1e-6;
+    //         T min_error = std::min({estimate_error_P, estimate_error_D});
+    //         bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+    //         bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+    //         estimate_error = min_error;
+    //         if (close_P)  eb_P /= 1.5;
+    //         if (close_D)  eb_D /= 1.5;
     //         if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
 	// 	}
 	// 	ebs[0] = eb_P;
@@ -243,14 +243,14 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
                 double T_Tr_3_sqrt = sqrt(T_Tr_3);
                 estimate_error_D = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
             }
-            if(estimate_error_P < estimate_error_D){
-                estimate_error = estimate_error_P;
-                eb_P /= 1.5;
-            }
-            else{
-                estimate_error = estimate_error_D;
-                eb_D /= 1.5;
-            }
+            std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+            const T epsilon = 1e-6;
+            T min_error = std::min({estimate_error_P, estimate_error_D});
+            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            estimate_error = min_error;
+            if (close_P)  eb_P /= 1.5;
+            if (close_D)  eb_D /= 1.5;
             if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
 		}
 		ebs[0] = eb_P;
