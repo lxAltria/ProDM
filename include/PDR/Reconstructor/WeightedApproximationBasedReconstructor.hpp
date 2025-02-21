@@ -297,8 +297,8 @@ namespace PDR
                         frexp(level_error_bounds[i] / 4, &level_exp);
                     else
                         frexp(level_error_bounds[i], &level_exp);
-                    int level_max_weight = compute_max_abs_value(filtered_int_weights.data(), level_elements[i]);
-                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, filtered_int_weights.data());
+                    int level_max_weight = compute_max_abs_value(filtered_int_weights.data(), num_valid_data);
+                    auto level_decoded_data = encoder.progressive_decode(level_components[i], num_valid_data, level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, filtered_int_weights.data());
                     compressor.decompress_release();
                     filtered_index = 0;
                     for (int i = 0; i < mask.size(); i++){

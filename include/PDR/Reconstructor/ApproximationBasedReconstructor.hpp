@@ -188,13 +188,14 @@ namespace PDR
                     free(level_decoded_data);
                 }
                 else{
+                    int num_valid_data = std::accumulate(mask.begin(), mask.end(), 0);
                     compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
                     int level_exp = 0;
                     if (negabinary)
                         frexp(level_error_bounds[i] / 4, &level_exp);
                     else
                         frexp(level_error_bounds[i], &level_exp);
-                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
+                    auto level_decoded_data = encoder.progressive_decode(level_components[i], num_valid_data, level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
                     compressor.decompress_release();
                     int filtered_index = 0;
                     for (int i = 0; i < mask.size(); i++)
