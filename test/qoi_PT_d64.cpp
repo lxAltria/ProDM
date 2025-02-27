@@ -594,8 +594,9 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
                 estimate_error_D = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
             }
     		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
-			const T epsilon = 1e-6;
+			const T relative_epsilon = 1e-3;
             T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
+            T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
             bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
             bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
             bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;

@@ -244,8 +244,9 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
                 estimate_error_D = mu_r * compute_bound_multiplication(T_Tr_3_sqrt, TrS_TS, e_T_Tr_3_sqrt, e_TrS_TS);
             }
             std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
-            const T epsilon = 1e-6;
+            const T relative_epsilon = 1e-3;
             T min_error = std::min({estimate_error_P, estimate_error_D});
+            T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
             bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
             bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
             estimate_error = min_error;

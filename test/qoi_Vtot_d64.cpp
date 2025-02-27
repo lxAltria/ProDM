@@ -269,8 +269,9 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 				estimate_error_Vz = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			}
 			std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
-			const T epsilon = 1e-6;
-            T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
+			const T relative_epsilon = 1e-3;
+			T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
+			T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
             bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
             bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
             bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
@@ -493,7 +494,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 				exit(-1);
 			}
 
-			outfile1.write(reinterpret_cast<const char*>(error_est_V_TOT.data()), error_est_V_TOT.size() * sizeof(float));
+			outfile1.write(reinterpret_cast<const char*>(error_est_V_TOT.data()), error_est_V_TOT.size() * sizeof(T));
 		
 			outfile1.close();
 			std::cout << "Data saved successfully to " << filename << std::endl;
@@ -939,7 +940,7 @@ int main(int argc, char ** argv){
 		exit(-1);
     }
 	std::cout << "VTOT.size: " << V_TOT.size() << std::endl;
-    outfile1.write(reinterpret_cast<const char*>(V_TOT.data()), V_TOT.size() * sizeof(float));
+    outfile1.write(reinterpret_cast<const char*>(V_TOT.data()), V_TOT.size() * sizeof(T));
     
     outfile1.close();
     std::cout << "Data saved successfully to " << filename << std::endl;

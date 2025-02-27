@@ -533,7 +533,7 @@ bool halfing_error_Mach_uniform(const T * Vx, const T * Vy, const T * Vz, const 
     std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
     std::cout << "e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
     std::cout << "max_weight_P = " << max_weight_P << ", max_weight_D = " << max_weight_D << std::endl;
-	// // estimate error bound based on maximal errors
+	// estimate error bound based on maximal errors
 	// if(max_value > tau){
 	// 	auto i = max_index;
 	// 	T estimate_error = max_value;
@@ -822,8 +822,9 @@ bool halfing_error_Mach_uniform(const T * Vx, const T * Vy, const T * Vz, const 
 				estimate_error_D = compute_bound_division(V_TOT, C, e_V_TOT, e_C);    			
     		}
     		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
-			const T epsilon = 1e-6;
+			const T relative_epsilon = 1e-3;
             T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
+            T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
             bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
             bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
             bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
