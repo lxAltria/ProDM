@@ -115,13 +115,13 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
             max_PT = PT;
 		}
 	}
-	std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
-    std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
-    std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
-    std::cout << "e_Mach = " << max_e_Mach << ", Mach = " << max_Mach << std::endl;
-    std::cout << "e_C = " << max_e_C << ", C = " << max_C << std::endl;
-    std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
-    std::cout << "e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
+	// std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+    // std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
+    // std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
+    // std::cout << "e_Mach = " << max_e_Mach << ", Mach = " << max_Mach << std::endl;
+    // std::cout << "e_C = " << max_e_C << ", C = " << max_C << std::endl;
+    // std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+    // std::cout << "e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		auto i = max_index;
@@ -132,7 +132,7 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		T eb_P = ebs[3];
 		T eb_D = ebs[4];
 		while(estimate_error > tau){
-    		std::cout << "uniform decrease\n";
+    		// std::cout << "uniform decrease\n";
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5; 
@@ -409,13 +409,13 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
             max_PT = PT;
 		}
 	}
-	std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
-    std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
-    std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
-    std::cout << "e_Mach = " << max_e_Mach << ", Mach = " << max_Mach << std::endl;
-    std::cout << "e_C = " << max_e_C << ", C = " << max_C << std::endl;
-    std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
-    std::cout << "e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
+	// std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+    // std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
+    // std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
+    // std::cout << "e_Mach = " << max_e_Mach << ", Mach = " << max_Mach << std::endl;
+    // std::cout << "e_C = " << max_e_C << ", C = " << max_C << std::endl;
+    // std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+    // std::cout << "e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
 	// estimate error bound based on maximal errors
 	// if(max_value > tau){
 	// 	auto i = max_index;
@@ -472,7 +472,7 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		T eb_P = ebs[3];
 		T eb_D = ebs[4];
 		while(estimate_error > tau){
-    		std::cout << "coordinate decrease\n";
+    		// std::cout << "coordinate decrease\n";
             T estimate_error_Vx = 0;
             {
                 T eb_Vx_ = eb_Vx / 1.5;
@@ -593,7 +593,7 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
                 T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
                 estimate_error_D = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
             }
-    		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
+    		// std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
 			const T relative_epsilon = 1e-3;
             T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
             T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
@@ -790,18 +790,18 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
+            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
-            std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             tolerance_met = halfing_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
-            std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
             max_act_error = print_max_abs(names[1] + " error", error_PT);
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
@@ -845,18 +845,18 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
+            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
-            std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             tolerance_met = halfing_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
-            std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             /* test
             std::string filename = "./Result/Temp_err.dat";
             std::ofstream outfile1(filename, std::ios::binary);
@@ -1042,7 +1042,7 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
     int max_iter = 30;
     bool tolerance_met = false;
     int n_variable = ebs.size();
-    std::cout << "n_variable = " << n_variable << std::endl; 
+    // std::cout << "n_variable = " << n_variable << std::endl; 
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
     std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
@@ -1078,18 +1078,18 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
+            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
-            std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             tolerance_met = halfing_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
-            std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
             max_act_error = print_max_abs(names[1] + " error", error_PT);
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
@@ -1133,18 +1133,18 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
+            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
-            std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             tolerance_met = halfing_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
-            std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             /* test
             std::string filename = "./Result/Temp_err.dat";
             std::ofstream outfile1(filename, std::ios::binary);

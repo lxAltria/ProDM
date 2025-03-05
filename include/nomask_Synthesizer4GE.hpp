@@ -60,7 +60,7 @@ void writemask(const char *filepath, T *data, size_t num_elements) {
     fclose(file);
     free(mask_data);
     free(ZSTD_mask);
-    std::cout << "byteLength = " << byteLength << std::endl;
+    // std::cout << "byteLength = " << byteLength << std::endl;
     std::string path = "/Users/wenboli/uky/test/ProDM/GE_small_reordered/original_mask.bin";
     MGARD::writefile(path.c_str(), data, num_elements);
     // MGARD::writefile(path.c_str(), int_mask.data(), int_mask.size());
@@ -109,7 +109,7 @@ std::vector<unsigned char> readmask(const char *filepath, uint32_t & mask_file_s
         compressed_mask.assign(tmp_data, tmp_data + tmp_size);
         free(tmp_data);
     }
-    std::cout << "byteLength = " << byteLength << std::endl;
+    // std::cout << "byteLength = " << byteLength << std::endl;
     std::vector<unsigned int> int_mask(num_elements, 0);
     std::vector<unsigned char> mask(num_elements, 0);
     if (compressed_mask.size() != Jiajun_extract_fixed_length_bits(compressed_mask.data(), num_elements, int_mask.data(), bit_count)){}
@@ -777,7 +777,7 @@ void refactor_velocities_1D_GE_BP(const std::string data_file_prefix, const std:
         }
     }
 
-    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
+    // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
     // MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
@@ -860,14 +860,14 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
         // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
     }
-    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
+    // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
         std::vector<std::string> files;
-        std::cout << "metadata location: " << metadata_file << std::endl;
+        // std::cout << "metadata location: " << metadata_file << std::endl;
         int num_levels = target_level + 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
@@ -1072,7 +1072,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
         }
     }
 
-    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
+    // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
     num_valid_data = num_elements;
@@ -1112,7 +1112,7 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
 
     uint8_t target_level = 0;
     uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
-    std::cout << "num_bitplanes = " << int(num_bitplanes) << std::endl;
+    // std::cout << "num_bitplanes = " << int(num_bitplanes) << std::endl;
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
 
@@ -1155,14 +1155,14 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
     }
-    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
+    // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
         std::vector<std::string> files;
-        std::cout << "metadata location: " << metadata_file << std::endl;
+        // std::cout << "metadata location: " << metadata_file << std::endl;
         int num_levels = target_level + 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
@@ -1431,7 +1431,7 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
 
 template<class T>
 void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, int max_weight=4, int block_size=1){
-    std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
+    // std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
     size_t num_elements = 0;
     auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
     auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);

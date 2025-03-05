@@ -74,7 +74,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		}
 		// if(mask[i]) weight_index++;
 	}
-	std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+	// std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
 	// estimate error bound based on maximal errors
 	if(max_value > tau){
 		// estimate
@@ -86,8 +86,8 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		T eb_Vy = ebs[1];
 		T eb_Vz = ebs[2];
 		while(estimate_error > tau){
-    		std::cout << "uniform decrease\n";
-    		std::cout << "uniform decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
+    		// std::cout << "uniform decrease\n";
+    		// std::cout << "uniform decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5;		        		
@@ -205,8 +205,8 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			// if(mask[i]) weight_index++;
 		}
 	}
-	std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
-	std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
+	// std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+	// std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
 	// estimate error bound based on maximal errors
 	// if(max_value > tau){
 	// 	// estimate
@@ -245,8 +245,8 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		T eb_Vy = ebs[1];
 		T eb_Vz = ebs[2];
 		while(estimate_error > tau){
-			std::cout << "coordinate decrease\n";
-			std::cout << "coordinate decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
+			// std::cout << "coordinate decrease\n";
+			// std::cout << "coordinate decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
     		T estimate_error_Vx = 0;
 			{
 				T eb_Vx_ = eb_Vx / 1.5;
@@ -268,7 +268,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 				estimate_error_Vz = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			}
-			std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
+			// std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
 			const T relative_epsilon = 1e-3;
 			T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
 			T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
@@ -468,24 +468,24 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
-			for(int i=0; i<n_variable; i++){
-				std::cout << total_retrieved_size[i] << ", ";
-			}
-			std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
+			// for(int i=0; i<n_variable; i++){
+			// 	std::cout << total_retrieved_size[i] << ", ";
+			// }
+			// std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
 
 			Vx_dec = reconstructed_vars[0].data();
 			Vy_dec = reconstructed_vars[1].data();
 			Vz_dec = reconstructed_vars[2].data();
-			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
 			error_V_TOT = std::vector<T>(num_elements);
 			error_est_V_TOT = std::vector<T>(num_elements);
-			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			/* test
 			std::string filename = "./Result/Vtot_err.dat";
 			std::ofstream outfile1(filename, std::ios::binary);
@@ -537,24 +537,24 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
-			for(int i=0; i<n_variable; i++){
-				std::cout << total_retrieved_size[i] << ", ";
-			}
-			std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
+			// for(int i=0; i<n_variable; i++){
+			// 	std::cout << total_retrieved_size[i] << ", ";
+			// }
+			// std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
 
 			Vx_dec = reconstructed_vars[0].data();
 			Vy_dec = reconstructed_vars[1].data();
 			Vz_dec = reconstructed_vars[2].data();
-			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
 			error_V_TOT = std::vector<T>(num_elements);
 			error_est_V_TOT = std::vector<T>(num_elements);
-			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			/* test
 			std::string filename = "./Result/Vtot_err.dat";
 			std::ofstream outfile1(filename, std::ios::binary);
@@ -786,24 +786,24 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
-			for(int i=0; i<n_variable; i++){
-				std::cout << total_retrieved_size[i] << ", ";
-			}
-			std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
+			// for(int i=0; i<n_variable; i++){
+			// 	std::cout << total_retrieved_size[i] << ", ";
+			// }
+			// std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
 
 			Vx_dec = reconstructed_vars[0].data();
 			Vy_dec = reconstructed_vars[1].data();
 			Vz_dec = reconstructed_vars[2].data();
-			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
 			error_V_TOT = std::vector<T>(num_elements);
 			error_est_V_TOT = std::vector<T>(num_elements);
-			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			/* test
 			std::string filename = "./Result/Vtot_err.dat";
 			std::ofstream outfile1(filename, std::ios::binary);
@@ -855,24 +855,24 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
-			for(int i=0; i<n_variable; i++){
-				std::cout << total_retrieved_size[i] << ", ";
-			}
-			std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
+			// for(int i=0; i<n_variable; i++){
+			// 	std::cout << total_retrieved_size[i] << ", ";
+			// }
+			// std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
 
 			Vx_dec = reconstructed_vars[0].data();
 			Vy_dec = reconstructed_vars[1].data();
 			Vz_dec = reconstructed_vars[2].data();
-			MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-			MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-			MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
 			error_V_TOT = std::vector<T>(num_elements);
 			error_est_V_TOT = std::vector<T>(num_elements);
-			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-			MDR::print_vec(ebs);
+			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
 			/* test
 			std::string filename = "./Result/Vtot_err.dat";
 			std::ofstream outfile1(filename, std::ios::binary);
@@ -945,9 +945,9 @@ int main(int argc, char ** argv){
     outfile1.close();
     std::cout << "Data saved successfully to " << filename << std::endl;
     //*/
-	std::cout << "Value Range of V_TOT = " << compute_value_range(V_TOT) << std::endl;
+	// std::cout << "Value Range of V_TOT = " << compute_value_range(V_TOT) << std::endl;
     T tau = compute_value_range(V_TOT)*target_rel_eb;
-	std::cout << "Tau = " << tau << std::endl;
+	// std::cout << "Tau = " << tau << std::endl;
 
     std::string mask_file = rdata_file_prefix + "mask.bin";
     uint32_t mask_file_size = 0;

@@ -39,11 +39,11 @@ namespace PDR {
             // if refactor successfully
             if(refactor(num_bitplanes, max_weight)){
                 timer.end();
-                timer.print("Refactor");
+                // timer.print("Refactor");
                 timer.start();
                 level_num = writer.write_level_components(level_components, level_sizes);
                 timer.end();
-                timer.print("Write");                
+                // timer.print("Write");                
             }
 
             write_weight();
@@ -104,7 +104,7 @@ namespace PDR {
             weight_data_pos += sizeof(uint32_t);
             memcpy(weight_data_pos, ZSTD_weights, ZSTD_weight_size);
             string path = writer.get_directory() + "weight.bin";
-            std::cout << "Path: " << path << std::endl;
+            // std::cout << "Path: " << path << std::endl;
             FILE * file = fopen(path.c_str(), "wb");
             if (file == nullptr) {
                 perror("Error opening file");
@@ -123,7 +123,7 @@ namespace PDR {
             uint8_t * weight_data_pos = weight_data;
             serialize(int_weights, weight_data_pos);
             string path = writer.get_directory() + "weight.dat";
-            std::cout << "Path: " << path << std::endl;
+            // std::cout << "Path: " << path << std::endl;
             FILE * file = fopen(path.c_str(), "w");
             if (file == nullptr) {
                 perror("Error opening file");
@@ -161,17 +161,17 @@ namespace PDR {
             // size_t num = 0;
             // std::string filename("/Users/wenboli/uky/ProDM/Hurricane_f32/new_weight.dat");
             // int_weights = MGARD::readfile<int>(filename.c_str(), num);
-            {
-                // std::cout << "num = " << num << std::endl;
-                std::cout << "Normalizing Weights" << std::endl;
-                int max_w = int_weights[0];
-                int min_w = int_weights[0];
-                for(int i=1; i< int_weights.size(); i++){
-                    if(int_weights[i] > max_w) max_w = int_weights[i];
-                    if(int_weights[i] < min_w) min_w = int_weights[i];
-                }
-                std::cout << min_w << " " << max_w << std::endl;
-            }
+            // {
+            //     // std::cout << "num = " << num << std::endl;
+            //     std::cout << "Normalizing Weights" << std::endl;
+            //     int max_w = int_weights[0];
+            //     int min_w = int_weights[0];
+            //     for(int i=1; i< int_weights.size(); i++){
+            //         if(int_weights[i] > max_w) max_w = int_weights[i];
+            //         if(int_weights[i] < min_w) min_w = int_weights[i];
+            //     }
+            //     std::cout << min_w << " " << max_w << std::endl;
+            // }
             block_weights = get_block_weight_GE(block_sizes, int_weights);
             // calculate the space that compressed_weights needs and resize it since we are passing the pointer
             bit_count = static_cast<unsigned int>(std::ceil(std::log2(max_weight + 1)));

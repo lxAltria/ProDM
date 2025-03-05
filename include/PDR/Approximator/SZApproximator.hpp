@@ -47,8 +47,8 @@ namespace PDR {
             if(filename.size()) approximator_file_name = filename;
             MGARD::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
             approximator_file_size = cmpSize;
-            std::cout << "Approximator size = " << approximator_file_size << std::endl;
-            std::cout << "num_elements = " << num_elements << std::endl;
+            // std::cout << "Approximator size = " << approximator_file_size << std::endl;
+            // std::cout << "num_elements = " << num_elements << std::endl;
             T * dec_data = (T *) malloc(num_elements * sizeof(T));
             SZ3::Config conf;
             SZ_decompress<T>(conf, cmpData, cmpSize, dec_data);
@@ -58,7 +58,7 @@ namespace PDR {
                 data[i] -= dec_data[i];
                 if(fabs(data[i]) > tmp) tmp = fabs(data[i]);
             }
-            std::cout << "max diff = " << tmp << std::endl;
+            // std::cout << "max diff = " << tmp << std::endl;
             free(dec_data);
             return approximator_file_size;
         }

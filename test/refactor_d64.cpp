@@ -20,7 +20,7 @@ int main(int argc, char** argv){
     int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
     std::string data = argv[argv_id++];
-    std::cout << "data = " << data << std::endl;
+    // std::cout << "data = " << data << std::endl;
 	std::string data_prefix_path = argv[argv_id++];
 	std::string data_file_prefix = data_prefix_path + "/data/";
 	std::string rdata_file_prefix = data_prefix_path + "/refactor/";

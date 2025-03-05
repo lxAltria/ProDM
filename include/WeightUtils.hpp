@@ -354,7 +354,7 @@ void assign_block_value_2D(const size_t n1, const size_t n2, const size_t dim0_o
 }
 template <class T>
 void assign_block_value_3D(const size_t n1, const size_t n2, const size_t n3, const size_t dim0_offset, const size_t dim1_offset, const int block_size, T * data){
-    std::cout << "n1 = " << n1 << " n2 = " << n2 << " n3 = " << n3 << " dim0_offset = " << dim0_offset << " dim1_offset = " << dim1_offset << std::endl; 
+    // std::cout << "n1 = " << n1 << " n2 = " << n2 << " n3 = " << n3 << " dim0_offset = " << dim0_offset << " dim1_offset = " << dim1_offset << std::endl; 
     size_t num_block_1 = (n1 - 1) / block_size + 1;
     size_t num_block_2 = (n2 - 1) / block_size + 1;
     size_t num_block_3 = (n3 - 1) / block_size + 1;
@@ -427,7 +427,7 @@ std::vector<int> normalize_weights(std::vector<T>& weights, int max_weight = 4, 
             if(abs_weight < min) min = abs_weight;
         }
     }
-    std::cout << max << " " << min << std::endl;
+    // std::cout << max << " " << min << std::endl;
     // exit(0);
     for(int i=0; i<weights.size(); i++){
         // if(i == debug_index){

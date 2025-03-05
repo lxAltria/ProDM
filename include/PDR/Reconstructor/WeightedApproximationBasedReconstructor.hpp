@@ -118,9 +118,9 @@ namespace PDR
         }
 
         void load_weight(){
-            std::cout << "Loading Weight" << std::endl;
+            // std::cout << "Loading Weight" << std::endl;
             string path = retriever.get_directory() + "weight.bin";
-            std::cout << "Path: " << path << std::endl;
+            // std::cout << "Path: " << path << std::endl;
             FILE *file = fopen(path.c_str(), "r");
             if (file == nullptr){
                 perror("Error opening file\n");
@@ -184,14 +184,14 @@ namespace PDR
             }
             // write_weight_dat(block_size);
             {
-                std::cout << "Spanning Weights" << std::endl;
+                // std::cout << "Spanning Weights" << std::endl;
                 int max_w = int_weights[0];
                 int min_w = int_weights[0];
                 for(int i=1; i< int_weights.size(); i++){
                     if(int_weights[i] > max_w) max_w = int_weights[i];
                     if(int_weights[i] < min_w) min_w = int_weights[i];
                 }
-                std::cout << min_w << " " << max_w << std::endl;
+                // std::cout << min_w << " " << max_w << std::endl;
                 max_weight = max_w;
             }
             // write_weight_dat(block_size);
@@ -204,7 +204,7 @@ namespace PDR
             uint8_t * weight_data_pos = weight_data;
             serialize(int_weights, weight_data_pos);
             string path = retriever.get_directory() + "weight_dec.dat";
-            std::cout << "Path: " << path << std::endl;
+            // std::cout << "Path: " << path << std::endl;
             FILE * file = fopen(path.c_str(), "w");
             if (file == nullptr) {
                 perror("Error opening file");

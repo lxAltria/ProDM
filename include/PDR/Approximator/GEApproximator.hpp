@@ -23,7 +23,7 @@ namespace PDR {
             tmp_path = tmp_path.substr(0, pos+1);
             std::string block_path;
             block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
-            std::cout << "block_path: " <<  block_path << std::endl;
+            // std::cout << "block_path: " <<  block_path << std::endl;
             size_t num_blocks = 0;
             auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
             // size_t num_blocks = 0;
@@ -37,9 +37,9 @@ namespace PDR {
                 }
                 means[i] = mean / block_sizes[i]; 
             }
-            std::cout << "num_blocks = " << num_blocks << std::endl;
-            std::cout << "data_pos - data = " << data_pos - data << std::endl;
-            std::cout << "dims = " << dimensions[0] << std::endl;
+            // std::cout << "num_blocks = " << num_blocks << std::endl;
+            // std::cout << "data_pos - data = " << data_pos - data << std::endl;
+            // std::cout << "dims = " << dimensions[0] << std::endl;
             assert(data_pos - data == dimensions[0]);
             // compress means
             char *cmpData = NULL;
@@ -60,7 +60,7 @@ namespace PDR {
             if(filename.size()) approximator_file_name = filename;
             MGARD::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
             approximator_file_size = cmpSize;
-            std::cout << "Approximator size = " << approximator_file_size << std::endl;
+            // std::cout << "Approximator size = " << approximator_file_size << std::endl;
             T * data_pos2 = data;
             for(int i=0; i<num_blocks; i++){
                 for(int j=0; j<block_sizes[i]; j++){
@@ -83,7 +83,7 @@ namespace PDR {
             tmp_path = tmp_path.substr(0, pos+1);
             std::string block_path;
             block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
-            std::cout << "block_path: " <<  block_path << std::endl;
+            // std::cout << "block_path: " <<  block_path << std::endl;
             size_t num_blocks = 0;
             auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
             size_t num = 0;
