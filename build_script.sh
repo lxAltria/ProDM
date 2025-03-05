@@ -19,6 +19,7 @@ make install
 cd ${external_dir}
 git clone https://github.com/szcompressor/SZ3.git
 cd SZ3
+git reset --hard 89df80e547d839049202deb9d2bb9a11f4404bbb
 mkdir -p build
 cd build
 cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ3/install ..
@@ -27,7 +28,7 @@ make install
 
 # build MGARDx
 cd ${external_dir}
-git clone https://github.com/lxAltria/MGARDx.git
+git clone https://github.com/Linus-Li-1037/MGARDx.git
 cd MGARDx
 mkdir -p build
 mkdir -p install
