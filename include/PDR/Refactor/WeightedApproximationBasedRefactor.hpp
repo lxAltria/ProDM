@@ -46,7 +46,7 @@ namespace PDR {
                 // timer.print("Write");                
             }
 
-            write_weight(block_size);
+            if(store_weight) write_weight(block_size);
             write_metadata();
             for(int i=0; i<level_components.size(); i++){
                 for(int j=0; j<level_components[i].size(); j++){
@@ -135,6 +135,14 @@ namespace PDR {
             free(weight_data);
         }
 
+        std::vector<int> get_int_weights(){
+            return int_weights;
+        }
+
+        void copy_int_weights(std::vector<int> & completed_weights){
+            int_weights = completed_weights;
+        }
+
         ~WeightedApproximationBasedRefactor(){}
 
         void print() const {
@@ -144,57 +152,46 @@ namespace PDR {
         }
     private:
         bool refactor(uint8_t num_bitplanes, int max_weight, const int block_size){
-            if (dimensions.size() == 1){
-                assign_block_value_1D(dimensions[0], block_size, weights.data());
+            if(store_weight){
+                if (dimensions.size() == 1){
+                    assign_block_value_1D(dimensions[0], block_size, weights.data());
+                }
+                else if (dimensions.size() == 2){
+                    assign_block_value_2D(dimensions[0], dimensions[1], dimensions[1], block_size, weights.data());
+                }
+                else if (dimensions.size() == 3){
+                    assign_block_value_3D(dimensions[0], dimensions[1], dimensions[2], dimensions[1]*dimensions[2], dimensions[2], block_size, weights.data());
+                }
+                int_weights = normalize_weights(weights, max_weight);
+                if(dimensions.size() == 1){
+                    block_weights = get_block_weight_1D(dimensions[0], int_weights, block_size);
+                }
+                else if(dimensions.size() == 2){
+                    block_weights = get_block_weight_2D(dimensions[0], dimensions[1], int_weights, block_size);
+                }
+                else{
+                    block_weights = get_block_weight_3D(dimensions[0], dimensions[1], dimensions[2], int_weights, block_size);
+                }
+                // calculate the space that compressed_weights needs and resize it since we are passing the pointer
+                bit_count = static_cast<unsigned int>(std::ceil(std::log2(max_weight + 1)));
+                unsigned int byte_count = bit_count / 8; // calculate the byte_count
+                unsigned int remainder_bit = bit_count % 8;
+                size_t byteLength = 0;
+                if (remainder_bit == 0) {
+                    byteLength = byte_count * block_weights.size() + 1;
+                } 
+                else {
+                    size_t tmp = remainder_bit * block_weights.size();
+                    byteLength = byte_count * block_weights.size() + (tmp - 1) / 8 + 1;
+                }
+                // std::cout << "bit_count = " << static_cast<size_t>(bit_count) << " byte_count = " << static_cast<size_t>(byte_count) << " remainder_bit = " << static_cast<size_t>(remainder_bit) << " byteLength = " << byteLength << " block_weights.size() = " << block_weights.size() << std::endl;
+                compressed_weights.resize(byteLength);
+                if (byteLength != Jiajun_save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
+                    // perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
+                }
+                ZSTD_weight_size = ZSTD::compress(compressed_weights.data(), byteLength, &ZSTD_weights);
             }
-            else if (dimensions.size() == 2){
-                assign_block_value_2D(dimensions[0], dimensions[1], dimensions[1], block_size, weights.data());
-            }
-            else if (dimensions.size() == 3){
-                assign_block_value_3D(dimensions[0], dimensions[1], dimensions[2], dimensions[1]*dimensions[2], dimensions[2], block_size, weights.data());
-            }
-            int_weights = normalize_weights(weights, max_weight);
-            // size_t num = 0;
-            // std::string filename("/Users/wenboli/uky/ProDM/Hurricane_f32/new_weight.dat");
-            // int_weights = MGARD::readfile<int>(filename.c_str(), num);
-            // {
-            //     // std::cout << "num = " << num << std::endl;
-            //     std::cout << "Normalizing Weights" << std::endl;
-            //     int max_w = int_weights[0];
-            //     int min_w = int_weights[0];
-            //     for(int i=1; i< int_weights.size(); i++){
-            //         if(int_weights[i] > max_w) max_w = int_weights[i];
-            //         if(int_weights[i] < min_w) min_w = int_weights[i];
-            //     }
-            //     std::cout << min_w << " " << max_w << std::endl;
-            // }
-            if(dimensions.size() == 1){
-                block_weights = get_block_weight_1D(dimensions[0], int_weights, block_size);
-            }
-            else if(dimensions.size() == 2){
-                block_weights = get_block_weight_2D(dimensions[0], dimensions[1], int_weights, block_size);
-            }
-            else{
-                block_weights = get_block_weight_3D(dimensions[0], dimensions[1], dimensions[2], int_weights, block_size);
-            }
-            // calculate the space that compressed_weights needs and resize it since we are passing the pointer
-            bit_count = static_cast<unsigned int>(std::ceil(std::log2(max_weight + 1)));
-            unsigned int byte_count = bit_count / 8; // calculate the byte_count
-	        unsigned int remainder_bit = bit_count % 8;
-            size_t byteLength = 0;
-	        if (remainder_bit == 0) {
-                byteLength = byte_count * block_weights.size() + 1;
-            } 
-            else {
-                size_t tmp = remainder_bit * block_weights.size();
-                byteLength = byte_count * block_weights.size() + (tmp - 1) / 8 + 1;
-            }
-            // std::cout << "bit_count = " << static_cast<size_t>(bit_count) << " byte_count = " << static_cast<size_t>(byte_count) << " remainder_bit = " << static_cast<size_t>(remainder_bit) << " byteLength = " << byteLength << " block_weights.size() = " << block_weights.size() << std::endl;
-            compressed_weights.resize(byteLength);
-            if (byteLength != Jiajun_save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
-                // perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
-            }
-            ZSTD_weight_size = ZSTD::compress(compressed_weights.data(), byteLength, &ZSTD_weights);
+
             auto num_elements = data.size();
             T max_val = data[0];
             T min_val = data[0];
@@ -281,6 +278,7 @@ namespace PDR {
         std::vector<std::vector<uint32_t>> level_sizes;
     public:
         bool negabinary = false;
+        bool store_weight = false;
         std::vector<T> QoI;
         std::vector<unsigned char> mask;
     };

@@ -823,8 +823,8 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
 
     std::vector<unsigned char> mask(num_elements, 0);
     int num_valid_data = 0;
-    std::vector<std::vector<T>> Vtot(3, std::vector<T>(num_elements));
-    std::vector<std::vector<T>> Temp(2, std::vector<T>(num_elements));
+    std::vector<T> Vtot(num_elements);
+    std::vector<T> Temp(num_elements);
     T R = 287.1;
     for(int i=0; i<num_elements; i++){
         if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
@@ -832,37 +832,18 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
             num_valid_data++;
         }
         if(mask[i]){
-            // Vtot[0][i] = fabs(velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // Vtot[1][i] = fabs(velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // Vtot[2][i] = fabs(velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // double temp = sqrt(Vtot[0][i]*Vtot[0][i] + Vtot[1][i]*Vtot[1][i] + Vtot[2][i]*Vtot[2][i]);
-            // Vtot[0][i] = temp;
-            // Vtot[1][i] = temp;
-            // Vtot[2][i] = temp;
-            // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
             T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
-            Vtot[0][i] = 1.0/V;
-            Vtot[1][i] = 1.0/V;
-            Vtot[2][i] = 1.0/V;
+            Vtot[i] = 1.0/V;
         }
         else{
-            Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
+            Vtot[i] = 0;
         }
-        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
-        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
-        // if(i == 567082){
-        //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
-        // }
-        // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-        // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-        // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        Temp[i] = 1.0 / pow(density_vec[i], 2.0);
     }
     // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
+    std::vector<int> int_weights;
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -889,12 +870,21 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor_GE<T>(approximator, encoder, compressor, writer, negabinary);
-        if(i < 3){
-            refactor.QoI = Vtot[i];
+        if(i == 0){
+            refactor.QoI = Vtot;
             refactor.mask = mask;
+            refactor.store_weight = true;
         }
-        else refactor.QoI = Temp[i-3];
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i]);  
+        else if(i == 3){
+            refactor.QoI = Temp;
+            refactor.store_weight = true;
+        }
+        else{
+            if(i < 3) refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i]);
+        if(i == 0 || i == 3) int_weights = refactor.get_int_weights();  
     }
 }
 
@@ -1118,8 +1108,8 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
 
     std::vector<unsigned char> mask(num_elements, 0);
     int num_valid_data = 0;
-    std::vector<std::vector<T>> Vtot(3, std::vector<T>(num_elements));
-    std::vector<std::vector<T>> Temp(2, std::vector<T>(num_elements));
+    std::vector<T> Vtot(num_elements);
+    std::vector<T> Temp(num_elements);
     T R = 287.1;
     for(int i=0; i<num_elements; i++){
         if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
@@ -1127,37 +1117,18 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
             num_valid_data++;
         }
         if(mask[i]){
-            // Vtot[0][i] = fabs(velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // Vtot[1][i] = fabs(velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // Vtot[2][i] = fabs(velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // double temp = sqrt(Vtot[0][i]*Vtot[0][i] + Vtot[1][i]*Vtot[1][i] + Vtot[2][i]*Vtot[2][i]);
-            // Vtot[0][i] = temp;
-            // Vtot[1][i] = temp;
-            // Vtot[2][i] = temp;
-            // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
             T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
-            Vtot[0][i] = 1.0/V;
-            Vtot[1][i] = 1.0/V;
-            Vtot[2][i] = 1.0/V;
+            Vtot[i] = 1.0/V;
         }
         else{
-            Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
+            Vtot[i] = 0;
         }
-        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
-        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
-        // if(i == 567082){
-        //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
-        // }
-        // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-        // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-        // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        Temp[i] = 1.0 / pow(density_vec[i], 2.0);
     }
     // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
+    std::vector<int> int_weights;
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1183,12 +1154,21 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        if(i < 3) {
-            refactor.QoI = Vtot[i];
+        if(i == 0){
+            refactor.QoI = Vtot;
             refactor.mask = mask;
+            refactor.store_weight = true;
         }
-        else refactor.QoI = Temp[i-3];
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);  
+        else if(i == 3){
+            refactor.QoI = Temp;
+            refactor.store_weight = true;
+        }
+        else{
+            if(i < 3) refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);
+        if(i == 0 || i == 3) int_weights = refactor.get_int_weights();   
     }
 }
 
@@ -1445,7 +1425,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
     std::vector<uint32_t> dims = {n1, n2, n3};
 
     std::vector<unsigned char> mask(num_elements, 0);
-    std::vector<std::vector<T>> Vtot(n_variable, std::vector<T>(num_elements));
+    std::vector<T> Vtot(num_elements);
     for(int i=0; i<num_elements; i++){
         if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
             mask[i] = 1;
@@ -1455,12 +1435,10 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
-            Vtot[0][i] = 1.0/V;
-            Vtot[1][i] = 1.0/V;
-            Vtot[2][i] = 1.0/V;
+            Vtot[i] = 1.0/V;
         }
         else{
-            Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
+            Vtot[i] = 0;
         }
         // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
@@ -1468,6 +1446,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
+    std::vector<int> int_weights;
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1493,9 +1472,17 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
         auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        refactor.QoI = Vtot[i];
-        refactor.mask = mask;
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);  
+        if(i == 0){
+            refactor.QoI = Vtot;
+            refactor.mask = mask;
+            refactor.store_weight = true;
+        }
+        else{
+            refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size); 
+        if(i == 0) int_weights = refactor.get_int_weights();  
     }
 }
 

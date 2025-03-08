@@ -524,16 +524,16 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
 			reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
+			if(i==0) reconstructors.back().fetch_weight = true;
+			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
-			reconstructors.back().load_weight();
-			reconstructors.back().span_weight();
 			weights[i] = reconstructors.back().get_int_weights();
 		}
 		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
-				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[i].get_max_weight())), -1);
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
@@ -842,16 +842,16 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
 			reconstructors.push_back(generateWBPReconstructor_GE<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
+			if(i==0) reconstructors.back().fetch_weight = true;
+			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
-			reconstructors.back().load_weight();
-			reconstructors.back().span_weight();
 			weights[i] = reconstructors.back().get_int_weights();
 		}
 		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
-				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[i].get_max_weight())), -1);
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}

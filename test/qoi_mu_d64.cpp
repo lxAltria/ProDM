@@ -445,16 +445,16 @@ std::vector<size_t> retrieve_mu_SZ3(std::string rdata_file_prefix, T tau, std::v
             auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
             auto retriever = ConcatLevelFileRetriever(metadata_file, files);
             reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
-            reconstructors.back().load_metadata();
-            reconstructors.back().load_weight();
-            reconstructors.back().span_weight();
-            weights[i] = reconstructors.back().get_int_weights();
+            if(i==0) reconstructors.back().fetch_weight = true;
+			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().load_metadata();
+			weights[i] = reconstructors.back().get_int_weights();
         }    
-        weight_file_size = reconstructors[n_variable - 1].get_weight_file_size();
+        weight_file_size = reconstructors[0].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
-                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[i].get_max_weight())), -1);
+                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
                 memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
                 total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
             }
@@ -676,16 +676,16 @@ std::vector<size_t> retrieve_mu_GE(std::string rdata_file_prefix, T tau, std::ve
             auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
             auto retriever = ConcatLevelFileRetriever(metadata_file, files);
             reconstructors.push_back(generateWBPReconstructor_GE<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
-            reconstructors.back().load_metadata();
-            reconstructors.back().load_weight();
-            reconstructors.back().span_weight();
-            weights[i] = reconstructors.back().get_int_weights();
+            if(i==0) reconstructors.back().fetch_weight = true;
+			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().load_metadata();
+			weights[i] = reconstructors.back().get_int_weights();
         }
-        weight_file_size = reconstructors[n_variable - 1].get_weight_file_size();
+        weight_file_size = reconstructors[0].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
-                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[i].get_max_weight())), -1);
+                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
                 memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
                 total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
             }

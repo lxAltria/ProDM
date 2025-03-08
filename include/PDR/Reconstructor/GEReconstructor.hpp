@@ -128,6 +128,10 @@ namespace PDR
             data = std::vector<T>(stride, 0);
             num_elements = stride;
             free(metadata);
+            if(fetch_weight){
+                load_weight();
+                span_weight();
+            }
         }
 
         void load_weight()
@@ -187,6 +191,14 @@ namespace PDR
             if (compressed_weights.size() != Jiajun_extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
                 // perror("From GEReconstructor: Error: byteLength != weight_size\n");
             }
+            {
+                int max_w = block_weights[0];
+                for(int i=1; i< block_weights.size(); i++){
+                    if(block_weights[i] > max_w) max_w = block_weights[i];
+                }
+                max_weight = max_w;
+                // std::cout << "max_weight = " << max_weight << std::endl;
+            }
             std::string tmp_path = retriever.get_directory();
             size_t pos = tmp_path.find_last_of('/');
             tmp_path = tmp_path.substr(0, pos);
@@ -203,17 +215,6 @@ namespace PDR
             auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
             int_weights = fill_block_weight_GE(block_sizes, block_weights);
             // write_weight_dat(block_size);
-            {
-                // std::cout << "Spanning Weights" << std::endl;
-                int max_w = int_weights[0];
-                int min_w = int_weights[0];
-                for(int i=1; i< int_weights.size(); i++){
-                    if(int_weights[i] > max_w) max_w = int_weights[i];
-                    if(int_weights[i] < min_w) min_w = int_weights[i];
-                }
-                // std::cout << min_w << " " << max_w << std::endl;
-                max_weight = max_w;
-            }
             // write_weight_dat(block_size);
             free(ZSTD_weights);
             // write_weight_dat();
@@ -264,6 +265,11 @@ namespace PDR
         std::vector<int> get_int_weights()
         {
             return int_weights;
+        }
+
+        void copy_int_weights(std::vector<int> & completed_weights)
+        {
+            int_weights = completed_weights;
         }
 
         ~GEReconstructor() {}
@@ -357,6 +363,7 @@ namespace PDR
         std::vector<T> data;
         // int block_size;
         int max_weight;
+        std::vector<int> int_weights;
         std::vector<unsigned char> compressed_weights;
         std::vector<int> block_weights;
         std::vector<uint32_t> dimensions;
@@ -372,7 +379,7 @@ namespace PDR
         bool reconstructed = false;
 
     public:
-        std::vector<int> int_weights;
+        bool fetch_weight = false;
         std::vector<unsigned char> mask;
     };
 }
