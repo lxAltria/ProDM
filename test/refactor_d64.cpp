@@ -92,6 +92,9 @@ int main(int argc, char** argv){
                 // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 256*384*384);
                 refactor_velocities_3D_SZ3_BP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix);
             }
+            else if (std::strcmp(data.c_str(), "S3D") == 0){
+                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix);
+            }
         }
         else{
             if(std::strcmp(data.c_str(), "Hurricane") == 0){
@@ -108,6 +111,9 @@ int main(int argc, char** argv){
             }
             else if (std::strcmp(data.c_str(), "Miranda") == 0){
                 refactor_velocities_3D_SZ3_WBP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+            }
+            else if (std::strcmp(data.c_str(), "S3D") == 0){
+                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
             }
         }
         break;
