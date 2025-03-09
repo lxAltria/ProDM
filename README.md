@@ -3,7 +3,7 @@
 This is the code repo for NSF project "Collaborative Research: Elements: ProDM: Developing A Unified Progressive Data Management Library for Exascale Computational Science". It is a joint collaborative effort from the University of Kentucky (UK), New Jersey Institute of Technology (NJIT), and Temple University. 
 
 Major authors: Dr. Xin Liang (UK), Dr. Qing Liu (NJIT), Dr. Xubin He (Temple)<br />
-Other contributors: Xuan Wu (UK), Qirui Tian (NJIT)<br />
+Other contributors: Xuan Wu (UK), Qirui Tian (NJIT), Wenbo Li (UK)<br />
 Collaborators: Dr. Scott Klasky (ORNL), Dr. Qian Gong (ORNL), Dr. Jill Zhang (LLNL), Dr. Seung-Hoe Ku (PPPL), Dr. Xiaohua Zhang (LLNL), Dr. Jieyang Chen (UAB) etc.<br />
 
 # Installation
