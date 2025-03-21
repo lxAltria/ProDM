@@ -19,20 +19,12 @@ sh build_script.sh<br />
 Precision data refactoring using approximators:<br />
 cd build<br />
 Refactor: ./test/refactor_d64 1 1 $dataset $path_to_dataset $max_weight_v $block_size<br />
-Retrieval: ./test/qoi_Vtot_d64 1 1 $eb $path_to_dataset<br />
+Retrieval: ./test/qoi_{$target QoI}_d64 1 1 $eb $path_to_dataset<br />
 
 Taking Hurricane dataset as an example, Hurricane ISABEL can be downloaded from https://sdrbench.github.io/.<br /> 
 Double versions of VelocityX.dat, VelocityY.dat, and VelocityZ.dat are extended from Uf48.bin.f32, Vf48.bin.f32, and Wf48.bin.f32 of Hurricane ISABEL.<br />
 We arrange the dataset like followings:<br />
-Hurricane_d64<br />
-├── data<br />
-│   ├── VelocityX.dat<br />
-│   ├── VelocityY.dat<br />
-│   └── VelocityZ.dat<br />
-└── refactor<br />
-    ├── VelocityX_refactored<br />
-    ├── VelocityY_refactored<br />
-    └── VelocityZ_refactored<br />
+<pre> ``` Hurricane_d64 ├── data │ ├── VelocityX.dat │ ├── VelocityY.dat │ └── VelocityZ.dat └── refactor ├── VelocityX_refactored ├── VelocityY_refactored └── VelocityZ_refactored ``` </pre>
 
 Thus, the Template can be modified into the following commands to test with Hurricane ISABEL using V_total as targeted QoI:<br />
 cd build<br />
