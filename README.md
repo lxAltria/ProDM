@@ -9,18 +9,18 @@ Collaborators: Dr. Scott Klasky (ORNL), Dr. Qian Gong (ORNL), Dr. Jill Zhang (LL
 # Installation
 
 One-command compilation using "sh build_script.sh". It will automatically builds ProDM libaray and the dependencies.
-
-git clone https://github.com/Linus-Li-1037/ProDM.git<br />
-cd ProDM<br />
-sh build_script.sh<br />
-
+```
+git clone https://github.com/Linus-Li-1037/ProDM.git
+cd ProDM
+sh build_script.sh
+```
 # Examples
 **Template**<br />
 Precision data refactoring using approximators:<br />
 ```
 cd build
-Refactor: ./test/refactor_d64 1 1 $dataset $path_to_dataset $max_weight_v $block_size
-Retrieval: ./test/qoi_{$target QoI}_d64 1 1 $eb $path_to_dataset
+Refactor: ./test/refactor_d64 $approximator $wbp $dataset $path_to_dataset $max_weight_v $block_size
+Retrieval: ./test/qoi_{$target QoI}_d64 $approximator $wbp $eb $path_to_dataset
 ```
 
 Taking Hurricane dataset as an example, Hurricane ISABEL can be downloaded from https://sdrbench.github.io/.<br /> 
@@ -44,6 +44,9 @@ cd build
 Refactor: ./test/refactor_d64 1 1 Hurricane ../Hurricane_d64 7 4
 Retrieval: ./test/qoi_Vtot_d64 1 1 $eb ../Hurricane_d64
 ```
+
+# Artifacts
+Please check Appendix.pdf for detailed description.<br />
 
 # Q&A
 
