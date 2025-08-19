@@ -80,43 +80,76 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
         ebs[1] = eb_D;
 		return false;
 	}
+	return true;
+}
+
+template<class T>
+bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs){
+	double eb_P = ebs[0];
+	double eb_D = ebs[1];
+	double R = 287.1;
+	double gamma = 1.4;
+	double c_1 = 1.0 / R;
+	double c_2 = sqrt(gamma * R);
+	double max_value = 0;
+	int max_index = 0;
+	for(int i=0; i<n; i++){
+		double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P, eb_D);
+		double Temp = P[i] / (D[i] * R);
+		// error of C
+		double e_C = c_2*compute_bound_square_root_x(Temp, e_T);
+		double C = c_2 * sqrt(Temp);
+
+		error_est_C[i] = e_C;
+		error_C[i] = C - C_ori[i];
+
+		if(max_value < error_est_C[i]){
+			max_value = error_est_C[i];
+			max_index = i;
+		}
+
+	}
+	// std::cout << "P = " << P[max_index] << " D = " << D[max_index] << std::endl;
+	// std::cout << "eb_P = " << eb_P << " eb_D = " << eb_D << std::endl;
+	// std::cout << "coeff_P = " << fabs(P[max_index])*eb_D << " coeff_D = " << fabs(D[max_index])*eb_P << std::endl;
+	// std::cout << names[2] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
 
     // ************************************************ P and D ************************************************
-    // if(max_value > tau){
-	// 	auto i = max_index;
-	// 	double estimate_error = max_value;
-    //     double eb_P = ebs[0];
-    //     double eb_D = ebs[1];
-	// 	while(estimate_error > tau){
-    // 		std::cout << "coorinate decrease\n";
-    //         T estimate_error_P = 0;
-    //         {
-    //             T eb_P_ = eb_P / 1.5;
-    //             double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_, eb_D);
-    //             double Temp = P[i] / (D[i] * R);
-    //             estimate_error_P = c_2*compute_bound_square_root_x(Temp, e_T);
-    //         }
-    //         T estimate_error_D = 0;
-    //         {
-    //             T eb_D_ = eb_D / 1.5;
-    //             double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P, eb_D_);
-    //             double Temp = P[i] / (D[i] * R);
-    //             estimate_error_D = c_2*compute_bound_square_root_x(Temp, e_T);
-    //         }
-    //         std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
-    //         const T epsilon = 1e-6;
-    //         T min_error = std::min({estimate_error_P, estimate_error_D});
-    //         bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
-    //         bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
-    //         estimate_error = min_error;
-    //         if (close_P)  eb_P /= 1.5;
-    //         if (close_D)  eb_D /= 1.5;
-    //         if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
-	// 	}
-    //     ebs[0] = eb_P;
-    //     ebs[1] = eb_D;
-	// 	return false;
-	// }
+    if(max_value > tau){
+		auto i = max_index;
+		double estimate_error = max_value;
+        double eb_P = ebs[0];
+        double eb_D = ebs[1];
+		while(estimate_error > tau){
+    		// std::cout << "coorinate decrease\n";
+            T estimate_error_P = 0;
+            {
+                T eb_P_ = eb_P / 1.5;
+                double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_, eb_D);
+                double Temp = P[i] / (D[i] * R);
+                estimate_error_P = c_2*compute_bound_square_root_x(Temp, e_T);
+            }
+            T estimate_error_D = 0;
+            {
+                T eb_D_ = eb_D / 1.5;
+                double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P, eb_D_);
+                double Temp = P[i] / (D[i] * R);
+                estimate_error_D = c_2*compute_bound_square_root_x(Temp, e_T);
+            }
+            std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+            const T epsilon = 1e-6;
+            T min_error = std::min({estimate_error_P, estimate_error_D});
+            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            estimate_error = min_error;
+            if (close_P)  eb_P /= 1.5;
+            if (close_D)  eb_D /= 1.5;
+            if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
+		}
+        ebs[0] = eb_P;
+        ebs[1] = eb_D;
+		return false;
+	}
 
 	return true;
 }
@@ -152,24 +185,57 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
 	// std::cout << "coeff_P = " << fabs(P[max_index])*eb_D << " coeff_D = " << fabs(D[max_index])*eb_P << std::endl;
 	// std::cout << names[2] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
 	// estimate error bound based on maximal errors
-	// if(max_value > tau){
-	// 	auto i = max_index;
-	// 	double estimate_error = max_value;
-    //     double eb_P = ebs[0];
-    //     double eb_D = ebs[1];
-	// 	while(estimate_error > tau){
-    // 		std::cout << "uniform decrease\n";
-    //         eb_P = eb_P / 1.5;
-    //         eb_D = eb_D / 1.5;
-	// 		double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
-	// 		double Temp = P[i] / (D[i] * R);
-	// 		estimate_error = c_2*compute_bound_square_root_x(Temp, e_T);
-    //         if (ebs[0] / eb_P > 10) break;
-	// 	}
-    //     ebs[0] = eb_P;
-    //     ebs[1] = eb_D;
-	// 	return false;
-	// }
+	if(max_value > tau){
+		auto i = max_index;
+		double estimate_error = max_value;
+        double eb_P = ebs[0];
+        double eb_D = ebs[1];
+		while(estimate_error > tau){
+    		// std::cout << "uniform decrease\n";
+            eb_P = eb_P / 1.5;
+            eb_D = eb_D / 1.5;
+			double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+			double Temp = P[i] / (D[i] * R);
+			estimate_error = c_2*compute_bound_square_root_x(Temp, e_T);
+            if (ebs[0] / eb_P > 10) break;
+		}
+        ebs[0] = eb_P;
+        ebs[1] = eb_D;
+		return false;
+	}
+	return true;
+}
+
+template<class T>
+bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
+	double eb_P = ebs[0];
+	double eb_D = ebs[1];
+	double R = 287.1;
+	double gamma = 1.4;
+	double c_1 = 1.0 / R;
+	double c_2 = sqrt(gamma * R);
+	double max_value = 0;
+	int max_index = 0;
+	for(int i=0; i<n; i++){
+		double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+		double Temp = P[i] / (D[i] * R);
+		// error of C
+		double e_C = c_2*compute_bound_square_root_x(Temp, e_T);
+		double C = c_2 * sqrt(Temp);
+
+		error_est_C[i] = e_C;
+		error_C[i] = C - C_ori[i];
+
+		if(max_value < error_est_C[i]){
+			max_value = error_est_C[i];
+			max_index = i;
+		}
+
+	}
+	// std::cout << "P = " << P[max_index] << " D = " << D[max_index] << std::endl;
+	// std::cout << "eb_P = " << eb_P << " eb_D = " << eb_D << std::endl;
+	// std::cout << "coeff_P = " << fabs(P[max_index])*eb_D << " coeff_D = " << fabs(D[max_index])*eb_P << std::endl;
+	// std::cout << names[2] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
 
     // ************************************************ P and D ************************************************
     if(max_value > tau){
@@ -208,12 +274,11 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
         ebs[1] = eb_D;
 		return false;
 	}
-
 	return true;
 }
 
 template<class T>
-std::vector<size_t> retrieve_C_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_C_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
     bool tolerance_met = false;
     int n_variable = ebs.size();
@@ -327,7 +392,7 @@ std::vector<size_t> retrieve_C_Dummy(std::string rdata_file_prefix, T tau, std::
 }
 
 template<class T>
-std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -368,7 +433,8 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -399,6 +465,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
 			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
+            ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight()));
         }    
         weight_file_size = reconstructors[0].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
@@ -416,7 +483,8 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test
@@ -441,7 +509,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
 }
 
 template<class T>
-std::vector<size_t> retrieve_C_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_C_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -558,7 +626,7 @@ std::vector<size_t> retrieve_C_PMGARD(std::string rdata_file_prefix, T tau, std:
 }
 
 template<class T>
-std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
     bool tolerance_met = false;
     int n_variable = ebs.size();
@@ -599,7 +667,8 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -630,6 +699,7 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
 			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
+            ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight()));
         }
         weight_file_size = reconstructors[0].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
@@ -647,7 +717,8 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test
@@ -677,6 +748,7 @@ int main(int argc, char ** argv){
 	int argv_id = 1;
     int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
+    int decrease_method = atoi(argv[argv_id++]);
     T target_rel_eb = atof(argv[argv_id++]);
 	std::string data_prefix_path = argv[argv_id++];
 	std::string data_file_prefix = data_prefix_path + "/data/";
@@ -714,16 +786,16 @@ int main(int argc, char ** argv){
     switch (compressor)
     {
     case Dummy:
-        total_retrieved_size = retrieve_C_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size);
+        total_retrieved_size = retrieve_C_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
         break;
     case SZ3:
-        total_retrieved_size = retrieve_C_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size);
+        total_retrieved_size = retrieve_C_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
         break;
     case PMGARD:
-        total_retrieved_size = retrieve_C_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size);
+        total_retrieved_size = retrieve_C_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
         break;
     case GE:
-        total_retrieved_size = retrieve_C_GE<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size);
+        total_retrieved_size = retrieve_C_GE<T>(rdata_file_prefix, tau, ebs, num_elements, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
         break;
     default:
         break;
@@ -732,12 +804,12 @@ int main(int argc, char ** argv){
 	err = clock_gettime(CLOCK_REALTIME, &end);
 	elapsed_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000;
 
-	std::cout << "requested error = " << tau << std::endl;
+	std::cout << "requested_error = " << tau << std::endl;
 	std::cout << "max_est_error = " << max_est_error << std::endl;
 	std::cout << "max_act_error = " << max_act_error << std::endl;
 	std::cout << "iter = " << iter << std::endl;
    
-   	size_t total_size = std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) + weight_file_size;
+   	size_t total_size = std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), size_t(0)) + weight_file_size;
 	double cr = n_variable * num_elements * sizeof(T) * 1.0 / total_size;
 	std::cout << "each retrieved size:";
     for(int i=0; i<n_variable; i++){
@@ -746,6 +818,7 @@ int main(int argc, char ** argv){
     std::cout << "weight_file_size = " << weight_file_size << std::endl;
 	// MDR::print_vec(total_retrieved_size);
 	std::cout << "aggregated cr = " << cr << std::endl;
+    std::cout << "bitrate = " << ((sizeof(T) * 8) / cr) << std::endl;
 	printf("elapsed_time = %.6f\n", elapsed_time);
 
     return 0;

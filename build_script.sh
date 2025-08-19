@@ -19,7 +19,7 @@ make install
 cd ${external_dir}
 git clone https://github.com/szcompressor/SZ3.git
 cd SZ3
-git reset --hard 89df80e547d839049202deb9d2bb9a11f4404bbb
+git reset --hard 90c66bed1c04e701442ecb104b912548fcfabee9
 mkdir -p build
 cd build
 cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ3/install ..

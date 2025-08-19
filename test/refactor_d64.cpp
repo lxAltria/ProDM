@@ -25,14 +25,12 @@ int main(int argc, char** argv){
 	std::string data_file_prefix = data_prefix_path + "/data/";
 	std::string rdata_file_prefix = data_prefix_path + "/refactor/";
     int max_weight_for_vtot = 4;
-    int max_weight_for_pressure = 0;
-    int max_weight_for_density = 4;
+    int max_weight_for_temperature = 0;
 	int block_size = 1;
 	if(argc > 5){
 		max_weight_for_vtot = atoi(argv[argv_id++]);
-        if (std::strcmp(data.c_str(), "GE_small") == 0){
-            max_weight_for_pressure = atoi(argv[argv_id++]);
-            max_weight_for_density = atoi(argv[argv_id++]);
+        if (std::strcmp(data.c_str(), "GE") == 0){
+            max_weight_for_temperature = atoi(argv[argv_id++]);
         }
         else{
 		    block_size = atoi(argv[argv_id++]);
@@ -55,7 +53,7 @@ int main(int argc, char** argv){
             else if (std::strcmp(data.c_str(), "NYX") == 0){
                 refactor_velocities_3D_Dummy_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix);
             }
-            else if (std::strcmp(data.c_str(), "GE_small") == 0){
+            else if (std::strcmp(data.c_str(), "GE") == 0){
                 refactor_velocities_1D_Dummy_BP<T>(data_file_prefix, rdata_file_prefix);
             }
         }
@@ -66,8 +64,8 @@ int main(int argc, char** argv){
             else if (std::strcmp(data.c_str(), "NYX") == 0){
                 refactor_velocities_3D_Dummy_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
             }
-            else if (std::strcmp(data.c_str(), "GE_small") == 0){
-                refactor_velocities_1D_Dummy_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density, block_size);
+            else if (std::strcmp(data.c_str(), "GE") == 0){
+                refactor_velocities_1D_Dummy_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature, block_size);
             }
         }
         break;
@@ -81,7 +79,7 @@ int main(int argc, char** argv){
                 // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 512*512*512);
                 refactor_velocities_3D_SZ3_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix);
             }
-            else if (std::strcmp(data.c_str(), "GE_small") == 0){
+            else if (std::strcmp(data.c_str(), "GE") == 0){
                 refactor_velocities_1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix);
             }
             else if (std::strcmp(data.c_str(), "SCALE") == 0){
@@ -103,8 +101,8 @@ int main(int argc, char** argv){
             else if (std::strcmp(data.c_str(), "NYX") == 0){
                 refactor_velocities_3D_SZ3_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
             }
-            else if (std::strcmp(data.c_str(), "GE_small") == 0){
-                refactor_velocities_1D_SZ3_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density, block_size);
+            else if (std::strcmp(data.c_str(), "GE") == 0){
+                refactor_velocities_1D_SZ3_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature, block_size);
             }
             else if (std::strcmp(data.c_str(), "SCALE") == 0){
                 refactor_velocities_3D_SZ3_WBP<T>(data, 98, 1200, 1200, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
@@ -113,7 +111,7 @@ int main(int argc, char** argv){
                 refactor_velocities_3D_SZ3_WBP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_SZ3_WBP_JHTDB<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
             }
         }
         break;
@@ -127,7 +125,7 @@ int main(int argc, char** argv){
                 // refactor_velocities_A1D_PMGARD_BP<T>(data_file_prefix, rdata_file_prefix, 512*512*512);
                 refactor_velocities_3D_PMGARD_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix);
             }
-            else if (std::strcmp(data.c_str(), "GE_small") == 0){
+            else if (std::strcmp(data.c_str(), "GE") == 0){
                 refactor_velocities_1D_PMGARD_BP<T>(data_file_prefix, rdata_file_prefix);
             }
         }
@@ -138,8 +136,8 @@ int main(int argc, char** argv){
             else if (std::strcmp(data.c_str(), "NYX") == 0){
                 refactor_velocities_3D_PMGARD_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
             }
-            else if (std::strcmp(data.c_str(), "GE_small") == 0){
-                refactor_velocities_1D_PMGARD_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density, block_size);
+            else if (std::strcmp(data.c_str(), "GE") == 0){
+                refactor_velocities_1D_PMGARD_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature, block_size);
             }
         }
         break;
@@ -148,7 +146,7 @@ int main(int argc, char** argv){
             refactor_velocities_1D_GE_BP<T>(data_file_prefix, rdata_file_prefix);
         }
         else{
-            refactor_velocities_1D_GE_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_pressure, max_weight_for_density);
+            refactor_velocities_1D_GE_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature);
         }
         break;
     default:

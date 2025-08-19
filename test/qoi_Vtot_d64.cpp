@@ -101,58 +101,103 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		ebs[2] = eb_Vz;
 		return false;
 	}
+	
+	return true;
+}
+
+template<class T>
+bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs){
+	T eb_Vx = ebs[0];
+	T eb_Vy = ebs[1];
+	T eb_Vz = ebs[2];
+	T max_value = 0;
+	int max_index = 0;
+	T max_e_V_TOT_2 = 0;
+	T max_V_TOT_2 = 0;
+	T max_Vx = 0;
+	T max_Vy = 0;
+	T max_Vz = 0;
+	// int weight_index = 0;
+	// int max_weight_index = 0;
+	for(int i=0; i<n; i++){
+		// error of total velocity square
+		T e_V_TOT_2 = 0;
+		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
+		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		// error of total velocity
+		T e_V_TOT = 0;
+		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+		T V_TOT = sqrt(V_TOT_2);
+		// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
+
+		error_est_V_TOT[i] = e_V_TOT;
+		error_V_TOT[i] = V_TOT - V_TOT_ori[i];
+
+		if(max_value < error_est_V_TOT[i]){
+			max_value = error_est_V_TOT[i];
+			max_e_V_TOT_2 = e_V_TOT_2;
+			max_V_TOT_2 = V_TOT_2;
+			max_Vx = Vx[i];
+			max_Vy = Vy[i];
+			max_Vz = Vz[i];
+			max_index = i;
+			// max_weight_index = weight_index;
+		}
+		// if(mask[i]) weight_index++;
+	}
+	// std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
 
 	// ************************************************ Vx, Vy and Vz ************************************************
-	// if(max_value > tau){
-	// 	// estimate
-	// 	auto i = max_index;
-	// 	T estimate_error = max_value;
-	// 	T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-	// 	T V_TOT = sqrt(V_TOT_2);
-	// 	T eb_Vx = ebs[0];
-	// 	T eb_Vy = ebs[1];
-	// 	T eb_Vz = ebs[2];
-	// 	while(estimate_error > tau){
-	// 		std::cout << "coordinate decrease\n";
-	// 		std::cout << "coordinate decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
-    // 		T estimate_error_Vx = 0;
-	// 		{
-	// 			T eb_Vx_ = eb_Vx / 1.5;
-	// 			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx_) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
-	// 			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 			estimate_error_Vx = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 		}
-	// 		T estimate_error_Vy = 0;
-	// 		{
-	// 			T eb_Vy_ = eb_Vy / 1.5;
-	// 			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy_) + compute_bound_x_square(Vz[i], eb_Vz);
-	// 			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 			estimate_error_Vy = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 		}
-	// 		T estimate_error_Vz = 0;
-	// 		{
-	// 			T eb_Vz_ = eb_Vz / 1.5;
-	// 			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz_);
-	// 			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 			estimate_error_Vz = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 		}
-	// 		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
-	// 		const T epsilon = 1e-6;
-    //         T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
-    //         bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
-    //         bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
-    //         bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
-    //         estimate_error = min_error;
-    //         if (close_Vx) eb_Vx /= 1.5;
-    //         if (close_Vy) eb_Vy /= 1.5;
-    //         if (close_Vz) eb_Vz /= 1.5;
-	// 		if (ebs[0] / eb_Vx > 10 || ebs[1] / eb_Vy > 10 || ebs[2] / eb_Vz > 10) break;
-	// 	}
-	// 	ebs[0] = eb_Vx;
-	// 	ebs[1] = eb_Vy;
-	// 	ebs[2] = eb_Vz;
-	// 	return false;
-	// }
+	if(max_value > tau){
+		// estimate
+		auto i = max_index;
+		T estimate_error = max_value;
+		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		T V_TOT = sqrt(V_TOT_2);
+		T eb_Vx = ebs[0];
+		T eb_Vy = ebs[1];
+		T eb_Vz = ebs[2];
+		while(estimate_error > tau){
+			// std::cout << "coordinate decrease\n";
+			// std::cout << "coordinate decrease, eb_Vx / ebs[0] = " << eb_Vx / ebs[0] << std::endl;
+    		T estimate_error_Vx = 0;
+			{
+				T eb_Vx_ = eb_Vx / 1.5;
+				T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx_) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
+				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vx = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			}
+			T estimate_error_Vy = 0;
+			{
+				T eb_Vy_ = eb_Vy / 1.5;
+				T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy_) + compute_bound_x_square(Vz[i], eb_Vz);
+				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vy = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			}
+			T estimate_error_Vz = 0;
+			{
+				T eb_Vz_ = eb_Vz / 1.5;
+				T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz_);
+				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vz = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			}
+			std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
+			const T epsilon = 1e-6;
+            T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
+            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
+            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
+            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+            estimate_error = min_error;
+            if (close_Vx) eb_Vx /= 1.5;
+            if (close_Vy) eb_Vy /= 1.5;
+            if (close_Vz) eb_Vz /= 1.5;
+			if (ebs[0] / eb_Vx > 10 || ebs[1] / eb_Vy > 10 || ebs[2] / eb_Vz > 10) break;
+		}
+		ebs[0] = eb_Vx;
+		ebs[1] = eb_Vy;
+		ebs[2] = eb_Vz;
+		return false;
+	}
 	
 	return true;
 }
@@ -208,31 +253,85 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 	// std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
 	// std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
 	// estimate error bound based on maximal errors
-	// if(max_value > tau){
-	// 	// estimate
-	// 	auto i = max_index;
-	// 	T estimate_error = max_value;
-	// 	T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-	// 	T V_TOT = sqrt(V_TOT_2);
-	// 	T eb_Vx = ebs[0];
-	// 	T eb_Vy = ebs[1];
-	// 	T eb_Vz = ebs[2];
-	// 	while(estimate_error > tau){
-    // 		std::cout << "uniform decrease\n";
-	// 		eb_Vx = eb_Vx / 1.5;
-	// 		eb_Vy = eb_Vy / 1.5;
-	// 		eb_Vz = eb_Vz / 1.5;		        		
-	// 		T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
-	// 		// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 		estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-	// 		// if(ebs[0]/eb_Vx > 5) break;
-	// 		if(ebs[0] / eb_Vx > 10) break;
-	// 	}
-	// 	ebs[0] = eb_Vx;
-	// 	ebs[1] = eb_Vy;
-	// 	ebs[2] = eb_Vz;
-	// 	return false;
-	// }
+	if(max_value > tau){
+		// estimate
+		auto i = max_index;
+		T estimate_error = max_value;
+		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		T V_TOT = sqrt(V_TOT_2);
+		T eb_Vx = ebs[0];
+		T eb_Vy = ebs[1];
+		T eb_Vz = ebs[2];
+		while(estimate_error > tau){
+    		// std::cout << "uniform decrease\n";
+			eb_Vx = eb_Vx / 1.5;
+			eb_Vy = eb_Vy / 1.5;
+			eb_Vz = eb_Vz / 1.5;		        		
+			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			// if(ebs[0]/eb_Vx > 5) break;
+			if(ebs[0] / eb_Vx > 10) break;
+		}
+		ebs[0] = eb_Vx;
+		ebs[1] = eb_Vy;
+		ebs[2] = eb_Vz;
+		return false;
+	}
+	
+	return true;
+}
+
+template<class T>
+bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
+	T eb_Vx = ebs[0];
+	T eb_Vy = ebs[1];
+	T eb_Vz = ebs[2];
+	T max_value = 0;
+	int max_index = 0;
+	T max_e_V_TOT_2 = 0;
+	T max_V_TOT_2 = 0;
+	T max_Vx = 0;
+	T max_Vy = 0;
+	T max_Vz = 0;
+	int max_weight_Vx = 0;
+	int max_weight_Vy = 0;
+	int max_weight_Vz = 0;
+	// int weight_index = 0;
+	// int max_weight_index = 0;
+	for(int i=0; i<n; i++){
+		if(mask[i]) {
+			// error of total velocity square
+			T e_V_TOT_2 = 0;
+			e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+			T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+			// error of total velocity
+			T e_V_TOT = 0;
+			e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			T V_TOT = sqrt(V_TOT_2);
+			// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
+
+			error_est_V_TOT[i] = e_V_TOT;
+			error_V_TOT[i] = V_TOT - V_TOT_ori[i];
+
+			if(max_value < error_est_V_TOT[i]){
+				max_value = error_est_V_TOT[i];
+				max_e_V_TOT_2 = e_V_TOT_2;
+				max_V_TOT_2 = V_TOT_2;
+				max_Vx = Vx[i];
+				max_Vy = Vy[i];
+				max_Vz = Vz[i];
+				max_index = i;
+				max_weight_Vx = weights[0][i];
+				max_weight_Vy = weights[1][i];
+				max_weight_Vz = weights[2][i];
+				// max_weight_index = weight_index;
+			}
+			// if(mask[i]) weight_index++;
+		}
+	}
+	// std::cout << names[0] << ": max estimated error = " << max_value << ", index = " << max_index << ", e_V_TOT_2 = " << max_e_V_TOT_2 << ", VTOT_2 = " << max_V_TOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
+	// std::cout << "max_weight_Vx = " << max_weight_Vx << ", max_weight_Vy = " << max_weight_Vy << ", max_weight_Vz = " << max_weight_Vz << std::endl;
 
 	// ************************************************ Vx, Vy and Vz ************************************************
 	if(max_value > tau){
@@ -291,7 +390,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -434,7 +533,7 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -483,7 +582,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			error_est_V_TOT = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -552,7 +652,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			error_est_V_TOT = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -577,7 +678,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
 	int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -752,7 +853,7 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size){
+std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -801,7 +902,8 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			error_est_V_TOT = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -846,6 +948,7 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
+			ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight()));
 		}
 		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
@@ -870,7 +973,8 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			error_est_V_TOT = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -900,6 +1004,7 @@ int main(int argc, char ** argv){
 	int argv_id = 1;
 	int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
+	int decrease_method = atoi(argv[argv_id++]);
     T target_rel_eb = atof(argv[argv_id++]);
 	std::string data_prefix_path = argv[argv_id++];
 	std::string data_file_prefix = data_prefix_path + "/data/";
@@ -959,16 +1064,16 @@ int main(int argc, char ** argv){
 	switch (compressor)
 	{
 	case Dummy:
-		total_retrieved_size = retrieve_V_TOT_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case SZ3:
-		total_retrieved_size = retrieve_V_TOT_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case PMGARD:
-		total_retrieved_size = retrieve_V_TOT_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case GE:
-		total_retrieved_size = retrieve_V_TOT_GE<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size);
+		total_retrieved_size = retrieve_V_TOT_GE<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 	default:
 		break;
 	}
@@ -976,12 +1081,12 @@ int main(int argc, char ** argv){
 	err = clock_gettime(CLOCK_REALTIME, &end);
 	elapsed_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000;
 
-	std::cout << "requested error = " << tau << std::endl;
+	std::cout << "requested_error = " << tau << std::endl;
 	std::cout << "max_est_error = " << max_est_error << std::endl;
 	std::cout << "max_act_error = " << max_act_error << std::endl;
 	std::cout << "iter = " << iter << std::endl;
 
-	size_t total_size = mask_file_size + std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) + weight_file_size;
+	size_t total_size = mask_file_size + std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), size_t(0)) + weight_file_size;
 	double cr = n_variable * num_elements * sizeof(T) * 1.0 / total_size;
 	std::cout << "each retrieved size:";
     for(int i=0; i<n_variable; i++){
@@ -990,6 +1095,7 @@ int main(int argc, char ** argv){
 	std::cout << "mask_file_size = " << mask_file_size << ", weight_file_size = " << weight_file_size << std::endl;
 	// MDR::print_vec(total_retrieved_size);
 	std::cout << "aggregated cr = " << cr << std::endl;
+	std::cout << "bitrate = " << ((sizeof(T) * 8) / cr) << std::endl;
 	printf("elapsed_time = %.6f\n", elapsed_time);
 
     return 0;

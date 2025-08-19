@@ -29,12 +29,12 @@ namespace MDR {
             data = std::vector<T>(data_, data_ + num_elements);
             // if refactor successfully
             if(refactor(target_level, num_bitplanes)){
-                timer.end();
-                timer.print("Refactor");
-                timer.start();
+                // timer.end();
+                // timer.print("Refactor");
+                // timer.start();
                 level_num = writer.write_level_components(level_components, level_sizes);
-                timer.end();
-                timer.print("Write");                
+                // timer.end();
+                // timer.print("Write");                
             }
 
             write_metadata();

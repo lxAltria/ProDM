@@ -27,8 +27,8 @@ namespace PDR {
         }
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, int max_weight = 4, const int block_size = 1){
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -38,11 +38,11 @@ namespace PDR {
             weights = QoI;
             // if refactor successfully
             if(refactor(num_bitplanes, max_weight, block_size)){
-                timer.end();
+                // timer.end();
                 // timer.print("Refactor");
-                timer.start();
+                // timer.start();
                 level_num = writer.write_level_components(level_components, level_sizes);
-                timer.end();
+                // timer.end();
                 // timer.print("Write");                
             }
 

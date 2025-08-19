@@ -218,6 +218,14 @@ namespace PDR
             return dimensions;
         }
 
+        size_t get_metadata_size(){
+            return retriever.get_metadata_size();
+        }
+
+        size_t get_approximator_size(){
+            return approximator_size;
+        }
+
         size_t get_retrieved_size(){
             return retriever.get_retrieved_size() + approximator_size;
         }

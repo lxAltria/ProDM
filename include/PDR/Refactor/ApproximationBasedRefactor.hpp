@@ -20,8 +20,8 @@ namespace PDR {
             : approximator(approximator), encoder(encoder), compressor(compressor), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -30,12 +30,12 @@ namespace PDR {
             data = std::vector<T>(data_, data_ + num_elements);
             // if refactor successfully
             if(refactor(num_bitplanes)){
-                timer.end();
-                timer.print("Refactor");
-                timer.start();
+                // timer.end();
+                // timer.print("Refactor");
+                // timer.start();
                 level_num = writer.write_level_components(level_components, level_sizes);
-                timer.end();
-                timer.print("Write");                
+                // timer.end();
+                // timer.print("Write");                
             }
 
             write_metadata();
@@ -96,7 +96,7 @@ namespace PDR {
             
             if (mask.empty()){
                 T level_max_error = compute_max_abs_value(data.data(), num_elements);
-                std::cout << "level_max_error = " << level_max_error << std::endl;
+                // std::cout << "level_max_error = " << level_max_error << std::endl;
 
                 // encoding
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);
@@ -122,7 +122,7 @@ namespace PDR {
                     }
                 }
                 T level_max_error = compute_max_abs_value(filtered_data.data(), num_valid_data);
-                std::cout << "level_max_error = " << level_max_error << std::endl;
+                // std::cout << "level_max_error = " << level_max_error << std::endl;
 
                 // encoding
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);

@@ -117,7 +117,7 @@ inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
 		else return e / (y*(y + eb_y));
 	}
 	else{
-		std::cout << "Warning: cannot control error in x/y\n";
+		// std::cout << "Warning: cannot control error in x/y\n";
 		return 0;
 	}
 }

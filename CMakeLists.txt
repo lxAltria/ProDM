@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 3.0)
 project(CQOI VERSION 0.0.0.1)
 set (CMAKE_CXX_STANDARD 17)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_CXX_FLAGS "-g -O3")
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -18,6 +19,7 @@ find_library(SZ3_LIB SZ3c HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ3/instal
 set (ZSTD_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ3/tools/zstd")
 set (SZ3_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ3/install/include")
 set (MGARDx_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARDx/install/include")
+find_package(MPI REQUIRED)
 
 add_library(${PROJECT_NAME} INTERFACE)
 target_include_directories(${PROJECT_NAME} INTERFACE include ${SZ3_INCLUDES} ${ZSTD_INCLUDES})
@@ -25,5 +27,5 @@ target_link_libraries(${PROJECT_NAME} INTERFACE ${ZSTD_LIB} ${SZ3_LIB})
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 add_subdirectory(test)
-
+add_subdirectory(prl_src)
 #add_subdirectory(app)
