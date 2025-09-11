@@ -49,8 +49,8 @@ mkdir Hurricane/refactor/VelocityX_refactored
 mkdir Hurricane/refactor/VelocityY_refactored
 mkdir Hurricane/refactor/VelocityZ_refactored
 cd build
-Refactor: ./test/refactor_d64 1 1 Hurricane ../Hurricane 7 4
-Retrieval: ./test/qoi_Vtot_d64 1 1 $eb ../Hurricane
+Refactor: ./test/refactor_d64 4 1 Hurricane ../Hurricane 7 4
+Retrieval: ./test/qoi_Vtot_d64 4 1 1 $eb ../Hurricane
 ```
 
 # Artifacts
