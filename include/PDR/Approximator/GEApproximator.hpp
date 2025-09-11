@@ -2,7 +2,7 @@
 #define _PDR_GE_APPROXIMATOR_HPP
 
 #include "ApproximatorInterface.hpp"
-#include "SZ3/api/sz.hpp"
+#include "QoZ/api/sz.hpp"
 #include "utils.hpp"
 #include <vector>
 
@@ -45,15 +45,15 @@ namespace PDR {
             char *cmpData = NULL;
             size_t cmpSize = 0;
             {
-                SZ3::Config conf(num_blocks);
-                conf.cmprAlgo = SZ3::ALGO_INTERP_LORENZO;
-                conf.errorBoundMode = SZ3::EB_REL;
+                QoZ::Config conf(num_blocks);
+                conf.cmprAlgo = QoZ::ALGO_INTERP_LORENZO;
+                conf.errorBoundMode = QoZ::EB_REL;
                 conf.relErrorBound = 1E-3;
                 cmpData = SZ_compress<T>(conf, means.data(), cmpSize);
             }
             // decompress and overwrite
             {
-                SZ3::Config conf;
+                QoZ::Config conf;
                 T * dec_mean = means.data();
                 SZ_decompress<T>(conf, cmpData, cmpSize, dec_mean);
             }
@@ -74,7 +74,7 @@ namespace PDR {
 
         void reconstruct_approximate(T * data, const std::vector<uint32_t>& dimensions, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
             if(filename.size()) approximator_file_name = filename;
-        	SZ3::Config conf;
+        	QoZ::Config conf;
             size_t pos = filename.find_last_of('/');
             std::string tmp_path = filename.substr(0, pos);
             pos = tmp_path.find_last_of('/');

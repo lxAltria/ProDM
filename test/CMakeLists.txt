@@ -1,6 +1,6 @@
 function(add_my_executable target source)
     add_executable(${target} ${source})
-    target_include_directories(${target} PRIVATE ${MGARDx_INCLUDES} ${SZ3_INCLUDES} ${ZSTD_INCLUDES})
+    target_include_directories(${target} PRIVATE ${MGARDx_INCLUDES} ${SZ3_INCLUDES} ${ZSTD_INCLUDES} ${QoZ_INCLUDE_DIR})
     target_link_libraries(${target} ${PROJECT_NAME} ${SZ3_LIB} ${ZSTD_LIB})
 endfunction()
 

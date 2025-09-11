@@ -1,6 +1,7 @@
 #ifndef _PDR_APPROXIMATOR_INTERFACE_HPP
 #define _PDR_APPROXIMATOR_INTERFACE_HPP
 #include <cstdint>
+#include <cstddef>
 
 namespace PDR {
     namespace concepts {

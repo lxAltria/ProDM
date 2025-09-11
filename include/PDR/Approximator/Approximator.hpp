@@ -2,7 +2,9 @@
 #define _PDR_APPROXIMATOR_HPP
 
 #include "DummyApproximator.hpp"
+#include "HPEZApproximator.hpp"
 #include "SZApproximator.hpp"
 #include "GEApproximator.hpp"
+
 
 #endif

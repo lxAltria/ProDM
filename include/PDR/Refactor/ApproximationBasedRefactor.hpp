@@ -19,7 +19,12 @@ namespace PDR {
         ApproximationBasedRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer)
             : approximator(approximator), encoder(encoder), compressor(compressor), writer(writer) {}
 
-        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
+        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes)
+        {
+
+        }
+
+        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, T user_defined_approximator_eb){
             // Timer timer;
             // timer.start();
             dimensions = dims;
@@ -29,7 +34,7 @@ namespace PDR {
             }
             data = std::vector<T>(data_, data_ + num_elements);
             // if refactor successfully
-            if(refactor(num_bitplanes)){
+            if(refactor(num_bitplanes, user_defined_approximator_eb)){
                 // timer.end();
                 // timer.print("Refactor");
                 // timer.start();
@@ -77,7 +82,7 @@ namespace PDR {
             std::cout << "Encoder: "; encoder.print();
         }
     private:
-        bool refactor(uint8_t num_bitplanes){
+        bool refactor(uint8_t num_bitplanes, T user_defined_approximator_eb){
 
             auto num_elements = data.size();
             T max_val = data[0];
@@ -86,6 +91,7 @@ namespace PDR {
                 if(data[i] > max_val) max_val = data[i];
                 if(data[i] < min_val) min_val = data[i];
             }
+            approximator_eb = user_defined_approximator_eb;
             approximator_eb *= (max_val - min_val);
             std::string approximator_path = writer.get_directory() + "approximator.dat";
             approximator_size = approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);

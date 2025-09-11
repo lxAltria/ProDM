@@ -14,6 +14,7 @@
 #define SZ3 1
 #define PMGARD 2
 #define GE 3
+#define HPEZ 4
 using namespace MDR;
 
 using T = double;
@@ -998,6 +999,151 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 	return total_retrieved_size;
 }
 
+template<class T>
+std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+    int max_iter = 30;
+	bool tolerance_met = false;
+	int n_variable = ebs.size();
+	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
+	std::vector<size_t> total_retrieved_size(n_variable, 0);
+	if(!weighted){
+		std::vector<PDR::ApproximationBasedReconstructor<T, PDR::HPEZApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+		for(int i=0; i<n_variable; i++){
+			std::string rdir_prefix = rdata_file_prefix + varlist[i];
+			std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+			std::vector<std::string> files;
+			int num_levels = 1;
+			for(int i=0; i<num_levels; i++){
+				std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+				files.push_back(filename);
+			}
+			auto approximator = PDR::HPEZApproximator<T>();
+			auto encoder = NegaBinaryBPEncoder<T, T_stream>();
+			auto compressor = AdaptiveLevelCompressor(64);
+			auto estimator = MaxErrorEstimatorHB<T>();
+			auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
+			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
+			reconstructors.push_back(generateBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
+			reconstructors.back().mask = mask;
+			reconstructors.back().load_metadata();
+		}
+		while((!tolerance_met) && (iter < max_iter)){
+			iter ++;
+			for(int i=0; i<n_variable; i++){
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i], -1);
+				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
+				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
+			}
+			// for(int i=0; i<n_variable; i++){
+			// 	std::cout << total_retrieved_size[i] << ", ";
+			// }
+			// std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
+
+			Vx_dec = reconstructed_vars[0].data();
+			Vy_dec = reconstructed_vars[1].data();
+			Vz_dec = reconstructed_vars[2].data();
+			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
+			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
+			/* test
+			std::string filename = "./Result/Vtot_err.dat";
+			std::ofstream outfile1(filename, std::ios::binary);
+			if (!outfile1.is_open()) {
+				std::cerr << "Failed to open file for writing: " << filename << std::endl;
+				exit(-1);
+			}
+
+			outfile1.write(reinterpret_cast<const char*>(error_est_V_TOT.data()), error_est_V_TOT.size() * sizeof(T));
+		
+			outfile1.close();
+			std::cout << "Data saved successfully to " << filename << std::endl;
+			//*/
+			// std::cout << names[0] << " requested error = " << tau << std::endl;
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+		}
+	}
+	else{
+		std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::HPEZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+		std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements));
+		for(int i=0; i<n_variable; i++){
+			std::string rdir_prefix = rdata_file_prefix + varlist[i];
+			std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+			std::vector<std::string> files;
+			int num_levels = 1;
+			for(int i=0; i<num_levels; i++){
+				std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+				files.push_back(filename);
+			}
+			auto approximator = PDR::HPEZApproximator<T>();
+			auto encoder = WeightedNegaBinaryBPEncoder<T, T_stream>();
+			auto compressor = AdaptiveLevelCompressor(64);
+			auto estimator = MaxErrorEstimatorHB<T>();
+			auto interpreter = SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>(estimator);
+			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
+			reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
+			reconstructors.back().mask = mask;
+			if(i==0) reconstructors.back().fetch_weight = true;
+			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().load_metadata();
+			weights[i] = reconstructors.back().get_int_weights();
+		}
+		weight_file_size = reconstructors[0].get_weight_file_size();
+		while((!tolerance_met) && (iter < max_iter)){
+			iter ++;
+			for(int i=0; i<n_variable; i++){
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
+				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
+				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
+			}
+			// for(int i=0; i<n_variable; i++){
+			// 	std::cout << total_retrieved_size[i] << ", ";
+			// }
+			// std::cout << ": total_size = " << std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0) << std::endl;
+
+			Vx_dec = reconstructed_vars[0].data();
+			Vy_dec = reconstructed_vars[1].data();
+			Vz_dec = reconstructed_vars[2].data();
+			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+			error_V_TOT = std::vector<T>(num_elements);
+			error_est_V_TOT = std::vector<T>(num_elements);
+			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
+			// MDR::print_vec(ebs);
+			/* test
+			std::string filename = "./Result/Vtot_err.dat";
+			std::ofstream outfile1(filename, std::ios::binary);
+			if (!outfile1.is_open()) {
+				std::cerr << "Failed to open file for writing: " << filename << std::endl;
+				exit(-1);
+			}
+
+			outfile1.write(reinterpret_cast<const char*>(error_est_V_TOT.data()), error_est_V_TOT.size() * sizeof(float));
+		
+			outfile1.close();
+			std::cout << "Data saved successfully to " << filename << std::endl;
+			//*/
+			// std::cout << names[0] << " requested error = " << tau << std::endl;
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+		}
+	}
+	return total_retrieved_size;
+}
+
 int main(int argc, char ** argv){
 	using T = double;
 	using T_stream = uint32_t;
@@ -1074,6 +1220,10 @@ int main(int argc, char ** argv){
 		break;
 	case GE:
 		total_retrieved_size = retrieve_V_TOT_GE<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		break;
+	case HPEZ:
+		total_retrieved_size = retrieve_V_TOT_HPEZ<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		break;
 	default:
 		break;
 	}

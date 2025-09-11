@@ -5,13 +5,13 @@ external_dir=${source_dir}/external
 mkdir -p external
 cd ${external_dir}
 # build SZ (to use ZSTD compressor)
-git clone https://github.com/szcompressor/SZ.git
-cd SZ
-git reset --hard f48d2f27a5470a28e900db9b46bb3344a2bc211f
+git clone https://github.com/szcompressor/SZ2.git
+cd SZ2
+# git reset --hard f48d2f27a5470a28e900db9b46bb3344a2bc211f
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ/install ..
+cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ2/install ..
 make -j 8
 make install
 
@@ -46,6 +46,13 @@ cd adios2-build
 cmake -DADIOS2_USE_MPI=OFF -DADIOS2_USE_SZ=OFF -DCMAKE_INSTALL_PREFIX=${external_dir}/ADIOS2/adios2-install ..
 make -j 8
 make install
+
+# copy QoZ
+cd ${external_dir}
+git clone https://github.com/Linus-Li-1037/QoZ.git
+cd QoZ
+mkdir -p install/include/
+rsync -av --exclude 'ska_hash' include/ ${external_dir}/QoZ/install/include/
 
 # build ProDM
 cd ${source_dir}
