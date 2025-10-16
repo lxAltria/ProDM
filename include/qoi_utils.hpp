@@ -81,7 +81,7 @@ inline double compute_bound_radical(T x, T a, T eb){
 		}
 	}
 	else{
-		std::cout << "Warning: cannot control error in 1/(x+a)\n";
+		// std::cout << "Warning: cannot control error in 1/(x+a)\n";
 		return 0;		
 	}
 }
@@ -98,7 +98,7 @@ inline double compute_inverse_bound_radical(T x, T a, T eb, T tau){
 		}
 	}
 	else{
-		std::cout << "Warning: cannot control error in 1/(x+a)\n";
+		// std::cout << "Warning: cannot control error in 1/(x+a)\n";
 		return 0;		
 	}
 }
@@ -178,6 +178,14 @@ void compute_QoIs(const T * Vx, const T * Vy, const T * Vz, const T * P, const T
 		Mach_[i] = Mach;
 		PT_[i] = PT;
 		mu_[i] = mu;
+	}
+}
+
+template <class T>
+void compute_VTOT2(const T * Vx, const T * Vy, const T * Vz, size_t n, T * V_TOT2_){
+	for(int i=0; i<n; i++){
+		double V_TOT2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		V_TOT2_[i] = V_TOT2;
 	}
 }
 

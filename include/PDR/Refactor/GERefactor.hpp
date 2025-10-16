@@ -195,8 +195,7 @@ namespace PDR {
                 if(data[i] > max_val) max_val = data[i];
                 if(data[i] < min_val) min_val = data[i];
             }
-            approximator_eb = user_defined_approximator_eb;
-            approximator_eb *= (max_val - min_val);
+            approximator_eb = user_defined_approximator_eb * (max_val - min_val);
             std::string approximator_path = writer.get_directory() + "approximator.dat";
             approximator_size = approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);
 

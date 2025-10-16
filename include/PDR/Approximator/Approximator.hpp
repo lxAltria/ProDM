@@ -3,8 +3,9 @@
 
 #include "DummyApproximator.hpp"
 #include "HPEZApproximator.hpp"
-#include "SZApproximator.hpp"
+#include "SZ3Approximator.hpp"
+#include "SZ2Approximator.hpp"
 #include "GEApproximator.hpp"
-
+#include "MGARDApproximator.hpp"
 
 #endif

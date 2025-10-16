@@ -50,24 +50,9 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 	int C7i[8] = {1, 7, 21, 35, 35, 21, 7, 1};
 	T max_value = 0;
 	int max_index = 0;
-    T max_Vx = 0;
-    T max_Vy = 0;
-    T max_Vz = 0;
-    T max_P = 0;
-    T max_D = 0;
-    T max_e_VTOT_2 = 0;
-    T max_VTOT_2 = 0;
-    T max_e_T = 0;
-    T max_T = 0;
-    T max_C = 0;
-    T max_e_C = 0;
-    T max_e_Mach = 0;
-    T max_Mach = 0;
-    T max_e_Mach_tmp_mi = 0;
-    T max_Mach_tmp_mi = 0;
-    T max_e_PT = 0;
-    T max_PT = 0;
 	int n_variable = ebs.size();
+    T Mach_tmp_pow[8];
+    T e_Mach_tmp_pow[8];
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
 		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
@@ -81,13 +66,19 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		T C = c_2 * sqrt(Temp);
 		T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 		T Mach = V_TOT / C;
-		T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-		T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+		T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+		T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 		T e_Mach_tmp_mi = 0;
-		for(int i=1; i<=7; i++){
-			e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
-		}
-		T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
+		Mach_tmp_pow[0] = 1;
+        e_Mach_tmp_pow[0] = 1;
+        for (int k = 1; k <= 7; k++) {
+            Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+            e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+        }
+        for (int k = 1; k <= 7; k++) {
+            e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+        }
+		T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
 		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P, e_Mach_tmp_mi);
 		T PT = P[i] * Mach_tmp_mi;
 
@@ -96,23 +87,6 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		if(max_value < error_est_PT[i]){
 			max_value = error_est_PT[i];
 			max_index = i;
-            max_Vx = Vx[i];
-            max_Vy = Vy[i];
-            max_Vz = Vz[i];
-            max_P = P[i];
-            max_D = D[i];
-            max_e_VTOT_2 = e_V_TOT_2;
-            max_VTOT_2 = V_TOT_2;
-            max_e_T = e_T;
-            max_T = Temp;
-            max_e_C = e_C;
-            max_C = C;
-            max_e_Mach = e_Mach;
-            max_Mach = Mach;
-            max_e_Mach_tmp_mi = e_Mach_tmp_mi;
-            max_Mach_tmp_mi = Mach_tmp_mi;
-            max_e_PT = e_PT;
-            max_PT = PT;
 		}
 	}
 	// std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
@@ -150,15 +124,20 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 			T C = c_2 * sqrt(Temp);
 			T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 			T Mach = V_TOT / C;
-			T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-			T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+			T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+			T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 			T e_Mach_tmp_mi = 0;
-			for(int i=1; i<=7; i++){
-				e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
-			}
-			T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
+			Mach_tmp_pow[0] = 1;
+            e_Mach_tmp_pow[0] = 1;
+            for (int k = 1; k <= 7; k++) {
+                Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+            }
+            for (int k = 1; k <= 7; k++) {
+                e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+            }
+            T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
 			estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P, e_Mach_tmp_mi);
-            if (ebs[0] / eb_Vx > 10) break;
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -219,8 +198,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
 		T C = c_2 * sqrt(Temp);
 		T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 		T Mach = V_TOT / C;
-		T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-		T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+		T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+		T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 		T e_Mach_tmp_mi = 0;
 		for(int i=1; i<=7; i++){
 			e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
@@ -287,8 +266,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
                 for(int i=1; i<=7; i++){
                     e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
@@ -311,8 +290,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
                 for(int i=1; i<=7; i++){
                     e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
@@ -335,8 +314,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
                 for(int i=1; i<=7; i++){
                     e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
@@ -359,8 +338,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
                 for(int i=1; i<=7; i++){
                     e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
@@ -383,8 +362,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
                 for(int i=1; i<=7; i++){
                     e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
@@ -437,45 +416,36 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 	int C7i[8] = {1, 7, 21, 35, 35, 21, 7, 1};
 	T max_value = 0;
 	int max_index = 0;
-    T max_Vx = 0;
-    T max_Vy = 0;
-    T max_Vz = 0;
-    T max_P = 0;
-    T max_D = 0;
-    T max_e_VTOT_2 = 0;
-    T max_VTOT_2 = 0;
-    T max_e_T = 0;
-    T max_T = 0;
-    T max_C = 0;
-    T max_e_C = 0;
-    T max_e_Mach = 0;
-    T max_Mach = 0;
-    T max_e_Mach_tmp_mi = 0;
-    T max_Mach_tmp_mi = 0;
-    T max_e_PT = 0;
-    T max_PT = 0;
 	int n_variable = ebs.size();
+    T Mach_tmp_pow[8];
+    T e_Mach_tmp_pow[8];
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
-		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		T e_V_TOT = 0;
 		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 		T V_TOT = sqrt(V_TOT_2);
-		T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+		T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
 		T Temp = P[i] / (D[i] * R);
 		T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
 		T C = c_2 * sqrt(Temp);
 		T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 		T Mach = V_TOT / C;
-		T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-		T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+		T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+		T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 		T e_Mach_tmp_mi = 0;
-		for(int i=1; i<=7; i++){
-			e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
-		}
-		T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+		Mach_tmp_pow[0] = 1;
+        e_Mach_tmp_pow[0] = 1;
+        for (int k = 1; k <= 7; k++) {
+            Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+            e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+        }
+        for (int k = 1; k <= 7; k++) {
+            e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+        }
+		T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
 		T PT = P[i] * Mach_tmp_mi;
 
 		error_est_PT[i] = e_PT;
@@ -483,23 +453,6 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 		if(max_value < error_est_PT[i]){
 			max_value = error_est_PT[i];
 			max_index = i;
-            max_Vx = Vx[i];
-            max_Vy = Vy[i];
-            max_Vz = Vz[i];
-            max_P = P[i];
-            max_D = D[i];
-            max_e_VTOT_2 = e_V_TOT_2;
-            max_VTOT_2 = V_TOT_2;
-            max_e_T = e_T;
-            max_T = Temp;
-            max_e_C = e_C;
-            max_C = C;
-            max_e_Mach = e_Mach;
-            max_Mach = Mach;
-            max_e_Mach_tmp_mi = e_Mach_tmp_mi;
-            max_Mach_tmp_mi = Mach_tmp_mi;
-            max_e_PT = e_PT;
-            max_PT = PT;
 		}
 	}
 	// std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
@@ -526,26 +479,31 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 			eb_P = eb_P / 1.5;
 			eb_D = eb_D / 1.5;
 			T e_V_TOT_2 = 0;
-			if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+			if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 			T e_V_TOT = 0;
 			if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			T V_TOT = sqrt(V_TOT_2);
-			T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+			T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
 			T Temp = P[i] / (D[i] * R);
 			T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
 			T C = c_2 * sqrt(Temp);
 			T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 			T Mach = V_TOT / C;
-			T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-			T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+			T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+			T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 			T e_Mach_tmp_mi = 0;
-			for(int i=1; i<=7; i++){
-				e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
-			}
-			T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-			estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
-            if (ebs[0] / eb_Vx > 10) break;
+			Mach_tmp_pow[0] = 1;
+            e_Mach_tmp_pow[0] = 1;
+            for (int k = 1; k <= 7; k++) {
+                Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+            }
+            for (int k = 1; k <= 7; k++) {
+                e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+            }
+            T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+			estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -575,45 +533,38 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
 	int C7i[8] = {1, 7, 21, 35, 35, 21, 7, 1};
 	T max_value = 0;
 	int max_index = 0;
-    T max_Vx = 0;
-    T max_Vy = 0;
-    T max_Vz = 0;
-    T max_P = 0;
-    T max_D = 0;
-    T max_e_VTOT_2 = 0;
-    T max_VTOT_2 = 0;
-    T max_e_T = 0;
-    T max_T = 0;
-    T max_C = 0;
-    T max_e_C = 0;
-    T max_e_Mach = 0;
-    T max_Mach = 0;
-    T max_e_Mach_tmp_mi = 0;
-    T max_Mach_tmp_mi = 0;
-    T max_e_PT = 0;
-    T max_PT = 0;
 	int n_variable = ebs.size();
+    T Mach_tmp_pow[8];
+    T e_Mach_tmp_pow[8];
+    // Timer find_max_error_timer;
+    // find_max_error_timer.start();
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
-		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+		e_V_TOT_2 = mask[i] ? compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i])) : 0;
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		T e_V_TOT = 0;
-		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+		e_V_TOT = mask[i] ? compute_bound_square_root_x(V_TOT_2, e_V_TOT_2) : 0;
 		T V_TOT = sqrt(V_TOT_2);
-		T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+		T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
 		T Temp = P[i] / (D[i] * R);
 		T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
 		T C = c_2 * sqrt(Temp);
 		T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 		T Mach = V_TOT / C;
-		T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-		T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+		T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+		T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 		T e_Mach_tmp_mi = 0;
-		for(int i=1; i<=7; i++){
-			e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
-		}
-		T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+        Mach_tmp_pow[0] = 1;
+        e_Mach_tmp_pow[0] = 1;
+        for (int k = 1; k <= 7; k++) {
+            Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+            e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+        }
+        for (int k = 1; k <= 7; k++) {
+            e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+        }
+		T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
 		T PT = P[i] * Mach_tmp_mi;
 
 		error_est_PT[i] = e_PT;
@@ -621,26 +572,12 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
 		if(max_value < error_est_PT[i]){
 			max_value = error_est_PT[i];
 			max_index = i;
-            max_Vx = Vx[i];
-            max_Vy = Vy[i];
-            max_Vz = Vz[i];
-            max_P = P[i];
-            max_D = D[i];
-            max_e_VTOT_2 = e_V_TOT_2;
-            max_VTOT_2 = V_TOT_2;
-            max_e_T = e_T;
-            max_T = Temp;
-            max_e_C = e_C;
-            max_C = C;
-            max_e_Mach = e_Mach;
-            max_Mach = Mach;
-            max_e_Mach_tmp_mi = e_Mach_tmp_mi;
-            max_Mach_tmp_mi = Mach_tmp_mi;
-            max_e_PT = e_PT;
-            max_PT = PT;
 		}
 	}
-	// std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
+    // find_max_error_timer.end();
+    // find_max_error_timer.print("Finding the max error: ");
+	// std::cout << "PT: requested tolerance = " << tau << ", max estimated error = " << max_value << ", index = " << max_index << std::endl;
+    // std::cout << "P = tau' / tau = " << max_value / tau << std::endl;
     // std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
     // std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
     // std::cout << "e_Mach = " << max_e_Mach << ", Mach = " << max_Mach << std::endl;
@@ -657,145 +594,222 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
 		T eb_Vz = ebs[2];
 		T eb_P = ebs[3];
 		T eb_D = ebs[4];
+        // Timer decrease_timer;
+        // decrease_timer.start();
 		while(estimate_error > tau){
     		// std::cout << "coordinate decrease\n";
             T estimate_error_Vx = 0;
             {
                 T eb_Vx_ = eb_Vx / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx_ / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx_, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_Vx = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_Vx = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_Vy = 0;
             {
                 T eb_Vy_ = eb_Vy / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy_ / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy_, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_Vy = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_Vy = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_Vz = 0;
             {
                 T eb_Vz_ = eb_Vz / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz_ / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz_, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_Vz = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_Vz = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_P = 0;
             {
                 T eb_P_ = eb_P / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_ / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P_, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_P = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P_ / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_P = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P_, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_D = 0;
             {
                 T eb_D_ = eb_D / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D_ / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D_, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_D = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_D = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
     		// std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
-			const T relative_epsilon = 1e-3;
-            T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
-            T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
-            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
-            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
-            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
-            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
-            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
-            estimate_error = min_error;
-            if (close_Vx) eb_Vx /= 1.5;
-            if (close_Vy) eb_Vy /= 1.5;
-            if (close_Vz) eb_Vz /= 1.5;
-            if (close_P)  eb_P /= 1.5;
-            if (close_D)  eb_D /= 1.5;
-            if ((ebs[0] / eb_Vx > 10) || (ebs[1] / eb_Vy > 10) || (ebs[2] / eb_Vz > 10) || (ebs[3] / eb_P > 10) || (ebs[4] / eb_D > 10)) break;
+			// const T relative_epsilon = 1e-3;
+            // T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
+            // T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
+            // bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
+            // bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
+            // bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+            // bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+            // bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            // if (close_Vx) eb_Vx /= 1.5;
+            // if (close_Vy) eb_Vy /= 1.5;
+            // if (close_Vz) eb_Vz /= 1.5;
+            // if (close_P)  eb_P /= 1.5;
+            // if (close_D)  eb_D /= 1.5;
+
+            // === Normalize each variable's contribution ===
+            T sum_err = 5 * estimate_error - (estimate_error_Vx + estimate_error_Vy + estimate_error_Vz + estimate_error_P + estimate_error_D);
+            T w_Vx = (estimate_error - estimate_error_Vx) / sum_err;
+            T w_Vy = (estimate_error - estimate_error_Vy) / sum_err;
+            T w_Vz = (estimate_error - estimate_error_Vz) / sum_err;
+            T w_P  = (estimate_error - estimate_error_P)  / sum_err;
+            T w_D  = (estimate_error - estimate_error_D)  / sum_err;
+            // === Smooth proportional update ===
+            T factor_base = 1.5;
+            T alpha = 1.0 - (1.0 / factor_base);
+            eb_Vx *= (1.0 - alpha * w_Vx);
+            eb_Vy *= (1.0 - alpha * w_Vy);
+            eb_Vz *= (1.0 - alpha * w_Vz);
+            eb_P  *= (1.0 - alpha * w_P);
+            eb_D  *= (1.0 - alpha * w_D);
+
+            {
+                T e_V_TOT_2 = 0;
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
+                T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+                T e_V_TOT = 0;
+                if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+                T V_TOT = sqrt(V_TOT_2);
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
+                T Temp = P[i] / (D[i] * R);
+                T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
+                T C = c_2 * sqrt(Temp);
+                T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
+                T Mach = V_TOT / C;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
+                T e_Mach_tmp_mi = 0;
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+                }
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
+            }
 		}
+        // decrease_timer.end();
+        // decrease_timer.print("Decreaseing EB: ");
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
 		ebs[2] = eb_Vz;
@@ -943,7 +957,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
-        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
             std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -953,7 +967,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
                 std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
                 files.push_back(filename);
             }
-            auto approximator = PDR::SZApproximator<T>();
+            auto approximator = PDR::SZ3Approximator<T>();
             auto encoder = NegaBinaryBPEncoder<T, uint32_t>();
             auto compressor = AdaptiveLevelCompressor(64);
             auto estimator = MaxErrorEstimatorHB<T>();
@@ -994,7 +1008,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
         }
     }
     else{
-        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -1005,7 +1019,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
                 std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
                 files.push_back(filename);
             }
-            auto approximator = PDR::SZApproximator<T>();
+            auto approximator = PDR::SZ3Approximator<T>();
             auto encoder = WeightedNegaBinaryBPEncoder<T, uint32_t>();
             auto compressor = AdaptiveLevelCompressor(64);
             auto estimator = MaxErrorEstimatorHB<T>();
@@ -1024,14 +1038,14 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
             int index = (i < 3) ? 0 : 3;
-            ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[index].get_max_weight()));
+            ebs[i] = ldexp(ebs[i], reconstructors[index].get_max_weight());
         }    
         weight_file_size = reconstructors[0].get_weight_file_size() + reconstructors[3].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
                 int index = (i < 3) ? 0 : 3;
-                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[index].get_max_weight())), -1);
+                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[index].get_max_weight()), -1);
                 total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
                 memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
             }
@@ -1238,6 +1252,7 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
     int max_iter = 30;
     bool tolerance_met = false;
     int n_variable = ebs.size();
+    std::vector<T> original_ebs;
     // std::cout << "n_variable = " << n_variable << std::endl; 
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
     std::vector<size_t> total_retrieved_size(n_variable, 0);
@@ -1323,14 +1338,22 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
             int index = (i < 3) ? 0 : 3;
-            ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[index].get_max_weight()));
+            ebs[i] = ldexp(ebs[i], reconstructors[index].get_max_weight());
         }
+        original_ebs = ebs;
         weight_file_size = reconstructors[0].get_weight_file_size() + reconstructors[3].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
+            // std::cout << "iter" << iter << ": The ebs are:" << std::endl;
+            // MDR::print_vec(ebs);
             for(int i=0; i<n_variable; i++){
                 int index = (i < 3) ? 0 : 3;
-                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[index].get_max_weight())), -1);
+                // Timer reconstructor_timer;
+				// reconstructor_timer.start();
+                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[index].get_max_weight()), -1);
+                // std::cout << "Var#" << i << ", retrieved_size = " << reconstructors[i].get_retrieved_size() - total_retrieved_size[i] << std::endl;
+                // reconstructor_timer.end();
+				// reconstructor_timer.print("Reconstructor");
                 total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
                 memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
             }
@@ -1348,8 +1371,17 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
             error_est_PT = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
+            // std::cout << "ebs / original ebs:" << std::endl;
+            // for(int k=0; k<ebs.size(); k++){
+            //     std::cout << ebs[k] / original_ebs[k] << " ";
+            // }
+            // std::cout << std::endl;
+            // Timer decrease_timer;
+			// decrease_timer.start();
             if(!decrease_method) tolerance_met = halfing_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             else tolerance_met = halfing_error_PT_coordinate(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
+            // decrease_timer.end();
+			// decrease_timer.print("Coordinate Decrease");
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test
@@ -1422,6 +1454,13 @@ int main(int argc, char ** argv){
     std::string mask_file = rdata_file_prefix + "mask.bin";
     uint32_t mask_file_size = 0;
     auto mask = readmask(mask_file.c_str(), mask_file_size);
+    // uint32_t zeros = 0;
+    // uint32_t ones = 0;
+    // for(int i=0; i<mask.size(); i++){
+    //     if(mask[i]) ones++;
+    //     else zeros++;
+    // }
+    // std::cout << "In mask, 0s = " << zeros << ", 1s = " << ones << std::endl;
     T max_act_error = 0, max_est_error = 0;
     size_t weight_file_size = 0;
     std::vector<size_t> total_retrieved_size;

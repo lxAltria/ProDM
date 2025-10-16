@@ -1,5 +1,5 @@
-#ifndef _PDR_WEIGHTED_APPROXIMATION_BASED_REFACTOR_HPP
-#define _PDR_WEIGHTED_APPROXIMATION_BASED_REFACTOR_HPP
+#ifndef _PDR_TEST_APPROXIMATION_BASED_REFACTOR_HPP
+#define _PDR_TEST_APPROXIMATION_BASED_REFACTOR_HPP
 
 #include "RefactorInterface.hpp"
 #include "PDR/Approximator/Approximator.hpp"
@@ -16,9 +16,9 @@ namespace PDR {
 
     // an approximation-based scientific data refactor: compose an approximation algorithm, encoder, and lossless compressor
     template<class T, class Approximator, class Encoder, class Compressor, class Writer>
-    class WeightedApproximationBasedRefactor : public concepts::RefactorInterface<T> {
+    class TestApproximationBasedRefactor : public concepts::RefactorInterface<T> {
     public:
-        WeightedApproximationBasedRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer)
+        TestApproximationBasedRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer)
             : approximator(approximator), encoder(encoder), compressor(compressor), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes)
@@ -143,7 +143,7 @@ namespace PDR {
             int_weights = completed_weights;
         }
 
-        ~WeightedApproximationBasedRefactor(){}
+        ~TestApproximationBasedRefactor(){}
 
         void print() const {
             std::cout << "Approximation-based refactor with the following components." << std::endl;
@@ -153,16 +153,16 @@ namespace PDR {
     private:
         bool refactor(uint8_t num_bitplanes, int max_weight, const int block_size, T user_defined_approximator_eb){
             if(store_weight){
-                if (dimensions.size() == 1){
-                    assign_block_value_1D(dimensions[0], block_size, weights.data());
-                }
-                else if (dimensions.size() == 2){
-                    assign_block_value_2D(dimensions[0], dimensions[1], dimensions[1], block_size, weights.data());
-                }
-                else if (dimensions.size() == 3){
-                    assign_block_value_3D(dimensions[0], dimensions[1], dimensions[2], dimensions[1]*dimensions[2], dimensions[2], block_size, weights.data());
-                }
-                int_weights = normalize_weights(weights, max_weight);
+                // if (dimensions.size() == 1){
+                //     assign_block_value_1D(dimensions[0], block_size, weights.data());
+                // }
+                // else if (dimensions.size() == 2){
+                //     assign_block_value_2D(dimensions[0], dimensions[1], dimensions[1], block_size, weights.data());
+                // }
+                // else if (dimensions.size() == 3){
+                //     assign_block_value_3D(dimensions[0], dimensions[1], dimensions[2], dimensions[1]*dimensions[2], dimensions[2], block_size, weights.data());
+                // }
+                // int_weights = normalize_weights(weights, max_weight);
                 if(dimensions.size() == 1){
                     block_weights = get_block_weight_1D(dimensions[0], int_weights, block_size);
                 }
@@ -187,7 +187,7 @@ namespace PDR {
                 // std::cout << "bit_count = " << static_cast<size_t>(bit_count) << " byte_count = " << static_cast<size_t>(byte_count) << " remainder_bit = " << static_cast<size_t>(remainder_bit) << " byteLength = " << byteLength << " block_weights.size() = " << block_weights.size() << std::endl;
                 compressed_weights.resize(byteLength);
                 if (byteLength != Jiajun_save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
-                    // perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
+                    // perror("From TestApproximationBasedRefactor: Error: byteLength != weight_size\n");
                 }
                 ZSTD_weight_size = ZSTD::compress(compressed_weights.data(), byteLength, &ZSTD_weights);
             }

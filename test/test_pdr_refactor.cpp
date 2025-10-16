@@ -7,6 +7,12 @@
 #include <bitset>
 #include "utils.hpp"
 #include "PDR/Refactor/Refactor.hpp"
+#define Dummy_Cmp 0
+#define MGARD_Cmp 1
+#define SZ2_Cmp 2
+#define SZ3_Cmp 3
+#define HPEZ_Cmp 4
+#define GE_Cmp 5
 
 using namespace std;
 bool negabinary = true;
@@ -17,7 +23,7 @@ void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int num_bitpl
     int err = 0;
     cout << "Start refactoring" << endl;
     err = clock_gettime(CLOCK_REALTIME, &start);
-    refactor.refactor(data.data(), dims, 0, num_bitplanes);
+    refactor.refactor(data.data(), dims, 0, num_bitplanes, 0.001);
     err = clock_gettime(CLOCK_REALTIME, &end);
     cout << "Refactor time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
 }
@@ -31,10 +37,61 @@ void test(string filename, const vector<uint32_t>& dims, int num_bitplanes, Appr
     evaluate(data, dims, num_bitplanes, refactor);
 }
 
-int main(int argc, char ** argv){
+template <class T, class Encoder, class Compressor, class Writer>
+void launch_refactor(string filename, const vector<uint32_t>& dims, int num_bitplanes, int approximator_rank, Encoder encoder, Compressor compressor, Writer writer){
+    switch(approximator_rank){
+        case Dummy_Cmp:{
+            auto approximator = PDR::DummyApproximator<T>();
+            test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+            break;
+        }
+        case MGARD_Cmp:{
+            auto approximator = PDR::MGARDApproximator<T>();
+            test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+            break;
+        }
+        case SZ2_Cmp:{
+            auto approximator = PDR::SZ2Approximator<T>();
+            test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+            break;
+        }
+        case SZ3_Cmp:{
+            auto approximator = PDR::SZ3Approximator<T>();
+            test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+            break;
+        }
+        case HPEZ_Cmp:{
+            auto approximator = PDR::HPEZApproximator<T>();
+            test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+            break;
+        }
+        case GE_Cmp:{
+            auto approximator = PDR::GEApproximator<T>();
+            test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+            break;
+        }
+        default:
+            perror("Undefined Approximator\n");
+            break;
+    }
+}
 
+void usage(char* cmd) {
+    std::cout << "QPro usage: " << cmd <<
+                  " data_file output_dict num_bitplanes num_dim dim0 .. dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]"
+                  << std::endl
+                  << "example: " << cmd <<
+                  " density.d64 refactor/Density_refactored 3 256 384 384 -d 4" << std::endl;
+}
+
+int main(int argc, char ** argv){
+    if (argc < 2) {
+        usage(argv[0]);
+        return 0;
+    }
     int argv_id = 1;
-    string filename = string(argv[argv_id ++]);
+    std::string filename = string(argv[argv_id ++]);
+    std::string output_dict = string(argv[argv_id++]);
     int num_bitplanes = atoi(argv[argv_id ++]);
     if(num_bitplanes % 2 == 1) {
         num_bitplanes += 1;
@@ -47,41 +104,40 @@ int main(int argc, char ** argv){
     }
 
     int target_level = 0; // #level = 1 for PDR
-    string metadata_file = "refactored_data/metadata.bin";
+    std::string metadata_file = output_dict + "/metadata.bin";
     vector<string> files;
     for(int i=0; i<=target_level; i++){
-        string filename = "refactored_data/level_" + to_string(i) + ".bin";
+        std::string filename = output_dict + "/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }
-    using T = float;
+    
     using T_stream = uint32_t;
-    if(num_bitplanes > 32){
-        num_bitplanes = 32;
-        std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
+
+    std::string dtype = string(argv[argv_id++]);
+    int approximator = atoi(argv[argv_id++]);
+    if (strcmp(dtype.c_str(), "-f") == 0){
+        if(num_bitplanes > 32){
+            num_bitplanes = 32;
+            std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
+        }
+        using T = float;
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        negabinary = true;
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        launch_refactor<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+    } else if (strcmp(dtype.c_str(), "-d") == 0){
+        if(num_bitplanes > 64){
+            num_bitplanes = 64;
+            std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
+        }
+        using T = double;
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        negabinary = true;
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        launch_refactor<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
     }
-    // using T = double;
-    // using T_stream = uint64_t;
-    // if(num_bitplanes > 64){
-    //     num_bitplanes = 64;
-    //     std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
-    // }
 
-    auto approximator = PDR::DummyApproximator<T>();
-    // auto approximator = PDR::SZApproximator<T>();
-
-    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-    negabinary = true;
-    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
-    // negabinary = false;
-
-    // auto compressor = MDR::DefaultLevelCompressor();
-    auto compressor = MDR::AdaptiveLevelCompressor(64);
-    // auto compressor = MDR::NullLevelCompressor();
-
-    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-    // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
-
-    test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
     return 0;
 }

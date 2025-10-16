@@ -74,7 +74,6 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
 			double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P, eb_D);
 			double Temp = P[i] / (D[i] * R);
 			estimate_error = c_2*compute_bound_square_root_x(Temp, e_T);
-            if (ebs[0] / eb_P > 10) break;
 		}
         ebs[0] = eb_P;
         ebs[1] = eb_D;
@@ -136,7 +135,7 @@ bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double
                 double Temp = P[i] / (D[i] * R);
                 estimate_error_D = c_2*compute_bound_square_root_x(Temp, e_T);
             }
-            std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+            // std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
             const T epsilon = 1e-6;
             T min_error = std::min({estimate_error_P, estimate_error_D});
             bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
@@ -165,7 +164,7 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
 	double max_value = 0;
 	int max_index = 0;
 	for(int i=0; i<n; i++){
-		double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+		double e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[0][i]), ldexp(eb_D, -weights[1][i]));
 		double Temp = P[i] / (D[i] * R);
 		// error of C
 		double e_C = c_2*compute_bound_square_root_x(Temp, e_T);
@@ -194,10 +193,9 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
     		// std::cout << "uniform decrease\n";
             eb_P = eb_P / 1.5;
             eb_D = eb_D / 1.5;
-			double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+			double e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[0][i]), ldexp(eb_D, -weights[1][i]));
 			double Temp = P[i] / (D[i] * R);
 			estimate_error = c_2*compute_bound_square_root_x(Temp, e_T);
-            if (ebs[0] / eb_P > 10) break;
 		}
         ebs[0] = eb_P;
         ebs[1] = eb_D;
@@ -217,7 +215,7 @@ bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double
 	double max_value = 0;
 	int max_index = 0;
 	for(int i=0; i<n; i++){
-		double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+		double e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[0][i]), ldexp(eb_D, -weights[1][i]));
 		double Temp = P[i] / (D[i] * R);
 		// error of C
 		double e_C = c_2*compute_bound_square_root_x(Temp, e_T);
@@ -248,27 +246,32 @@ bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double
             T estimate_error_P = 0;
             {
                 T eb_P_ = eb_P / 1.5;
-                double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_ / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D / static_cast<T>(std::pow(2.0, weights[1][i])));
+                double e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P_, -weights[0][i]), ldexp(eb_D, -weights[1][i]));
                 double Temp = P[i] / (D[i] * R);
                 estimate_error_P = c_2*compute_bound_square_root_x(Temp, e_T);
             }
             T estimate_error_D = 0;
             {
                 T eb_D_ = eb_D / 1.5;
-                double e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[0][i])), eb_D_ / static_cast<T>(std::pow(2.0, weights[1][i])));
+                double e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[0][i]), ldexp(eb_D_, -weights[1][i]));
                 double Temp = P[i] / (D[i] * R);
                 estimate_error_D = c_2*compute_bound_square_root_x(Temp, e_T);
             }
             // std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
-            const T relative_epsilon = 1e-3;
-            T min_error = std::min({estimate_error_P, estimate_error_D});
-            T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
-            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
-            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
-            estimate_error = min_error;
-            if (close_P)  eb_P /= 1.5;
-            if (close_D)  eb_D /= 1.5;
-            if (ebs[0] / eb_P > 10 || ebs[1] / eb_D > 10) break;
+            // std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
+            double sum_err = 2 * estimate_error - (estimate_error_P + estimate_error_D);
+            double w_P = (estimate_error - estimate_error_P) / sum_err;
+            double w_D = (estimate_error - estimate_error_D) / sum_err;
+            // === Smooth proportional update ===
+            double factor_base = 1.5;
+            double alpha = 1.0 - (1.0 / factor_base);
+            eb_P *= (1.0 - alpha * w_P);
+            eb_D *= (1.0 - alpha * w_D);
+			{
+                double e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[0][i]), ldexp(eb_D, -weights[1][i]));
+                double Temp = P[i] / (D[i] * R);
+                estimate_error = c_2*compute_bound_square_root_x(Temp, e_T);
+            }
 		}
         ebs[0] = eb_P;
         ebs[1] = eb_D;
@@ -399,7 +402,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
-        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i+3];
             std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -409,7 +412,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
                 std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
                 files.push_back(filename);
             }
-            auto approximator = PDR::SZApproximator<T>();
+            auto approximator = PDR::SZ3Approximator<T>();
             auto encoder = NegaBinaryBPEncoder<T, uint32_t>();
             auto compressor = AdaptiveLevelCompressor(64);
             auto estimator = MaxErrorEstimatorHB<T>();
@@ -443,7 +446,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
         }
     }
     else{
-        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i+3];
@@ -454,7 +457,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
                 std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
                 files.push_back(filename);
             }
-            auto approximator = PDR::SZApproximator<T>();
+            auto approximator = PDR::SZ3Approximator<T>();
             auto encoder = WeightedNegaBinaryBPEncoder<T, uint32_t>();
             auto compressor = AdaptiveLevelCompressor(64);
             auto estimator = MaxErrorEstimatorHB<T>();
@@ -465,13 +468,13 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
 			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
-            ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight()));
+            ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
         }    
         weight_file_size = reconstructors[0].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
-                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
+                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[0].get_max_weight()), -1);
                 memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
                 total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
             }
@@ -699,13 +702,13 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
 			else reconstructors.back().copy_int_weights(weights[0]);
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
-            ebs[i] *= static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight()));
+            ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
         }
         weight_file_size = reconstructors[0].get_weight_file_size();
         while((!tolerance_met) && (iter < max_iter)){
             iter ++;
             for(int i=0; i<n_variable; i++){
-                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ebs[i] / static_cast<T>(std::pow(2.0, reconstructors[0].get_max_weight())), -1);
+                auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[0].get_max_weight()), -1);
                 memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
                 total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
             }

@@ -22,24 +22,20 @@ using namespace MDR;
 
 using T = double;
 using T_stream = uint32_t;
-std::vector<double> P_ori;
-std::vector<double> D_ori;
 std::vector<double> Vx_ori;
 std::vector<double> Vy_ori;
 std::vector<double> Vz_ori;
-double * P_dec = NULL;
-double * D_dec = NULL;
 double * Vx_dec = NULL;
 double * Vy_dec = NULL;
 double * Vz_dec = NULL;
-double * V_TOT_ori = NULL;
-std::vector<double> error_V_TOT;
-std::vector<double> error_est_V_TOT;
+double * V_TOT2_ori = NULL;
+std::vector<double> error_V_TOT2;
+std::vector<double> error_est_V_TOT2;
 int iter = 0;
 
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs){
+bool halfing_error_V_TOT2_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs){
 	T eb_Vx = ebs[0];
 	T eb_Vy = ebs[1];
 	T eb_Vz = ebs[2];
@@ -53,16 +49,14 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		// error of total velocity
-		T e_V_TOT = 0;
-		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-		T V_TOT = sqrt(V_TOT_2);
+		// T e_V_TOT = 0;
 		// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
 
-		error_est_V_TOT[i] = e_V_TOT;
-		error_V_TOT[i] = V_TOT - V_TOT_ori[i];
+		error_est_V_TOT2[i] = e_V_TOT_2;
+		error_V_TOT2[i] = V_TOT_2 - V_TOT2_ori[i];
 
-		if(max_value < error_est_V_TOT[i]){
-			max_value = error_est_V_TOT[i];
+		if(max_value < error_est_V_TOT2[i]){
+			max_value = error_est_V_TOT2[i];
 			max_index = i;
 			// max_weight_index = weight_index;
 		}
@@ -75,7 +69,6 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		auto i = max_index;
 		T estimate_error = max_value;
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		T V_TOT = sqrt(V_TOT_2);
 		T eb_Vx = ebs[0];
 		T eb_Vy = ebs[1];
 		T eb_Vz = ebs[2];
@@ -85,9 +78,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5;		        		
-			T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
-			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-			estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			estimate_error = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -99,17 +90,12 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 }
 
 template<class T>
-bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs){
+bool halfing_error_V_TOT2_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs){
 	T eb_Vx = ebs[0];
 	T eb_Vy = ebs[1];
 	T eb_Vz = ebs[2];
 	T max_value = 0;
 	int max_index = 0;
-	T max_e_V_TOT_2 = 0;
-	T max_V_TOT_2 = 0;
-	T max_Vx = 0;
-	T max_Vy = 0;
-	T max_Vz = 0;
 	// int weight_index = 0;
 	// int max_weight_index = 0;
 	for(int i=0; i<n; i++){
@@ -117,22 +103,13 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 		T e_V_TOT_2 = 0;
 		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		// error of total velocity
-		T e_V_TOT = 0;
-		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-		T V_TOT = sqrt(V_TOT_2);
 		// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
 
-		error_est_V_TOT[i] = e_V_TOT;
-		error_V_TOT[i] = V_TOT - V_TOT_ori[i];
+		error_est_V_TOT2[i] = e_V_TOT_2;
+		error_V_TOT2[i] = V_TOT_2 - V_TOT2_ori[i];
 
-		if(max_value < error_est_V_TOT[i]){
-			max_value = error_est_V_TOT[i];
-			max_e_V_TOT_2 = e_V_TOT_2;
-			max_V_TOT_2 = V_TOT_2;
-			max_Vx = Vx[i];
-			max_Vy = Vy[i];
-			max_Vz = Vz[i];
+		if(max_value < error_est_V_TOT2[i]){
+			max_value = error_est_V_TOT2[i];
 			max_index = i;
 			// max_weight_index = weight_index;
 		}
@@ -146,7 +123,6 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 		auto i = max_index;
 		T estimate_error = max_value;
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		T V_TOT = sqrt(V_TOT_2);
 		T eb_Vx = ebs[0];
 		T eb_Vy = ebs[1];
 		T eb_Vz = ebs[2];
@@ -156,35 +132,29 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
     		T estimate_error_Vx = 0;
 			{
 				T eb_Vx_ = eb_Vx / 1.5;
-				T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx_) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error_Vx = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vx = compute_bound_x_square(Vx[i], eb_Vx_) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz);
 			}
 			T estimate_error_Vy = 0;
 			{
 				T eb_Vy_ = eb_Vy / 1.5;
-				T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy_) + compute_bound_x_square(Vz[i], eb_Vz);
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error_Vy = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vy = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy_) + compute_bound_x_square(Vz[i], eb_Vz);
 			}
 			T estimate_error_Vz = 0;
 			{
 				T eb_Vz_ = eb_Vz / 1.5;
-				T e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz_);
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error_Vz = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vz = compute_bound_x_square(Vx[i], eb_Vx) + compute_bound_x_square(Vy[i], eb_Vy) + compute_bound_x_square(Vz[i], eb_Vz_);
 			}
-			std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
-			const T epsilon = 1e-6;
-            T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
-            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
-            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
-            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
-            estimate_error = min_error;
-            if (close_Vx) eb_Vx /= 1.5;
-            if (close_Vy) eb_Vy /= 1.5;
-            if (close_Vz) eb_Vz /= 1.5;
-			if (ebs[0] / eb_Vx > 10 || ebs[1] / eb_Vy > 10 || ebs[2] / eb_Vz > 10) break;
+			// // std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
+			// const T epsilon = 1e-6;
+            // T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
+            // bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
+            // bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
+            // bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+            // estimate_error = min_error;
+            // if (close_Vx) eb_Vx /= 1.5;
+            // if (close_Vy) eb_Vy /= 1.5;
+            // if (close_Vz) eb_Vz /= 1.5;
+			// if (ebs[0] / eb_Vx > 10 || ebs[1] / eb_Vy > 10 || ebs[2] / eb_Vz > 10) break;
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -196,7 +166,7 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 }
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
+bool halfing_error_V_TOT2_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
 	T eb_Vx = ebs[0];
 	T eb_Vy = ebs[1];
 	T eb_Vz = ebs[2];
@@ -210,17 +180,13 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			T e_V_TOT_2 = 0;
 			e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-			// error of total velocity
-			T e_V_TOT = 0;
-			e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-			T V_TOT = sqrt(V_TOT_2);
 			// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
 
-			error_est_V_TOT[i] = e_V_TOT;
-			error_V_TOT[i] = V_TOT - V_TOT_ori[i];
+			error_est_V_TOT2[i] = e_V_TOT_2;
+			error_V_TOT2[i] = V_TOT_2 - V_TOT2_ori[i];
 
-			if(max_value < error_est_V_TOT[i]){
-				max_value = error_est_V_TOT[i];
+			if(max_value < error_est_V_TOT2[i]){
+				max_value = error_est_V_TOT2[i];
 				max_index = i;
 				// max_weight_index = weight_index;
 			}
@@ -235,7 +201,6 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 		auto i = max_index;
 		T estimate_error = max_value;
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		T V_TOT = sqrt(V_TOT_2);
 		T eb_Vx = ebs[0];
 		T eb_Vy = ebs[1];
 		T eb_Vz = ebs[2];
@@ -244,9 +209,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 			eb_Vx = eb_Vx / 1.5;
 			eb_Vy = eb_Vy / 1.5;
 			eb_Vz = eb_Vz / 1.5;		        		
-			T e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
-			// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-			estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+			estimate_error = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -258,7 +221,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 }
 
 template<class T>
-bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
+bool halfing_error_V_TOT2_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
 	T eb_Vx = ebs[0];
 	T eb_Vy = ebs[1];
 	T eb_Vz = ebs[2];
@@ -270,17 +233,13 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 			T e_V_TOT_2 = 0;
 			e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-			// error of total velocity
-			T e_V_TOT = 0;
-			e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-			T V_TOT = sqrt(V_TOT_2);
 			// print_error("V_TOT", V_TOT, V_TOT_ori[i], e_V_TOT);
 
-			error_est_V_TOT[i] = e_V_TOT;
-			error_V_TOT[i] = V_TOT - V_TOT_ori[i];
+			error_est_V_TOT2[i] = e_V_TOT_2;
+			error_V_TOT2[i] = V_TOT_2 - V_TOT2_ori[i];
 
-			if(max_value < error_est_V_TOT[i]){
-				max_value = error_est_V_TOT[i];
+			if(max_value < error_est_V_TOT2[i]){
+				max_value = error_est_V_TOT2[i];
 				max_index = i;
 				// max_weight_index = weight_index;
 			}
@@ -296,7 +255,6 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 		auto i = max_index;
 		T estimate_error = max_value;
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
-		T V_TOT = sqrt(V_TOT_2);
 		T eb_Vx = ebs[0];
 		T eb_Vy = ebs[1];
 		T eb_Vz = ebs[2];
@@ -306,23 +264,17 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
     		T estimate_error_Vx = 0;
 			{
 				T eb_Vx_ = eb_Vx / 1.5;
-				T e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx_, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error_Vx = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vx = compute_bound_x_square(Vx[i], ldexp(eb_Vx_, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			}
 			T estimate_error_Vy = 0;
 			{
 				T eb_Vy_ = eb_Vy / 1.5;
-				T e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy_, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error_Vy = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vy = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy_, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			}
 			T estimate_error_Vz = 0;
 			{
 				T eb_Vz_ = eb_Vz / 1.5;
-				T e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz_, -weights[2][i]));
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error_Vz = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error_Vz = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz_, -weights[2][i]));
 			}
 			// std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
 			T sum_err = 3 * estimate_error - (estimate_error_Vx + estimate_error_Vy + estimate_error_Vz);
@@ -337,9 +289,7 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
             eb_Vz *= (1.0 - alpha * w_Vz);
 
 			{
-				double e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
-				// float e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
-				estimate_error = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+				estimate_error = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			}
 		}
 		ebs[0] = eb_Vx;
@@ -352,7 +302,7 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_Dummy(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -397,11 +347,11 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -418,8 +368,8 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -447,7 +397,6 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			reconstructors.back().span_weight();
 			weights[i] = reconstructors.back().get_int_weights();
 		}
-		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
@@ -466,11 +415,11 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -487,15 +436,15 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, T tau, s
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_SZ3(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -540,12 +489,12 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -562,8 +511,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -586,17 +535,16 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
 			reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
-			if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().fetch_weight = true;
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
-			ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
+			ebs[i] = ldexp(ebs[i], reconstructors[i].get_max_weight());
+			weight_file_size += reconstructors.back().get_weight_file_size();
 		}
-		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
-				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[0].get_max_weight()), -1);
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[i].get_max_weight()), -1);
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
@@ -611,12 +559,12 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -633,15 +581,15 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_PMGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
 	int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -701,11 +649,11 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -722,8 +670,8 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -752,7 +700,6 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			reconstructors.back().span_weight();
 			weights[i] = reconstructors.back().get_int_weights();
 		}
-		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
@@ -787,11 +734,11 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -808,15 +755,15 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, T tau, 
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -861,12 +808,12 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -883,8 +830,8 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -907,17 +854,16 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
 			reconstructors.push_back(generateWBPReconstructor_GE<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
-			if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().fetch_weight = true;
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
-			ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
+			ebs[i] = ldexp(ebs[i], reconstructors[i].get_max_weight());
+			weight_file_size += reconstructors.back().get_weight_file_size();
 		}
-		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
-				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[0].get_max_weight()), -1);
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[i].get_max_weight()), -1);
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
@@ -932,12 +878,12 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -954,15 +900,15 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, T tau, std:
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_HPEZ(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -1008,12 +954,12 @@ std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, T tau, st
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -1030,8 +976,8 @@ std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, T tau, st
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -1084,14 +1030,14 @@ std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, T tau, st
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			// Timer decrease_timer;
 			// decrease_timer.start();
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// decrease_timer.end();
 			// decrease_timer.print("Coordinate Decrease");
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
@@ -1110,15 +1056,15 @@ std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, T tau, st
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_SZ2(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_SZ2(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -1163,16 +1109,16 @@ std::vector<size_t> retrieve_V_TOT_SZ2(std::string rdata_file_prefix, T tau, std
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -1195,17 +1141,16 @@ std::vector<size_t> retrieve_V_TOT_SZ2(std::string rdata_file_prefix, T tau, std
 			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
 			reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
-			if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().fetch_weight = true;
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
-			ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
+			ebs[i] = ldexp(ebs[i], reconstructors[i].get_max_weight());
+			weight_file_size += reconstructors.back().get_weight_file_size();
 		}
-		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
-				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[0].get_max_weight()), -1);
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[i].get_max_weight()), -1);
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
@@ -1220,12 +1165,12 @@ std::vector<size_t> retrieve_V_TOT_SZ2(std::string rdata_file_prefix, T tau, std
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -1242,15 +1187,15 @@ std::vector<size_t> retrieve_V_TOT_SZ2(std::string rdata_file_prefix, T tau, std
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_MGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_MGARD(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -1295,16 +1240,16 @@ std::vector<size_t> retrieve_V_TOT_MGARD(std::string rdata_file_prefix, T tau, s
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -1327,17 +1272,16 @@ std::vector<size_t> retrieve_V_TOT_MGARD(std::string rdata_file_prefix, T tau, s
 			auto retriever = ConcatLevelFileRetriever(metadata_file, files);
 			reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
-			if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			reconstructors.back().fetch_weight = true;
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
-			ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
+			ebs[i] = ldexp(ebs[i], reconstructors[i].get_max_weight());
+			weight_file_size += reconstructors.back().get_weight_file_size();
 		}
-		weight_file_size = reconstructors[0].get_weight_file_size();
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
 			for(int i=0; i<n_variable; i++){
-				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[0].get_max_weight()), -1);
+				auto reconstructed_data = reconstructors[i].progressive_reconstruct(ldexp(ebs[i], -reconstructors[i].get_max_weight()), -1);
 				total_retrieved_size[i] = reconstructors[i].get_retrieved_size();
 				memcpy(reconstructed_vars[i].data(), reconstructed_data, num_elements*sizeof(T));
 			}
@@ -1352,12 +1296,12 @@ std::vector<size_t> retrieve_V_TOT_MGARD(std::string rdata_file_prefix, T tau, s
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -1374,15 +1318,15 @@ std::vector<size_t> retrieve_V_TOT_MGARD(std::string rdata_file_prefix, T tau, s
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
 }
 
 template<class T>
-std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
+std::vector<size_t> retrieve_V_TOT2_HPEZ_square(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
 	bool tolerance_met = false;
 	int n_variable = ebs.size();
@@ -1428,12 +1372,12 @@ std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, 
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -1450,8 +1394,8 @@ std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, 
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	else{
@@ -1478,7 +1422,7 @@ std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, 
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
 			ebs[i] = ldexp(ebs[i], reconstructors[i].get_max_weight());
-			weight_file_size += reconstructors[i].get_weight_file_size();
+			weight_file_size += reconstructors.back().get_weight_file_size();
 		}
 		while((!tolerance_met) && (iter < max_iter)){
 			iter ++;
@@ -1503,14 +1447,14 @@ std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, 
 			// MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
 			// MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
 			// MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-			error_V_TOT = std::vector<T>(num_elements);
-			error_est_V_TOT = std::vector<T>(num_elements);
+			error_V_TOT2 = std::vector<T>(num_elements);
+			error_est_V_TOT2 = std::vector<T>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			// Timer decrease_timer;
 			// decrease_timer.start();
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halfing_error_V_TOT2_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
+			else tolerance_met = halfing_error_V_TOT2_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs, weights);
 			// decrease_timer.end();
 			// decrease_timer.print("Coordinate Decrease");
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
@@ -1529,8 +1473,8 @@ std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, 
 			std::cout << "Data saved successfully to " << filename << std::endl;
 			//*/
 			// std::cout << names[0] << " requested error = " << tau << std::endl;
-			max_act_error = print_max_abs(names[0] + " error", error_V_TOT);
-			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT);  
+			max_act_error = print_max_abs(names[0] + " error", error_V_TOT2);
+			max_est_error = print_max_abs(names[0] + " error_est", error_est_V_TOT2);  
 		}
 	}
 	return total_retrieved_size;
@@ -1572,9 +1516,9 @@ int main(int argc, char ** argv){
 
 	err = clock_gettime(CLOCK_REALTIME, &start);
 
-    std::vector<T> V_TOT(num_elements);
-    compute_VTOT(Vx_ori.data(), Vy_ori.data(), Vz_ori.data(), num_elements, V_TOT.data());
-	V_TOT_ori = V_TOT.data();
+    std::vector<T> V_TOT2(num_elements);
+    compute_VTOT2(Vx_ori.data(), Vy_ori.data(), Vz_ori.data(), num_elements, V_TOT2.data());
+	V_TOT2_ori = V_TOT2.data();
 	/* test
     std::string filename = "./Result/Vtot_ori.dat";
     std::ofstream outfile1(filename, std::ios::binary);
@@ -1589,7 +1533,7 @@ int main(int argc, char ** argv){
     std::cout << "Data saved successfully to " << filename << std::endl;
     //*/
 	// std::cout << "Value Range of V_TOT = " << compute_value_range(V_TOT) << std::endl;
-    T tau = compute_value_range(V_TOT)*target_rel_eb;
+    T tau = compute_value_range(V_TOT2)*target_rel_eb;
 	// std::cout << "Tau = " << tau << std::endl;
 
     std::string mask_file = rdata_file_prefix + "mask.bin";
@@ -1602,28 +1546,28 @@ int main(int argc, char ** argv){
 	switch (compressor)
 	{
 	case Dummy_Cmp:
-		total_retrieved_size = retrieve_V_TOT_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_Dummy<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case SZ3_Cmp:
-		total_retrieved_size = retrieve_V_TOT_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_SZ3<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case PMGARD:
-		total_retrieved_size = retrieve_V_TOT_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_PMGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case GE_Cmp:
-		total_retrieved_size = retrieve_V_TOT_GE<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_GE<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case HPEZ_Cmp:
-		total_retrieved_size = retrieve_V_TOT_HPEZ<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_HPEZ<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case SZ2_Cmp:
-		total_retrieved_size = retrieve_V_TOT_SZ2<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_SZ2<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case MGARD_Cmp:
-		total_retrieved_size = retrieve_V_TOT_MGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_MGARD<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	case HPEZ_Vtot2:
-		total_retrieved_size = retrieve_V_TOT_HPEZ_2<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
+		total_retrieved_size = retrieve_V_TOT2_HPEZ_square<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	default:
 		break;

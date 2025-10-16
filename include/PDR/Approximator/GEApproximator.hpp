@@ -15,14 +15,12 @@ namespace PDR {
         size_t refactor_approximate(T * data, const std::vector<uint32_t>& dimensions, T approximator_eb, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
 
             // block size file
-            size_t pos = filename.find_last_of('/');
-            std::string tmp_path = filename.substr(0, pos);
-            pos = tmp_path.find_last_of('/');
-            tmp_path = tmp_path.substr(0, pos);
-            pos = tmp_path.find_last_of('/');
-            tmp_path = tmp_path.substr(0, pos+1);
-            std::string block_path;
-            block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
+            size_t pos = filename.find("/refactor");
+            if(pos == std::string::npos){
+                perror("Please arrange dataset directory according to Appendix\n");
+            }
+            std::string tmp_path = filename.substr(0, pos+1);
+            std::string block_path = tmp_path + "/block_sizes.dat";
             // std::cout << "block_path: " <<  block_path << std::endl;
             size_t num_blocks = 0;
             auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
@@ -46,7 +44,7 @@ namespace PDR {
             size_t cmpSize = 0;
             {
                 QoZ::Config conf(num_blocks);
-                conf.cmprAlgo = QoZ::ALGO_INTERP_LORENZO;
+                conf.QoZ = 4;
                 conf.errorBoundMode = QoZ::EB_REL;
                 conf.relErrorBound = 1E-3;
                 cmpData = SZ_compress<T>(conf, means.data(), cmpSize);
@@ -75,14 +73,12 @@ namespace PDR {
         void reconstruct_approximate(T * data, const std::vector<uint32_t>& dimensions, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
             if(filename.size()) approximator_file_name = filename;
         	QoZ::Config conf;
-            size_t pos = filename.find_last_of('/');
-            std::string tmp_path = filename.substr(0, pos);
-            pos = tmp_path.find_last_of('/');
-            tmp_path = tmp_path.substr(0, pos);
-            pos = tmp_path.find_last_of('/');
-            tmp_path = tmp_path.substr(0, pos+1);
-            std::string block_path;
-            block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
+            size_t pos = filename.find("/refactor");
+            if(pos == std::string::npos){
+                perror("Please arrange dataset directory according to Appendix\n");
+            }
+            std::string tmp_path = filename.substr(0, pos+1);
+            std::string block_path = tmp_path + "/block_sizes.dat";
             // std::cout << "block_path: " <<  block_path << std::endl;
             size_t num_blocks = 0;
             auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
@@ -105,7 +101,7 @@ namespace PDR {
         }
 
         void print() const {
-            std::cout << "PDR dummy approximator" << std::endl;
+            std::cout << "PDR GE approximator" << std::endl;
         }
     private:
         size_t approximator_file_size;

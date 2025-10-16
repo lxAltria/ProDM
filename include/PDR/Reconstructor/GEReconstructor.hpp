@@ -48,7 +48,8 @@ namespace PDR
                 level_errors = level_abs_errors;
             }
 
-            // timer.start();
+            // Timer interp_retrieve_timer;
+            // interp_retrieve_timer.start();
             auto prev_level_num_bitplanes(level_num_bitplanes);
             if (max_level == -1 || (max_level >= level_num_bitplanes.size()))
             {
@@ -75,6 +76,8 @@ namespace PDR
                     level_num_bitplanes[i] = tmp_level_num_bitplanes[i];
                 }
             }
+            // interp_retrieve_timer.end();
+            // interp_retrieve_timer.print("Interpreter & Retriever");
 
             bool success = reconstruct(prev_level_num_bitplanes);
             retriever.release();
@@ -242,6 +245,14 @@ namespace PDR
             return dimensions;
         }
 
+        size_t get_metadata_size(){
+            return retriever.get_metadata_size();
+        }
+
+        size_t get_approximator_size(){
+            return approximator_size;
+        }
+
         size_t get_retrieved_size()
         {
             return retriever.get_retrieved_size() + approximator_size;
@@ -295,7 +306,11 @@ namespace PDR
             if (!reconstructed)
             {
                 std::string approximator_path = retriever.get_directory() + "approximator.dat";
+                // Timer approximator_timer;
+                // approximator_timer.start();
                 approximator.reconstruct_approximate(data.data(), dimensions, approximator_path);
+                // approximator_timer.end();
+                // approximator_timer.print("Approximator");
                 reconstructed = true;
             }
             int i = 0;
@@ -304,14 +319,22 @@ namespace PDR
             if (level_num_bitplanes[i] - prev_level_num_bitplanes[i] > 0)
             {
                 if (mask.empty()){
+                    // Timer decompressor_timer;
+                    // decompressor_timer.start();
                     compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
+                    // decompressor_timer.end();
+                    // decompressor_timer.print("Decompression");
                     int level_exp = 0;
                     if (negabinary)
                         frexp(level_error_bounds[i] / 4, &level_exp);
                     else
                         frexp(level_error_bounds[i], &level_exp);
                     int level_max_weight = compute_max_abs_value(int_weights.data(), level_elements[i]);
+                    // Timer decoder_timer;
+                    // decoder_timer.start();
                     auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, int_weights.data());
+                    // decoder_timer.end();
+                    // decoder_timer.print("Decoder");
                     compressor.decompress_release();
                     for (int i = 0; i < num_elements; i++)
                     {
@@ -323,19 +346,31 @@ namespace PDR
                     int num_valid_data = std::accumulate(mask.begin(), mask.end(), 0);
                     std::vector<int> filtered_int_weights(num_valid_data);
                     int filtered_index = 0;
+                    // Timer filtered_timer;
+                    // filtered_timer.start();
                     for(int i=0; i<mask.size(); i++){
                         if(mask[i]){
                             filtered_int_weights[filtered_index++]=int_weights[i];
                         }
                     }
+                    // filtered_timer.end();
+                    // filtered_timer.print("Filtering weight");
+                    // Timer decompressor_timer;
+                    // decompressor_timer.start();
                     compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
+                    // decompressor_timer.end();
+                    // decompressor_timer.print("Decompression");
                     int level_exp = 0;
                     if (negabinary)
                         frexp(level_error_bounds[i] / 4, &level_exp);
                     else
                         frexp(level_error_bounds[i], &level_exp);
                     int level_max_weight = compute_max_abs_value(filtered_int_weights.data(), num_valid_data);
+                    // Timer decoder_timer;
+                    // decoder_timer.start();
                     auto level_decoded_data = encoder.progressive_decode(level_components[i], num_valid_data, level_exp + level_max_weight, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i, filtered_int_weights.data());
+                    // decoder_timer.end();
+                    // decoder_timer.print("Decoder");
                     compressor.decompress_release();
                     filtered_index = 0;
                     for (int i = 0; i < mask.size(); i++){

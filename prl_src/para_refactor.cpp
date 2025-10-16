@@ -84,23 +84,22 @@ int main(int argc, char** argv){
     case SZ3:
         if(!weighted){
             if(std::strcmp(data.c_str(), "Hurricane") == 0){
-                // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 100*500*500);
                 refactor_velocities_3D_SZ3_BP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "NYX") == 0){
-                // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 512*512*512);
                 refactor_velocities_3D_SZ3_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "SCALE") == 0){
-                // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 98*1200*1200);
                 refactor_velocities_3D_SZ3_BP<T>(data, 98, 1200, 1200, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "Miranda") == 0){
-                // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 256*384*384);
                 refactor_velocities_3D_SZ3_BP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
                 refactor_velocities_3D_SZ3_BP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
+            }
+            else if (std::strcmp(data.c_str(), "JHTDB") == 0){
+                refactor_velocities_3D_SZ3_BP<T>(data, 128, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
         }
         else{
@@ -178,6 +177,9 @@ int main(int argc, char** argv){
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
                 refactor_velocities_3D_HPEZ_BP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
+            }
+            else if (std::strcmp(data.c_str(), "JHTDB") == 0){
+                refactor_velocities_3D_HPEZ_BP<T>(data, 128, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
         }
         else{

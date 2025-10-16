@@ -54,6 +54,13 @@ cd QoZ
 mkdir -p install/include/
 rsync -av --exclude 'ska_hash' include/ ${external_dir}/QoZ/install/include/
 
+# copy MGARD
+cd ${external_dir}
+git clone git@github.com:CODARcode/MGARD.git
+cd MGARD
+sh build_scripts/build_mgard_serial.sh 8
+
+
 # build ProDM
 cd ${source_dir}
 mkdir -p build

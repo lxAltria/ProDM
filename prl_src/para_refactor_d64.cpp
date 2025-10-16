@@ -36,6 +36,7 @@ int main(int argc, char** argv){
     int max_weight_for_vtot = 4;
     int max_weight_for_temperature = 0;
 	int block_size = 1;
+    T approximator_eb = 0.001;
 	if(argc > 5){
 		max_weight_for_vtot = atoi(argv[argv_id++]);
         if (std::strcmp(data.c_str(), "GE") == 0){
@@ -44,6 +45,7 @@ int main(int argc, char** argv){
         else{
 		    block_size = atoi(argv[argv_id++]);
         }
+        approximator_eb = atof(argv[argv_id++]);
 	}
 
 	struct timespec start, end;
@@ -57,24 +59,24 @@ int main(int argc, char** argv){
     case Dummy:
         if(!weighted){
             if(std::strcmp(data.c_str(), "Hurricane") == 0){
-                refactor_velocities_3D_Dummy_BP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_Dummy_BP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "NYX") == 0){
-                refactor_velocities_3D_Dummy_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_Dummy_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "GE") == 0){
-                refactor_velocities_1D_Dummy_BP<T>(data_file_prefix, rdata_file_prefix);
+                refactor_velocities_1D_Dummy_BP<T>(data_file_prefix, rdata_file_prefix, approximator_eb);
             }
         }
         else{
             if(std::strcmp(data.c_str(), "Hurricane") == 0){
-                refactor_velocities_3D_Dummy_WBP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_Dummy_WBP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "NYX") == 0){
-                refactor_velocities_3D_Dummy_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_Dummy_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "GE") == 0){
-                refactor_velocities_1D_Dummy_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature, block_size);
+                refactor_velocities_1D_Dummy_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, approximator_eb, max_weight_for_temperature, block_size);
             }
         }
         break;
@@ -82,45 +84,45 @@ int main(int argc, char** argv){
         if(!weighted){
             if(std::strcmp(data.c_str(), "Hurricane") == 0){
                 // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 100*500*500);
-                refactor_velocities_3D_SZ3_BP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_SZ3_BP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "NYX") == 0){
                 // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 512*512*512);
-                refactor_velocities_3D_SZ3_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_SZ3_BP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "GE") == 0){
-                refactor_velocities_1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix);
+                refactor_velocities_1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "SCALE") == 0){
                 // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 98*1200*1200);
-                refactor_velocities_3D_SZ3_BP<T>(data, 98, 1200, 1200, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_SZ3_BP<T>(data, 98, 1200, 1200, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "Miranda") == 0){
                 // refactor_velocities_A1D_SZ3_BP<T>(data_file_prefix, rdata_file_prefix, 256*384*384);
-                refactor_velocities_3D_SZ3_BP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_SZ3_BP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix);
+                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
         }
         else{
             if(std::strcmp(data.c_str(), "Hurricane") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_SZ3_WBP<T>(data, 100, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "NYX") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_SZ3_WBP<T>(data, 512, 512, 512, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "GE") == 0){
-                refactor_velocities_1D_SZ3_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature, block_size);
+                refactor_velocities_1D_SZ3_WBP<T>(data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, max_weight_for_temperature, block_size);
             }
             else if (std::strcmp(data.c_str(), "SCALE") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 98, 1200, 1200, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_SZ3_WBP<T>(data, 98, 1200, 1200, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "Miranda") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_SZ3_WBP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
-                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_SZ3_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
         }
         break;
@@ -152,10 +154,10 @@ int main(int argc, char** argv){
         break;
     case GE:
         if(!weighted){
-            refactor_velocities_1D_GE_BP<T>(data_file_prefix, rdata_file_prefix);
+            refactor_velocities_1D_GE_BP<T>(data_file_prefix, rdata_file_prefix, approximator_eb);
         }
         else{
-            refactor_velocities_1D_GE_WBP<T>(data_file_prefix, rdata_file_prefix, max_weight_for_vtot, max_weight_for_temperature);
+            refactor_velocities_1D_GE_WBP<T>(data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, max_weight_for_temperature);
         }
         break;
     default:

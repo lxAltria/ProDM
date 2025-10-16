@@ -62,8 +62,7 @@ namespace MDR {
                     T_data cur_data = *(data_pos++);//
                     // std::cout << cur_data << " ";
                     // int current_weight = *(weights_pos++);
-                    cur_data *= std::pow(2.0, *(weights_pos++)); 
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
+                    T_data shifted_data = ldexp(cur_data, (num_bitplanes - exp) + *(weights_pos++));
                     T_fps signed_int_data = (T_fps) shifted_data;
                     // std::cout << shifted_data << " ";
                     int_data_buffer[j] = binary2negabinary(signed_int_data);
@@ -79,8 +78,7 @@ namespace MDR {
                     T_data cur_data = *(data_pos++);
                     // std::cout << cur_data << " ";
                     // int current_weight = *(weights_pos++);
-                    cur_data *= std::pow(2.0, *(weights_pos++)); 
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
+                    T_data shifted_data = ldexp(cur_data, (num_bitplanes - exp) + *(weights_pos++));
                     T_fps signed_int_data = (T_fps) shifted_data;
                     // std::cout << shifted_data << " ";
                     int_data_buffer[j] = binary2negabinary(signed_int_data);
@@ -201,7 +199,7 @@ namespace MDR {
                     for(int j=0; j<block_size; j++){
                         // int current_weight = *(weights_pos++);
                         // std::cout << negabinary2binary(int_data_buffer[j]) << " ";
-                        T_data x = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        T_data x = ldexp((T_data) negabinary2binary(int_data_buffer[j]), (- ending_bitplane + exp) - *(weights_pos++));
                         // std::cout << x << " " << - ending_bitplane + exp << std::endl;
                         *(data_pos++) = x;
                     }
@@ -215,7 +213,7 @@ namespace MDR {
                     for(int j=0; j<rest_size; j++){
                         // int current_weight = *(weights_pos++);
                         // std::cout << negabinary2binary(int_data_buffer[j]) << " ";
-                        T_data x = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        T_data x = ldexp((T_data) negabinary2binary(int_data_buffer[j]), (- ending_bitplane + exp) - *(weights_pos++));
                         // std::cout << x << " " << - ending_bitplane + exp << std::endl;
                         *(data_pos++) = x; 
                     }
@@ -228,7 +226,7 @@ namespace MDR {
                     for(int j=0; j<block_size; j++){
                        //int current_weight = *(weights_pos++);
                         /// std::cout << negabinary2binary(int_data_buffer[j]) << " ";
-                        T_data x = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        T_data x = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), (- ending_bitplane + exp) - *(weights_pos++));
                         // std::cout << x  << " " << - ending_bitplane + exp << std::endl;
                         *(data_pos++) = x;
                     }
@@ -242,7 +240,7 @@ namespace MDR {
                     for(int j=0; j<rest_size; j++){
                         // int current_weight = *(weights_pos++);
                         // std::cout << negabinary2binary(int_data_buffer[j]) << " ";
-                        T_data x = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp) / std::pow(2.0, *(weights_pos++));
+                        T_data x = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), (- ending_bitplane + exp) - *(weights_pos++));
                         // std::cout << x << " " << - ending_bitplane + exp << std::endl;
                         *(data_pos++) = x;
                     }

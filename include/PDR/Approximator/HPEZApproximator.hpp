@@ -54,10 +54,10 @@ namespace PDR {
             QoZ::Config conf;
             SZ_decompress<T>(conf, cmpData, cmpSize, dec_data);
             free(cmpData);
-            T tmp = 0;
+            // T tmp = 0;
             for(int i=0; i<num_elements; i++){
                 data[i] -= dec_data[i];
-                if(fabs(data[i]) > tmp) tmp = fabs(data[i]);
+                // if(fabs(data[i]) > tmp) tmp = fabs(data[i]);
             }
             // std::cout << "max diff = " << tmp << std::endl;
             free(dec_data);

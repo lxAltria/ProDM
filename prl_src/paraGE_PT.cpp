@@ -19,6 +19,11 @@
 #define GE 3
 using namespace MDR;
 
+const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
+
+using T = double;
+using T_stream = uint32_t;
+
 std::vector<double> P_ori;
 std::vector<double> D_ori;
 std::vector<double> Vx_ori;
@@ -461,12 +466,12 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 	int n_variable = ebs.size();
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
-		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		T e_V_TOT = 0;
 		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 		T V_TOT = sqrt(V_TOT_2);
-		T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+		T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
 		T Temp = P[i] / (D[i] * R);
 		T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
 		T C = c_2 * sqrt(Temp);
@@ -479,7 +484,7 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 			e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
 		}
 		T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
 		T PT = P[i] * Mach_tmp_mi;
 
 		error_est_PT[i] = e_PT;
@@ -530,12 +535,12 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 			eb_P = eb_P / 1.5;
 			eb_D = eb_D / 1.5;
 			T e_V_TOT_2 = 0;
-			if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+			if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
 			T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 			T e_V_TOT = 0;
 			if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
 			T V_TOT = sqrt(V_TOT_2);
-			T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+			T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
 			T Temp = P[i] / (D[i] * R);
 			T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
 			T C = c_2 * sqrt(Temp);
@@ -548,7 +553,7 @@ bool halfing_error_PT_uniform(const T * Vx, const T * Vy, const T * Vz, const T 
 				e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
 			}
 			T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-			estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+			estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             if (ebs[0] / eb_Vx > 10) break;
 		}
 		ebs[0] = eb_Vx;
@@ -579,45 +584,36 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
 	int C7i[8] = {1, 7, 21, 35, 35, 21, 7, 1};
 	T max_value = 0;
 	int max_index = 0;
-    T max_Vx = 0;
-    T max_Vy = 0;
-    T max_Vz = 0;
-    T max_P = 0;
-    T max_D = 0;
-    T max_e_VTOT_2 = 0;
-    T max_VTOT_2 = 0;
-    T max_e_T = 0;
-    T max_T = 0;
-    T max_C = 0;
-    T max_e_C = 0;
-    T max_e_Mach = 0;
-    T max_Mach = 0;
-    T max_e_Mach_tmp_mi = 0;
-    T max_Mach_tmp_mi = 0;
-    T max_e_PT = 0;
-    T max_PT = 0;
 	int n_variable = ebs.size();
+    T Mach_tmp_pow[8];
+    T e_Mach_tmp_pow[8];
 	for(int i=0; i<n; i++){
 		T e_V_TOT_2 = 0;
-		if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+		e_V_TOT_2 = mask[i] ? compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i])) : 0;
 		T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
 		T e_V_TOT = 0;
-		if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+		e_V_TOT = mask[i] ? compute_bound_square_root_x(V_TOT_2, e_V_TOT_2) : 0;
 		T V_TOT = sqrt(V_TOT_2);
-		T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+		T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
 		T Temp = P[i] / (D[i] * R);
 		T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
 		T C = c_2 * sqrt(Temp);
 		T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
 		T Mach = V_TOT / C;
-		T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-		T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+		T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+		T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
 		T e_Mach_tmp_mi = 0;
-		for(int i=1; i<=7; i++){
-			e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
-		}
-		T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+        Mach_tmp_pow[0] = 1;
+        e_Mach_tmp_pow[0] = 1;
+        for (int k = 1; k <= 7; k++) {
+            Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+            e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+        }
+        for (int k = 1; k <= 7; k++) {
+            e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+        }
+		T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+		T e_PT = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
 		T PT = P[i] * Mach_tmp_mi;
 
 		error_est_PT[i] = e_PT;
@@ -625,32 +621,8 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
 		if(max_value < error_est_PT[i]){
 			max_value = error_est_PT[i];
 			max_index = i;
-            max_Vx = Vx[i];
-            max_Vy = Vy[i];
-            max_Vz = Vz[i];
-            max_P = P[i];
-            max_D = D[i];
-            max_e_VTOT_2 = e_V_TOT_2;
-            max_VTOT_2 = V_TOT_2;
-            max_e_T = e_T;
-            max_T = Temp;
-            max_e_C = e_C;
-            max_C = C;
-            max_e_Mach = e_Mach;
-            max_Mach = Mach;
-            max_e_Mach_tmp_mi = e_Mach_tmp_mi;
-            max_Mach_tmp_mi = Mach_tmp_mi;
-            max_e_PT = e_PT;
-            max_PT = PT;
 		}
 	}
-	// std::cout << names[4] << ": max estimated error = " << max_value << ", index = " << max_index << std::endl;
-    // std::cout << "e_PT = " << max_e_PT << ", PT = " << max_PT << std::endl;
-    // std::cout << "e_Mach_tmp_mi = " << max_e_Mach_tmp_mi << ", Mach_tmp_mi = " << max_Mach_tmp_mi << std::endl;
-    // std::cout << "e_Mach = " << max_e_Mach << ", Mach = " << max_Mach << std::endl;
-    // std::cout << "e_C = " << max_e_C << ", C = " << max_C << std::endl;
-    // std::cout << "e_VTOT_2 = " << max_e_VTOT_2 << ", VTOT_2 = " << max_VTOT_2 << ", Vx = " << max_Vx << ", Vy = " << max_Vy << ", Vz = " << max_Vz << std::endl;
-    // std::cout << "e_T = " << max_e_T << ", T = " << max_T << ", P = " << max_P << ", D = " << max_D << std::endl;
 
     // ************************************************ Vx, Vy, Vz, P and D ************************************************
     if(max_value > tau){
@@ -667,138 +639,212 @@ bool halfing_error_PT_coordinate(const T * Vx, const T * Vy, const T * Vz, const
             {
                 T eb_Vx_ = eb_Vx / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx_ / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx_, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_Vx = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_Vx = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_Vy = 0;
             {
                 T eb_Vy_ = eb_Vy / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy_ / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy_, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_Vy = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_Vy = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_Vz = 0;
             {
                 T eb_Vz_ = eb_Vz / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz_ / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz_, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_Vz = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_Vz = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_P = 0;
             {
                 T eb_P_ = eb_P / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P_ / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P_, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_P = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P_ / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_P = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P_, -weights[3][i]), e_Mach_tmp_mi);
             }
             T estimate_error_D = 0;
             {
                 T eb_D_ = eb_D / 1.5;
                 T e_V_TOT_2 = 0;
-                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], eb_Vx / static_cast<T>(std::pow(2.0, weights[0][i]))) + compute_bound_x_square(Vy[i], eb_Vy / static_cast<T>(std::pow(2.0, weights[1][i]))) + compute_bound_x_square(Vz[i], eb_Vz / static_cast<T>(std::pow(2.0, weights[2][i])));
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
                 T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
                 T e_V_TOT = 0;
                 if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
                 T V_TOT = sqrt(V_TOT_2);
-                T e_T = c_1 * compute_bound_division(P[i], D[i], eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), eb_D_ / static_cast<T>(std::pow(2.0, weights[4][i])));
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D_, -weights[4][i]));
                 T Temp = P[i] / (D[i] * R);
                 T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
                 T C = c_2 * sqrt(Temp);
                 T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
                 T Mach = V_TOT / C;
-                T e_Mach_tmp = (gamma-1) / 2 * compute_bound_x_square(Mach, e_Mach);
-                T Mach_tmp = 1 + (gamma-1)/2 * Mach * Mach;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
                 T e_Mach_tmp_mi = 0;
-                for(int i=1; i<=7; i++){
-                    e_Mach_tmp_mi += C7i[i] * pow(Mach_tmp, 7-i) * pow(e_Mach_tmp, i);
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
                 }
-                T Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
-                estimate_error_D = compute_bound_multiplication(P[i], Mach_tmp_mi, eb_P / static_cast<T>(std::pow(2.0, weights[3][i])), e_Mach_tmp_mi);
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error_D = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
             }
     		// std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
-			const T relative_epsilon = 1e-3;
-            T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
-            T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
-            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
-            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
-            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
-            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
-            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
-            estimate_error = min_error;
-            if (close_Vx) eb_Vx /= 1.5;
-            if (close_Vy) eb_Vy /= 1.5;
-            if (close_Vz) eb_Vz /= 1.5;
-            if (close_P)  eb_P /= 1.5;
-            if (close_D)  eb_D /= 1.5;
-            if ((ebs[0] / eb_Vx > 10) || (ebs[1] / eb_Vy > 10) || (ebs[2] / eb_Vz > 10) || (ebs[3] / eb_P > 10) || (ebs[4] / eb_D > 10)) break;
+			// const T relative_epsilon = 1e-3;
+            // T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
+            // T epsilon = std::max(relative_epsilon * min_error, static_cast<T>(1e-12));
+            // bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
+            // bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
+            // bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+            // bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
+            // bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            // if (close_Vx) eb_Vx /= 1.5;
+            // if (close_Vy) eb_Vy /= 1.5;
+            // if (close_Vz) eb_Vz /= 1.5;
+            // if (close_P)  eb_P /= 1.5;
+            // if (close_D)  eb_D /= 1.5;
+
+            // === Normalize each variable's contribution ===
+            T sum_err = 5 * estimate_error - (estimate_error_Vx + estimate_error_Vy + estimate_error_Vz + estimate_error_P + estimate_error_D);
+            T w_Vx = (estimate_error - estimate_error_Vx) / sum_err;
+            T w_Vy = (estimate_error - estimate_error_Vy) / sum_err;
+            T w_Vz = (estimate_error - estimate_error_Vz) / sum_err;
+            T w_P  = (estimate_error - estimate_error_P)  / sum_err;
+            T w_D  = (estimate_error - estimate_error_D)  / sum_err;
+            // === Smooth proportional update ===
+            T factor_base = 1.5;
+            T alpha = 1.0 - (1.0 / factor_base);
+            eb_Vx *= (1.0 - alpha * w_Vx);
+            eb_Vy *= (1.0 - alpha * w_Vy);
+            eb_Vz *= (1.0 - alpha * w_Vz);
+            eb_P  *= (1.0 - alpha * w_P);
+            eb_D  *= (1.0 - alpha * w_D);
+
+            {
+                T e_V_TOT_2 = 0;
+                if(mask[i]) e_V_TOT_2 = compute_bound_x_square(Vx[i], ldexp(eb_Vx, -weights[0][i])) + compute_bound_x_square(Vy[i], ldexp(eb_Vy, -weights[1][i])) + compute_bound_x_square(Vz[i], ldexp(eb_Vz, -weights[2][i]));
+                T V_TOT_2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+                T e_V_TOT = 0;
+                if(mask[i]) e_V_TOT = compute_bound_square_root_x(V_TOT_2, e_V_TOT_2);
+                T V_TOT = sqrt(V_TOT_2);
+                T e_T = c_1 * compute_bound_division(P[i], D[i], ldexp(eb_P, -weights[3][i]), ldexp(eb_D, -weights[4][i]));
+                T Temp = P[i] / (D[i] * R);
+                T e_C = c_2*compute_bound_square_root_x(Temp, e_T);
+                T C = c_2 * sqrt(Temp);
+                T e_Mach = compute_bound_division(V_TOT, C, e_V_TOT, e_C);
+                T Mach = V_TOT / C;
+                T e_Mach_tmp = ldexp(gamma - 1, -1) * compute_bound_x_square(Mach, e_Mach);
+                T Mach_tmp = 1 + ldexp(gamma - 1, -1) * Mach * Mach;
+                T e_Mach_tmp_mi = 0;
+                Mach_tmp_pow[0] = 1;
+                e_Mach_tmp_pow[0] = 1;
+                for (int k = 1; k <= 7; k++) {
+                    Mach_tmp_pow[k] = Mach_tmp_pow[k - 1] * Mach_tmp;
+                    e_Mach_tmp_pow[k] = e_Mach_tmp_pow[k - 1] * e_Mach_tmp;
+                }
+                for (int k = 1; k <= 7; k++) {
+                    e_Mach_tmp_mi += C7i[k] * Mach_tmp_pow[7 - k] * e_Mach_tmp_pow[k];
+                }
+                T Mach_tmp_mi = sqrt(Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp * Mach_tmp);
+                estimate_error = compute_bound_multiplication(P[i], Mach_tmp_mi, ldexp(eb_P, -weights[3][i]), e_Mach_tmp_mi);
+            }
+            // if ((ebs[0] / eb_Vx > 10) || (ebs[1] / eb_Vy > 10) || (ebs[2] / eb_Vz > 10) || (ebs[3] / eb_P > 10) || (ebs[4] / eb_D > 10)) break;
 		}
 		ebs[0] = eb_Vx;
 		ebs[1] = eb_Vy;
@@ -967,7 +1013,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
-        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
             std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -977,7 +1023,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
                 std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
                 files.push_back(filename);
             }
-            auto approximator = PDR::SZApproximator<T>();
+            auto approximator = PDR::SZ3Approximator<T>();
             auto encoder = NegaBinaryBPEncoder<T, uint32_t>();
             auto compressor = AdaptiveLevelCompressor(64);
             auto estimator = MaxErrorEstimatorHB<T>();
@@ -1020,7 +1066,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
         local_elapsed_time += MPI_Wtime();
     }
     else{
-        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -1031,7 +1077,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
                 std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
                 files.push_back(filename);
             }
-            auto approximator = PDR::SZApproximator<T>();
+            auto approximator = PDR::SZ3Approximator<T>();
             auto encoder = WeightedNegaBinaryBPEncoder<T, uint32_t>();
             auto compressor = AdaptiveLevelCompressor(64);
             auto estimator = MaxErrorEstimatorHB<T>();
@@ -1261,6 +1307,8 @@ std::vector<size_t> retrieve_PT_PMGARD(std::string rdata_file_prefix, T tau, std
     return total_retrieved_size;
 }
 
+std::vector<PDR::GEReconstructor<T, PDR::GEApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> ge_reconstructors;
+
 template<class T>
 std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
     int max_iter = 30;
@@ -1401,6 +1449,7 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
         }
         local_elapsed_time += MPI_Wtime();
+        ge_reconstructors = reconstructors;
     }
     return total_retrieved_size;
 }
@@ -1428,6 +1477,8 @@ int main(int argc, char ** argv){
     data_prefix_path += oss.str();
 	std::string data_file_prefix = data_prefix_path + "/data/";
 	std::string rdata_file_prefix = data_prefix_path + "/refactor/";
+    int exp = static_cast<int>(std::round(std::log10(target_rel_eb)));
+	std::string wdata_file_prefix = output_path + "/1e" + std::to_string(exp) + "/";
 
     size_t num_elements = 0;
     P_ori = MGARD::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
@@ -1484,17 +1535,19 @@ int main(int argc, char ** argv){
     double global_elapsed_time = 0;
     MPI_Reduce(&local_elapsed_time, &global_elapsed_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    // std::cout << "rank = " << rank << " act_iter = " << iter << std::endl;
+    int global_max_iter = 0;
+    MPI_Reduce(&iter, &global_max_iter, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+    if(!rank) std::cout << "max_iter = " << global_max_iter << std::endl;
 
-    if(!rank) printf("requested_error = %.10f\n", global_tau);
+    if(!rank) std::cout << "requested_error = " << global_tau << std::endl;
 	
     double global_max_est_error = 0;
 	MPI_Reduce(&local_max_est_error, &global_max_est_error, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-	if(!rank) printf("max_est_error = %.10f\n", global_max_est_error);
+	if(!rank) std::cout << "max_est_error = " << global_max_est_error << std::endl;
 
 	double global_max_act_error = 0;
 	MPI_Reduce(&local_max_act_error, &global_max_act_error, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-	if(!rank) printf("max_act_error = %.10f\n", global_max_act_error);
+	if(!rank) std::cout << "max_act_error = " << global_max_act_error << std::endl;
 
 	unsigned long long local_total_size = static_cast<unsigned long long>(mask_file_size) + std::accumulate(total_retrieved_size.begin(), total_retrieved_size.end(), 0ULL) + static_cast<unsigned long long>(weight_file_size);
 
@@ -1504,6 +1557,120 @@ int main(int argc, char ** argv){
 	MPI_Reduce(&local_total_size, &global_total_retrieved, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 	if(!rank) printf("Aggregated bitrate = %.10f, retrieved_size = %ld, total_num_elements = %ld\n", 8*global_total_retrieved * 1.0 / (global_total_num * n_variable), global_total_retrieved, global_total_num);
 	if(!rank) printf("elapsed_time = %.6f\n", global_elapsed_time);
+
+    size_t total_2 = 0;
+    for(int i=0; i<n_variable; i++){
+        auto tmp_count = ge_reconstructors[i].get_offsets();
+		auto approximator_count = ge_reconstructors[i].get_approximator_size();
+		auto metadata_count = ge_reconstructors[i].get_metadata_size();
+
+		std::vector<unsigned long long int> count(tmp_count.begin(), tmp_count.end());
+        auto offsets(count);
+        for(int j=0; j<offsets.size(); j++) offsets[j] = 0;
+		unsigned long long int approximator_offset = 0;
+		unsigned long long int metadata_offset = 0;
+
+        auto buffer(offsets);
+		unsigned long long int approximator_buffer;
+		unsigned long long int metadata_buffer;
+
+        for(int j=0; j<size; j++){
+            if(j == rank){
+                if(j != 0) {
+                    MPI_Recv(&offsets[0], offsets.size(), MPI_UNSIGNED_LONG_LONG, j-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					MPI_Recv(&approximator_offset, 1, MPI_UNSIGNED_LONG_LONG, j-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					MPI_Recv(&metadata_offset, 1, MPI_UNSIGNED_LONG_LONG, j-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                }
+
+                for(int k=0; k<offsets.size(); k++){
+                    buffer[k] = offsets[k] + count[k];
+                }
+				approximator_buffer = approximator_offset + approximator_count;
+				metadata_buffer = metadata_offset + metadata_count;
+
+                if(j != size - 1) {
+					MPI_Send(&buffer[0], offsets.size(), MPI_UNSIGNED_LONG_LONG, j+1, 0, MPI_COMM_WORLD);
+					MPI_Send(&approximator_buffer, 1, MPI_UNSIGNED_LONG_LONG, j+1, 0, MPI_COMM_WORLD);
+					MPI_Send(&metadata_buffer, 1, MPI_UNSIGNED_LONG_LONG, j+1, 0, MPI_COMM_WORLD);
+				}
+            }
+        }
+		std::string rdir_prefix = rdata_file_prefix + var_name_out[i] + "_refactored/";
+        for(int k=0; k<offsets.size(); k++){
+            std::string file_level = rdir_prefix + "level_" + std::to_string(k) + ".bin";
+            size_t num_char = 0;
+            auto level_data = MGARD::readfile<unsigned char>(file_level.c_str(), num_char);
+            MPI_File file;
+            std::string filename = wdata_file_prefix + var_name_out[i] + "_aggregated_level_" + std::to_string(k) + ".dat";
+            MPI_File_open(MPI_COMM_WORLD, filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
+            MPI_File_write_at(file, offsets[k], level_data.data(), count[k], MPI_SIGNED_CHAR, MPI_STATUS_IGNORE);
+            MPI_File_close(&file);
+            total_2 += count[k];
+        }
+		std::string approximator_path = rdir_prefix + "approximator.dat";
+		std::string metadata_path = rdir_prefix + "metadata.bin";
+		size_t approximator_num_char = 0;
+		size_t metadata_num_char = 0;
+		auto approximator_data = MGARD::readfile<char>(approximator_path.c_str(), approximator_num_char);
+		auto metadata_data = MGARD::readfile<unsigned char>(metadata_path.c_str(), metadata_num_char);
+		MPI_File approximator_file;
+		MPI_File metadata_file;
+		std::string approximator_filename = wdata_file_prefix + var_name_out[i] + "_aggregated_approximator.dat";
+		std::string metadata_filename = wdata_file_prefix + var_name_out[i] + "_aggregated_metadata.bin";
+		MPI_File_open(MPI_COMM_WORLD, approximator_filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &approximator_file);
+		MPI_File_write_at(approximator_file, approximator_offset, approximator_data.data(), approximator_count, MPI_SIGNED_CHAR, MPI_STATUS_IGNORE);
+		MPI_File_close(&approximator_file);
+		MPI_File_open(MPI_COMM_WORLD, metadata_filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &metadata_file);
+		MPI_File_write_at(metadata_file, metadata_offset, metadata_data.data(), metadata_count, MPI_SIGNED_CHAR, MPI_STATUS_IGNORE);
+		MPI_File_close(&metadata_file);
+		if(i == 0 || i == 3){
+			auto weight_count = ge_reconstructors[i].get_weight_file_size();
+			unsigned long long int weight_offset = 0;
+			unsigned long long int weight_buffer; 
+			for(int j=0; j<size; j++){
+				if(j == rank){
+					if(j != 0) {
+						MPI_Recv(&weight_offset, 1, MPI_UNSIGNED_LONG_LONG, j-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					}
+					weight_buffer = weight_offset + weight_count;
+					if(j != size - 1) {
+						MPI_Send(&weight_buffer, 1, MPI_UNSIGNED_LONG_LONG, j+1, 0, MPI_COMM_WORLD);
+					}
+				}
+			}
+			std::string weight_path = rdir_prefix + "weight.bin";
+			size_t weight_num_char = 0;
+			auto weight_data = MGARD::readfile<unsigned char> (weight_path.c_str(), weight_num_char);
+			MPI_File weight_file;
+			std::string weight_filename = wdata_file_prefix + var_name_out[i] + "_aggregated_weight.bin";
+			MPI_File_open(MPI_COMM_WORLD, weight_filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &weight_file);
+			MPI_File_write_at(weight_file, weight_offset, weight_data.data(), weight_count, MPI_SIGNED_CHAR, MPI_STATUS_IGNORE);
+			MPI_File_close(&weight_file);
+		}
+        if(i == 0){
+            // mask file size already known
+			unsigned long long int mask_offset = 0;
+			unsigned long long int mask_buffer; 
+			for(int j=0; j<size; j++){
+				if(j == rank){
+					if(j != 0) {
+						MPI_Recv(&mask_offset, 1, MPI_UNSIGNED_LONG_LONG, j-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					}
+					mask_buffer = mask_offset + mask_file_size;
+					if(j != size - 1) {
+						MPI_Send(&mask_buffer, 1, MPI_UNSIGNED_LONG_LONG, j+1, 0, MPI_COMM_WORLD);
+					}
+				}
+			}
+			size_t mask_num_char = 0;
+			auto mask_data = MGARD::readfile<unsigned char> (mask_file.c_str(), mask_num_char);
+			MPI_File mask_file;
+			std::string mask_filename = wdata_file_prefix + "aggregated_mask.bin";
+			MPI_File_open(MPI_COMM_WORLD, mask_filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &mask_file);
+			MPI_File_write_at(mask_file, mask_offset, mask_data.data(), mask_file_size, MPI_SIGNED_CHAR, MPI_STATUS_IGNORE);
+			MPI_File_close(&mask_file);
+        }
+    }
 
     MPI_Finalize();
     

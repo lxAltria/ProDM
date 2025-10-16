@@ -564,7 +564,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
 	if(!weighted){
-		std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+		std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 		for(int i=0; i<n_variable; i++){
 			std::string rdir_prefix = rdata_file_prefix + varlist[i];
 			std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -574,7 +574,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 				std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
 				files.push_back(filename);
 			}
-			auto approximator = PDR::SZApproximator<T>();
+			auto approximator = PDR::SZ3Approximator<T>();
 			auto encoder = NegaBinaryBPEncoder<T, T_stream>();
 			auto compressor = AdaptiveLevelCompressor(64);
 			auto estimator = MaxErrorEstimatorHB<T>();
@@ -631,7 +631,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
         local_elapsed_time += MPI_Wtime();
 	}
 	else{
-		std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+		std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
 		std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements));
 		for(int i=0; i<n_variable; i++){
 			std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -642,7 +642,7 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, T tau, std
 				std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
 				files.push_back(filename);
 			}
-			auto approximator = PDR::SZApproximator<T>();
+			auto approximator = PDR::SZ3Approximator<T>();
 			auto encoder = WeightedNegaBinaryBPEncoder<T, T_stream>();
 			auto compressor = AdaptiveLevelCompressor(64);
 			auto estimator = MaxErrorEstimatorHB<T>();

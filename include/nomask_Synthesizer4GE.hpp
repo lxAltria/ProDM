@@ -16,6 +16,7 @@
 #include "PDR/Reconstructor/Reconstructor.hpp"
 #include "ompSZp_typemanager.h"
 #include <cstdint>
+#include "WeightUtils.hpp"
 
 const std::vector<std::string> varlist = {"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;
@@ -145,6 +146,13 @@ MDR::QoIRefactor<T, Decomposer, InterleaverT, InterleaverInt, Encoder, Compresso
 template <class T, class Approximator, class Encoder, class Compressor, class Writer>
 PDR::WeightedApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer> generateWBPRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer, bool negabinary){
     auto refactor = PDR::WeightedApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
+    refactor.negabinary = negabinary;
+    return refactor;
+}
+
+template <class T, class Approximator, class Encoder, class Compressor, class Writer>
+PDR::TestApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer> generateTestWBPRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer, bool negabinary){
+    auto refactor = PDR::TestApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
     refactor.negabinary = negabinary;
     return refactor;
 }
@@ -644,18 +652,7 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
             num_valid_data ++;
         }
         if(mask[i]){
-            // Vtot[0][i] = fabs(velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // Vtot[1][i] = fabs(velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // Vtot[2][i] = fabs(velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]));
-            // double temp = sqrt(Vtot[0][i]*Vtot[0][i] + Vtot[1][i]*Vtot[1][i] + Vtot[2][i]*Vtot[2][i]);
-            // Vtot[0][i] = temp;
-            // Vtot[1][i] = temp;
-            // Vtot[2][i] = temp;
-            // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -663,8 +660,8 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
-        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[0][i] = 1.0 / (density_vec[i] * density_vec[i]);
+        Temp[1][i] = 1.0 / (density_vec[i] * density_vec[i]);
     }
 
     std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
@@ -697,56 +694,6 @@ void refactor_velocities_1D_PMGARD_WBP(const std::string data_file_prefix, const
         }
         else refactor.QoI = Temp[i-3];
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weights[i], block_size);            
-    }
-}
-
-template<class T>
-void refactor_velocities_A1D_PMGARD_BP(const std::string data_file_prefix, const std::string rdata_file_prefix, uint32_t n1){
-    size_t num_elements = 0;
-    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
-    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
-    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
-    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
-    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
-    int n_variable = var_list.size();
-    std::vector<uint32_t> dims;
-    dims.push_back(num_elements);
-    // compute masks
-    std::vector<unsigned char> mask(num_elements, 0);
-    int num_valid_data = 0;
-    for(int i=0; i<num_elements; i++){
-        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
-            mask[i] = 1;
-            num_valid_data ++;
-        }
-    }
-
-    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
-    std::string mask_file = rdata_file_prefix + "mask.bin";
-    writemask(mask_file.c_str(), mask.data(), mask.size());
-
-    uint8_t target_level = 8;   // log2(*min_element(dims.begin(), dims.end())) - 1;
-    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
-
-    for(int i=0; i<n_variable; i++){
-        std::string rdir_prefix = rdata_file_prefix + var_list[i];
-        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
-        std::vector<std::string> files;
-        int num_levels = target_level + 1;
-        for(int i=0; i<num_levels; i++){
-            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
-            files.push_back(filename);
-        }
-        auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
-        auto interleaver = MDR::DirectInterleaver<T>();
-        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
-        bool negabinary = true;
-        auto compressor = MDR::AdaptiveLevelCompressor(64);
-        auto collector = MDR::SquaredErrorCollector<T>();
-        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-        auto refactor = generateRefactor<T>(decomposer, interleaver, encoder, compressor, collector, writer, negabinary);
-        refactor.mask = mask;
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
 
@@ -822,23 +769,23 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
     dims.push_back(num_elements);
 
     std::vector<unsigned char> mask(num_elements, 0);
-    int num_valid_data = 0;
+    // int num_valid_data = 0;
     std::vector<T> Vtot(num_elements);
     std::vector<T> Temp(num_elements);
     T R = 287.1;
     for(int i=0; i<num_elements; i++){
         if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
             mask[i] = 1;
-            num_valid_data++;
+            // num_valid_data++;
         }
         if(mask[i]){
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[i] = 1.0/V;
         }
         else{
             Vtot[i] = 0;
         }
-        Temp[i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[i] = 1.0 / (density_vec[i] * density_vec[i]);
     }
     // double V_max = -std::numeric_limits<double>::infinity();
     // double V_min = std::numeric_limits<double>::infinity();
@@ -868,7 +815,7 @@ void refactor_velocities_1D_GE_WBP(const std::string data_file_prefix, const std
         }
         
         auto approximator = PDR::GEApproximator<T>();
-        // auto approximator = PDR::SZApproximator<T>();
+        // auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -992,7 +939,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -1000,8 +947,8 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         else{
             Vtot[0][i] = Vtot[1][i] = Vtot[2][i] = 0;
         }
-        Temp[0][i] = 1.0 / pow(density_vec[i], 2.0);
-        Temp[1][i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[0][i] = 1.0 / (density_vec[i] * density_vec[i]);
+        Temp[1][i] = 1.0 / (density_vec[i] * density_vec[i]);
         // if(i == 567082){
         //     std::cout << "index = " << i << ": " << +mask[i] << ", " << Vtot[0][i] << " " << Vtot[1][i] << " " << Vtot[2][i] << std::endl; 
         // }
@@ -1024,7 +971,7 @@ void refactor_velocities_1D_Dummy_WBP(const std::string data_file_prefix, const 
         }
         
         auto approximator = PDR::DummyApproximator<T>();
-        // auto approximator = PDR::SZApproximator<T>();
+        // auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1088,7 +1035,7 @@ void refactor_velocities_1D_SZ3_BP(const std::string data_file_prefix, const std
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
             files.push_back(filename);
         }
-        auto approximator = PDR::SZApproximator<T>();
+        auto approximator = PDR::SZ3Approximator<T>();
         auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
         auto compressor = MDR::AdaptiveLevelCompressor(64);
@@ -1129,13 +1076,13 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
             num_valid_data++;
         }
         if(mask[i]){
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[i] = 1.0/V;
         }
         else{
             Vtot[i] = 0;
         }
-        Temp[i] = 1.0 / pow(density_vec[i], 2.0);
+        Temp[i] = 1.0 / (density_vec[i] * density_vec[i]);
     }
     // std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
     std::string mask_file = rdata_file_prefix + "mask.bin";
@@ -1152,7 +1099,7 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
             files.push_back(filename);
         }
         
-        auto approximator = PDR::SZApproximator<T>();
+        auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1181,56 +1128,6 @@ void refactor_velocities_1D_SZ3_WBP(const std::string data_file_prefix, const st
         }
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weights[i], block_size);
         if(i == 0 || i == 3) int_weights = refactor.get_int_weights();   
-    }
-}
-
-template<class T>
-void refactor_velocities_A1D_SZ3_BP(const std::string data_file_prefix, const std::string rdata_file_prefix, uint32_t n1){
-    size_t num_elements = 0;
-    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
-    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
-    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
-    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
-    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
-    int n_variable = var_list.size();
-
-    uint8_t target_level = 0;
-    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
-
-    std::vector<uint32_t> dims;
-    dims.push_back(num_elements);
-    // compute masks
-    std::vector<unsigned char> mask(num_elements, 0);
-    int num_valid_data = 0;
-    for(int i=0; i<num_elements; i++){
-        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
-            mask[i] = 1;
-            num_valid_data ++;
-        }
-    }
-
-    std::cout << "num_elements = " << num_elements << ", num_valid_data = " << num_valid_data << std::endl;
-    std::string mask_file = rdata_file_prefix + "mask.bin";
-    writemask(mask_file.c_str(), mask.data(), mask.size());
-    num_valid_data = num_elements;
-
-    for(int i=0; i<n_variable; i++){
-        std::string rdir_prefix = rdata_file_prefix + var_list[i];
-        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
-        std::vector<std::string> files;
-        int num_levels = target_level + 1;
-        for(int i=0; i<num_levels; i++){
-            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
-            files.push_back(filename);
-        }
-        auto approximator = PDR::SZApproximator<T>();
-        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
-        bool negabinary = true;
-        auto compressor = MDR::AdaptiveLevelCompressor(64);
-        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-        auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        refactor.mask = mask;
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes);            
     }
 }
 
@@ -1267,7 +1164,7 @@ void refactor_velocities_3D_Dummy_BP(std::string dataset, uint32_t n1, uint32_t 
         }
         
         auto approximator = PDR::DummyApproximator<T>();
-        // auto approximator = PDR::SZApproximator<T>();
+        // auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1318,7 +1215,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
             // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // double V = velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i];
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -1347,7 +1244,7 @@ void refactor_velocities_3D_Dummy_WBP(std::string dataset, uint32_t n1, uint32_t
         }
         
         auto approximator = PDR::DummyApproximator<T>();
-        // auto approximator = PDR::SZApproximator<T>();
+        // auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1396,12 +1293,12 @@ void refactor_velocities_3D_SZ3_BP(std::string dataset, uint32_t n1, uint32_t n2
         int num_levels = target_level + 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
-            std::cout << "filename: " << filename << std::endl;
+            // std::cout << "filename: " << filename << std::endl;
             files.push_back(filename);
         }
         
         // auto approximator = PDR::DummyApproximator<T>();
-        auto approximator = PDR::SZApproximator<T>();
+        auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1445,7 +1342,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
             // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[i] = 1.0/V;
         }
         else{
@@ -1469,7 +1366,7 @@ void refactor_velocities_3D_SZ3_WBP(std::string dataset, uint32_t n1, uint32_t n
         }
         
         // auto approximator = PDR::DummyApproximator<T>();
-        auto approximator = PDR::SZApproximator<T>();
+        auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1526,7 +1423,7 @@ void refactor_velocities_3D_HPEZ_BP(std::string dataset, uint32_t n1, uint32_t n
         int num_levels = target_level + 1;
         for(int i=0; i<num_levels; i++){
             std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
-            std::cout << "filename: " << filename << std::endl;
+            // std::cout << "filename: " << filename << std::endl;
             files.push_back(filename);
         }
         
@@ -1575,7 +1472,7 @@ void refactor_velocities_3D_HPEZ_WBP(std::string dataset, uint32_t n1, uint32_t 
             // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[i] = 1.0/V;
         }
         else{
@@ -1635,6 +1532,472 @@ void refactor_velocities_3D_HPEZ_WBP(std::string dataset, uint32_t n1, uint32_t 
 }
 
 template<class T>
+void refactor_velocities_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb, int max_weight=4, int block_size=1){
+    // std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    // std::vector<T> abs_sum(num_elements, 0);
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+        }
+        // T abs_Vx = (velocityX_vec[i] > 0) ? velocityX_vec[i] : -velocityX_vec[i];
+        // T abs_Vy = (velocityY_vec[i] > 0) ? velocityY_vec[i] : -velocityY_vec[i];
+        // T abs_Vz = (velocityZ_vec[i] > 0) ? velocityZ_vec[i] : -velocityZ_vec[i];
+        // abs_sum[i] = abs_Vx + abs_Vy + abs_Vz;
+    }
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    // std::vector<int> int_weights;
+    std::vector<T> weights(n_variable * num_elements);
+    std::vector<int> int_weights(n_variable * num_elements);
+    for(int i=0; i<n_variable; i++){
+        memcpy(weights.data() + i*num_elements, vars_vec[i].data(), num_elements * sizeof(T));
+        assign_block_value_3D(n1, n2, n3, n2*n3, n3, block_size, weights.data() + i*num_elements);
+    }
+    int_weights = normalize_weights(weights, max_weight);
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            files.push_back(filename);
+        }
+        
+        // auto approximator = PDR::DummyApproximator<T>();
+        auto approximator = PDR::HPEZApproximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateTestWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        std::vector<int> tmp_weight(num_elements);
+        memcpy(tmp_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
+        refactor.copy_int_weights(tmp_weight);
+        refactor.mask = mask;
+        refactor.store_weight = true;
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        // if(i == 0){
+        //     refactor.QoI = abs_sum;
+        //     refactor.mask = mask;
+        //     refactor.store_weight = true;
+        // }
+        // else{
+        //     refactor.mask = mask;
+        //     refactor.copy_int_weights(int_weights);
+        // }
+        // refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        // if(i == 0) int_weights = refactor.get_int_weights();
+    }
+}
+
+template<class T>
+void refactor_velocities_and_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb, int max_weight=4, int block_size=1){
+    // std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    std::vector<T> Vtot(num_elements);
+    // std::vector<std::vector<T>> weights(n_variable, std::vector<T>(num_elements));
+
+    // std::vector<T> weights(num_elements);
+    // std::vector<T> abs_sum(num_elements);
+
+    std::vector<T> weights(n_variable * num_elements);
+    std::vector<int> int_weights(n_variable * num_elements);
+
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+        }
+        if(mask[i]){
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            Vtot[i] = 1.0/V;
+        }
+        else{
+            Vtot[i] = 0;
+        }
+        // T abs_Vx = (velocityX_vec[i] > 0) ? velocityX_vec[i] : -velocityX_vec[i];
+        // T abs_Vy = (velocityY_vec[i] > 0) ? velocityY_vec[i] : -velocityY_vec[i];
+        // T abs_Vz = (velocityZ_vec[i] > 0) ? velocityZ_vec[i] : -velocityZ_vec[i];
+        // abs_sum[i] = abs_Vx + abs_Vy + abs_Vz;
+    }
+    // for(int i=0; i<n_variable; i++){
+    //     for(int j=0; j<num_elements; j++){
+    //         T Vtot_abs = (Vtot[j] > 0) ? Vtot[j] : -Vtot[j];
+    //         T Vi_abs = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
+    //         weights[i][j] = (Vtot_abs > Vi_abs) ? Vtot_abs : Vi_abs;
+    //     }
+    // }
+
+    // for(int i=0; i<num_elements; i++){
+    //     weights[i] = (Vtot[i] > abs_sum[i]) ? Vtot[i] : abs_sum[i];
+    // }
+
+    for(int i=0; i<n_variable; i++){
+        for(int j=0; j<num_elements; j++){
+            T abs_Vij = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
+            weights[i*num_elements + j] = (Vtot[j] > abs_Vij) ? Vtot[j] : abs_Vij;
+        }
+        assign_block_value_3D(n1, n2, n3, n2*n3, n3, block_size, weights.data() + i*num_elements);
+    }
+    int_weights = normalize_weights(weights, max_weight);
+    
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    // std::vector<int> int_weights;
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            files.push_back(filename);
+        }
+        
+        // auto approximator = PDR::DummyApproximator<T>();
+        auto approximator = PDR::HPEZApproximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateTestWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        std::vector<int> tmp_weight(num_elements);
+        memcpy(tmp_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
+        // refactor.QoI = tmp_weight;
+        refactor.copy_int_weights(tmp_weight);
+        refactor.mask = mask;
+        refactor.store_weight = true;
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size);
+        // if(i == 0){
+        //     refactor.QoI = weights;
+        //     refactor.mask = mask;
+        //     refactor.store_weight = true;
+        // }
+        // else{
+        //     refactor.mask = mask;
+        //     refactor.copy_int_weights(int_weights);
+        // }
+        // refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        // if(i == 0) int_weights = refactor.get_int_weights();
+    }
+}
+
+template<class T>
+void refactor_velocities_3D_SZ2_BP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb){
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+        }
+    }
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            // std::cout << "filename: " << filename << std::endl;
+            files.push_back(filename);
+        }
+        
+        // auto approximator = PDR::DummyApproximator<T>();
+        auto approximator = PDR::SZ2Approximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.mask = mask;
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb);  
+    }
+}
+
+template<class T>
+void refactor_velocities_3D_SZ2_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb, int max_weight=4, int block_size=1){
+    // std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    std::vector<T> Vtot(num_elements);
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+        }
+        if(mask[i]){
+            // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            Vtot[i] = 1.0/V;
+        }
+        else{
+            Vtot[i] = 0;
+        }
+        // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+    }
+    // double max = -std::numeric_limits<double>::infinity();
+    // double min = std::numeric_limits<double>::infinity();
+    // for(int i=0; i<num_elements; i++){
+    //     if(Vtot[i] > max) max = Vtot[i];
+    //     if(Vtot[i] < min && Vtot[i] != 0) min = Vtot[i];
+    // }
+    // std::cout << "max(Vtot) = " << max << ", min(Vtot) = " << min << ", log2(max/min) = " << log2(max/min) << std::endl;
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    std::vector<int> int_weights;
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            files.push_back(filename);
+        }
+        
+        // auto approximator = PDR::DummyApproximator<T>();
+        auto approximator = PDR::SZ2Approximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i == 0){
+            refactor.QoI = Vtot;
+            refactor.mask = mask;
+            refactor.store_weight = true;
+        }
+        else{
+            refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        if(i == 0) int_weights = refactor.get_int_weights();  
+    }
+}
+
+template<class T>
+void refactor_velocities_3D_MGARD_BP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb){
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+        }
+    }
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            // std::cout << "filename: " << filename << std::endl;
+            files.push_back(filename);
+        }
+        
+        // auto approximator = PDR::DummyApproximator<T>();
+        auto approximator = PDR::MGARDApproximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.mask = mask;
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb);  
+    }
+}
+
+template<class T>
+void refactor_velocities_3D_MGARD_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb, int max_weight=4, int block_size=1){
+    // std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
+    size_t num_elements = 0;
+    auto velocityX_vec = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    auto velocityY_vec = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    auto velocityZ_vec = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    std::vector<std::vector<T>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec};
+    std::vector<std::string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
+    int n_variable = var_list.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<unsigned char> mask(num_elements, 0);
+    std::vector<T> Vtot(num_elements);
+    for(int i=0; i<num_elements; i++){
+        if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
+            mask[i] = 1;
+        }
+        if(mask[i]){
+            // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+            Vtot[i] = 1.0/V;
+        }
+        else{
+            Vtot[i] = 0;
+        }
+        // Vtot[0][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        // Vtot[1][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+        // Vtot[2][i] = std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
+    }
+    // double max = -std::numeric_limits<double>::infinity();
+    // double min = std::numeric_limits<double>::infinity();
+    // for(int i=0; i<num_elements; i++){
+    //     if(Vtot[i] > max) max = Vtot[i];
+    //     if(Vtot[i] < min && Vtot[i] != 0) min = Vtot[i];
+    // }
+    // std::cout << "max(Vtot) = " << max << ", min(Vtot) = " << min << ", log2(max/min) = " << log2(max/min) << std::endl;
+    std::string mask_file = rdata_file_prefix + "mask.bin";
+    writemask(mask_file.c_str(), mask.data(), mask.size());
+    std::vector<int> int_weights;
+    for(int i=0; i<n_variable; i++){
+        std::string rdir_prefix = rdata_file_prefix + var_list[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            files.push_back(filename);
+        }
+        
+        // auto approximator = PDR::DummyApproximator<T>();
+        auto approximator = PDR::MGARDApproximator<T>();
+        // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        // auto encoder = MDR::PerBitBPEncoder<T, uint32_t>();
+        // negabinary = false;
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i == 0){
+            refactor.QoI = Vtot;
+            refactor.mask = mask;
+            refactor.store_weight = true;
+        }
+        else{
+            refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        if(i == 0) int_weights = refactor.get_int_weights();  
+    }
+}
+
+template<class T>
 void refactor_velocities_3D_SZ3_WBP_JHTDB(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb, int max_weight=4, int block_size=1){
     // std::cout << "refactor_velocities_3D_SZ3_WBP" << std::endl;
     size_t num_elements = 0;
@@ -1651,7 +2014,7 @@ void refactor_velocities_3D_SZ3_WBP_JHTDB(std::string dataset, uint32_t n1, uint
 
     std::vector<T> Vtot(num_elements);
     for(int i=0; i<num_elements; i++){
-        T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+        T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
         Vtot[i] = 1.0/V;
     }
     std::vector<int> int_weights;
@@ -1666,7 +2029,7 @@ void refactor_velocities_3D_SZ3_WBP_JHTDB(std::string dataset, uint32_t n1, uint
         }
         
         // auto approximator = PDR::DummyApproximator<T>();
-        auto approximator = PDR::SZApproximator<T>();
+        auto approximator = PDR::SZ3Approximator<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, uint32_t>();
         auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
         bool negabinary = true;
@@ -1758,7 +2121,7 @@ void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_
             // Vtot[0][i] = velocityX_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[1][i] = velocityY_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             // Vtot[2][i] = velocityZ_vec[i] / std::sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            T V = pow(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i], 0.5);
+            T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
             Vtot[0][i] = 1.0/V;
             Vtot[1][i] = 1.0/V;
             Vtot[2][i] = 1.0/V;
@@ -1792,6 +2155,130 @@ void refactor_velocities_3D_PMGARD_WBP(std::string dataset, uint32_t n1, uint32_
         auto refactor = generateRefactor<T>(decomposer, interleaver, weight_interleaver, encoder, compressor, collector, writer, negabinary);
         refactor.QoI = Vtot[i];
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, max_weight, block_size);  
+    }
+}
+
+template<class T>
+void refactor_S3D_xixj_BP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb){
+    std::vector<std::string> species = {"H2", "O2", "H2O", "H", "O", "OH"};
+    int n_species = species.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<std::vector<T>> vars_vec(n_species);
+    size_t num_elements = 0;
+    for(int i=0; i<n_species; i++){
+        if(i == 2) continue;
+        auto Xi = MGARD::readfile<T>((data_file_prefix + species[i] + ".dat").c_str(), num_elements);
+        vars_vec[i] = Xi;
+    }
+
+    for(int i=0; i<n_species; i++){
+        if(i == 2) continue;
+        std::string rdir_prefix = rdata_file_prefix + species[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            // std::cout << "filename: " << filename << std::endl;
+            files.push_back(filename);
+        }
+        
+        auto approximator = PDR::HPEZApproximator<T>();
+        auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        auto refactor = generateBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb);  
+    }
+}
+
+template<class T>
+void refactor_S3D_xixj_WBP(std::string dataset, uint32_t n1, uint32_t n2, uint32_t n3, const std::string data_file_prefix, const std::string rdata_file_prefix, T approximator_eb, int max_weight=4, int block_size=1){
+    std::vector<std::string> species = {"H2", "O2", "H2O", "H", "O", "OH"};
+    int n_species = species.size();
+
+    uint8_t target_level = 0;
+    uint8_t num_bitplanes = std::is_same<T, double>::value ? 60 : 32;
+    std::vector<uint32_t> dims = {n1, n2, n3};
+
+    std::vector<std::vector<T>> vars_vec(n_species);
+    size_t num_elements = 0;
+    for(int i=0; i<n_species; i++){
+        if(i == 2) continue;
+        auto Xi = MGARD::readfile<T>((data_file_prefix + species[i] + ".dat").c_str(), num_elements);
+        vars_vec[i] = Xi;
+    }
+
+    std::vector<T> weight_x0(num_elements);
+    for(int i=0; i<num_elements; i++){
+        weight_x0[i] = (vars_vec[4][i] > 0) ? vars_vec[4][i] : -vars_vec[4][i];
+    }
+    std::vector<T> weight_x1(num_elements);
+    for(int i=0; i<num_elements; i++){
+        weight_x1[i] = (vars_vec[3][i] > 0) ? vars_vec[3][i] : -vars_vec[3][i];
+    }
+    std::vector<T> weight_x3(num_elements);
+    for(int i=0; i<num_elements; i++){
+        T abs_x1 = (vars_vec[1][i] > 0) ? vars_vec[1][i] : -vars_vec[1][i];
+        T abs_x4 = (vars_vec[4][i] > 0) ? vars_vec[4][i] : -vars_vec[4][i];
+        weight_x3[i] = (abs_x1 > abs_x4) ? abs_x1 : abs_x4; 
+    }
+    std::vector<T> weight_x4(num_elements);
+    for(int i=0; i<num_elements; i++){
+        T abs_x0 = (vars_vec[0][i] > 0) ? vars_vec[0][i] : -vars_vec[0][i];
+        T abs_x5 = (vars_vec[5][i] > 0) ? vars_vec[5][i] : -vars_vec[5][i];
+        weight_x4[i] = (abs_x0 > abs_x5) ? abs_x0 : abs_x5; 
+    }
+    std::vector<T> weight_x5(num_elements);
+    for(int i=0; i<num_elements; i++){
+        T abs_x3 = (vars_vec[3][i] > 0) ? vars_vec[3][i] : -vars_vec[3][i];
+        T abs_x4 = (vars_vec[4][i] > 0) ? vars_vec[4][i] : -vars_vec[4][i];
+        weight_x5[i] = (abs_x3 > abs_x4) ? abs_x3 : abs_x4; 
+    }
+    for(int i=0; i<n_species; i++){
+        if(i == 2) continue;
+        std::string rdir_prefix = rdata_file_prefix + species[i];
+        std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
+        std::vector<std::string> files;
+        int num_levels = target_level + 1;
+        for(int i=0; i<num_levels; i++){
+            std::string filename = rdir_prefix + "_refactored/level_" + std::to_string(i) + ".bin";
+            // std::cout << "filename: " << filename << std::endl;
+            files.push_back(filename);
+        }
+        
+        auto approximator = PDR::HPEZApproximator<T>();
+        auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+        bool negabinary = true;
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        if(i == 0){
+            refactor.QoI = weight_x0;
+            refactor.store_weight = true;
+        }
+        else if(i == 1){
+            refactor.QoI = weight_x1;
+            refactor.store_weight = true;
+        }
+        else if(i == 3){
+            refactor.QoI = weight_x1;
+            refactor.store_weight = true;
+        }
+        else if(i == 4){
+            refactor.QoI = weight_x1;
+            refactor.store_weight = true;
+        }
+        else if(i == 5){
+            refactor.QoI = weight_x1;
+            refactor.store_weight = true;
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size);  
     }
 }
 }
