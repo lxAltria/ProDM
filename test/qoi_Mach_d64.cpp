@@ -798,11 +798,11 @@ std::vector<size_t> retrieve_Mach_SZ3(std::string rdata_file_prefix, T tau, std:
             if(i < 3){
                 reconstructors.back().mask = mask;
                 if (i==0) reconstructors.back().fetch_weight = true;
-                else reconstructors.back().copy_int_weights(weights[0]);
+                else reconstructors.back().copy_int_weights(weights[0], reconstructors[0].get_max_weight());
             }
             else{
                 if (i==3) reconstructors.back().fetch_weight = true;
-                else reconstructors.back().copy_int_weights(weights[3]);
+                else reconstructors.back().copy_int_weights(weights[3], reconstructors[3].get_max_weight());
             }
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
@@ -1112,11 +1112,11 @@ std::vector<size_t> retrieve_Mach_GE(std::string rdata_file_prefix, T tau, std::
             if(i < 3){
                 reconstructors.back().mask = mask;
                 if (i==0) reconstructors.back().fetch_weight = true;
-                else reconstructors.back().copy_int_weights(weights[0]);
+                else reconstructors.back().copy_int_weights(weights[0], reconstructors[0].get_max_weight());
             }
             else{
                 if (i==3) reconstructors.back().fetch_weight = true;
-                else reconstructors.back().copy_int_weights(weights[3]);
+                else reconstructors.back().copy_int_weights(weights[3], reconstructors[0].get_max_weight());
             }
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();

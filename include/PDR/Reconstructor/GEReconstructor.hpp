@@ -278,9 +278,10 @@ namespace PDR
             return int_weights;
         }
 
-        void copy_int_weights(std::vector<int> & completed_weights)
+        void copy_int_weights(std::vector<int> & completed_weights, int max_weight_)
         {
             int_weights = completed_weights;
+            max_weight = max_weight_;
         }
 
         ~GEReconstructor() {}

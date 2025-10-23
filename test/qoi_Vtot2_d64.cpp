@@ -1001,7 +1001,7 @@ std::vector<size_t> retrieve_V_TOT2_HPEZ(std::string rdata_file_prefix, T tau, s
 			reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
 			reconstructors.back().mask = mask;
 			if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			else reconstructors.back().copy_int_weights(weights[0], reconstructors[0].get_max_weight());
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
 			ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
@@ -1422,6 +1422,7 @@ std::vector<size_t> retrieve_V_TOT2_HPEZ_square(std::string rdata_file_prefix, T
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
 			ebs[i] = ldexp(ebs[i], reconstructors[i].get_max_weight());
+			// std::cout << "max_weight for " << i << ": " << reconstructors[i].get_max_weight() << std::endl;
 			weight_file_size += reconstructors.back().get_weight_file_size();
 		}
 		while((!tolerance_met) && (iter < max_iter)){
@@ -1497,9 +1498,17 @@ int main(int argc, char ** argv){
     Vy_ori = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
     Vz_ori = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
     std::vector<T> ebs;
-	ebs.push_back(compute_value_range(Vx_ori)*target_rel_eb);
-	ebs.push_back(compute_value_range(Vy_ori)*target_rel_eb);
-	ebs.push_back(compute_value_range(Vz_ori)*target_rel_eb);
+	std::vector<T> V3(3 * num_elements);
+	memcpy(V3.data(), Vx_ori.data(), num_elements * sizeof(T));
+	memcpy(V3.data() + num_elements, Vy_ori.data(), num_elements * sizeof(T));
+	memcpy(V3.data() + 2 * num_elements, Vz_ori.data(), num_elements * sizeof(T));
+	T unified_eb = compute_value_range(V3) * target_rel_eb;
+	ebs.push_back(unified_eb);
+	ebs.push_back(unified_eb);
+	ebs.push_back(unified_eb);
+	// ebs.push_back(compute_value_range(Vx_ori)*target_rel_eb);
+	// ebs.push_back(compute_value_range(Vy_ori)*target_rel_eb);
+	// ebs.push_back(compute_value_range(Vz_ori)*target_rel_eb);
 	// ebs.push_back(compute_max_abs_value(Vx_ori.data(), Vx_ori.size()*target_rel_eb));
 	// ebs.push_back(compute_max_abs_value(Vy_ori.data(), Vy_ori.size()*target_rel_eb));
 	// ebs.push_back(compute_max_abs_value(Vz_ori.data(), Vz_ori.size()*target_rel_eb));

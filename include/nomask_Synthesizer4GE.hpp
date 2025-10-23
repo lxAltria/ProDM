@@ -210,6 +210,15 @@ static T compute_vr(const std::vector<T>& vec){
     return max - min;
 }
 
+template <class T>
+static T compute_min(const std::vector<T>& vec){
+    T min = vec[0];
+    for(int i=0; i<vec.size(); i++){
+        if(vec[i] < min) min = vec[i];
+    }
+    return min;
+}
+
 template<class T>
 char * SZ3_compress(size_t num_elements, T * data, double abs_eb, size_t& compressed_size){
     SZ3::Config conf(num_elements);
@@ -1559,14 +1568,27 @@ void refactor_velocities_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1, ui
     }
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
+
     // std::vector<int> int_weights;
-    std::vector<T> weights(n_variable * num_elements);
-    std::vector<int> int_weights(n_variable * num_elements);
+    // std::vector<T> weights(n_variable * num_elements);
+    // std::vector<int> int_weights(n_variable * num_elements);
+    // for(int i=0; i<n_variable; i++){
+    //     // memcpy(weights.data() + i*num_elements, vars_vec[i].data(), num_elements * sizeof(T));
+    //     for(int j=0; j<num_elements; j++){
+    //         T abs_Vij = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
+    //         weights[i*num_elements + j] = abs_Vij;
+    //     }
+    //     assign_block_value_3D(n1, n2, n3, n2*n3, n3, block_size, weights.data() + i*num_elements);
+    // }
+    // int_weights = normalize_weights(weights, max_weight);
+
+    std::vector<std::vector<T>> weights(n_variable, std::vector<T>(num_elements));
     for(int i=0; i<n_variable; i++){
-        memcpy(weights.data() + i*num_elements, vars_vec[i].data(), num_elements * sizeof(T));
-        assign_block_value_3D(n1, n2, n3, n2*n3, n3, block_size, weights.data() + i*num_elements);
+        for(int j=0; j<num_elements; j++){
+            T abs_Vij = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
+            weights[i][j] = abs_Vij;
+        }
     }
-    int_weights = normalize_weights(weights, max_weight);
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1591,10 +1613,11 @@ void refactor_velocities_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1, ui
 
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
-        auto refactor = generateTestWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        std::vector<int> tmp_weight(num_elements);
-        memcpy(tmp_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
-        refactor.copy_int_weights(tmp_weight);
+        auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        // std::vector<int> tmp_weight(num_elements);
+        // memcpy(tmp_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
+        // refactor.copy_int_weights(tmp_weight);
+        refactor.QoI = weights[i];
         refactor.mask = mask;
         refactor.store_weight = true;
         refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
@@ -1629,13 +1652,7 @@ void refactor_velocities_and_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1
 
     std::vector<unsigned char> mask(num_elements, 0);
     std::vector<T> Vtot(num_elements);
-    // std::vector<std::vector<T>> weights(n_variable, std::vector<T>(num_elements));
-
-    // std::vector<T> weights(num_elements);
-    // std::vector<T> abs_sum(num_elements);
-
-    std::vector<T> weights(n_variable * num_elements);
-    std::vector<int> int_weights(n_variable * num_elements);
+    // std::vector<T> Vtot2(num_elements);
 
     for(int i=0; i<num_elements; i++){
         if(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i] != 0){            
@@ -1643,40 +1660,66 @@ void refactor_velocities_and_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1
         }
         if(mask[i]){
             T V = sqrt(velocityX_vec[i]*velocityX_vec[i] + velocityY_vec[i]*velocityY_vec[i] + velocityZ_vec[i]*velocityZ_vec[i]);
-            Vtot[i] = 1.0/V;
+            Vtot[i] = 1 / V;
         }
         else{
             Vtot[i] = 0;
         }
-        // T abs_Vx = (velocityX_vec[i] > 0) ? velocityX_vec[i] : -velocityX_vec[i];
-        // T abs_Vy = (velocityY_vec[i] > 0) ? velocityY_vec[i] : -velocityY_vec[i];
-        // T abs_Vz = (velocityZ_vec[i] > 0) ? velocityZ_vec[i] : -velocityZ_vec[i];
-        // abs_sum[i] = abs_Vx + abs_Vy + abs_Vz;
     }
+
+    // T Vtot_value_range = compute_vr(Vtot);
+    // T Vtot_min = compute_min(Vtot);
+
+    // std::vector<std::vector<T>> weights(n_variable, std::vector<T>(num_elements));
     // for(int i=0; i<n_variable; i++){
     //     for(int j=0; j<num_elements; j++){
-    //         T Vtot_abs = (Vtot[j] > 0) ? Vtot[j] : -Vtot[j];
-    //         T Vi_abs = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
-    //         weights[i][j] = (Vtot_abs > Vi_abs) ? Vtot_abs : Vi_abs;
+    //         abs_vars_vec[i][j] = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
+    //         // weights[i][j] = abs_vars_vec[i][j] * Vtot[j] / (abs_vars_vec[i][j] + Vtot[j]);
+    //     }
+    //     T Vi_value_range = compute_vr(abs_vars_vec[i]);
+    //     T Vi_min = compute_min(abs_vars_vec[i]);
+    //     int count_Vtot_greater_than_Vi = 0;
+    //     for(int j=0; j<num_elements; j++){
+    //         T normalized_Vtot = (Vtot[j] - Vtot_min) / Vtot_value_range;
+    //         T normalized_Vi = (abs_vars_vec[i][j] - Vi_min) / Vi_value_range;
+    //         weights[i][j] = (normalized_Vtot > normalized_Vi) ? normalized_Vtot : normalized_Vi;
+    //         if(normalized_Vtot > normalized_Vi) count_Vtot_greater_than_Vi++;
+    //         weights[i][j] = normalized_Vi + normalized_Vtot;
+    //     }
+    //     std::cout << count_Vtot_greater_than_Vi << " " << num_elements - count_Vtot_greater_than_Vi << std::endl;
+    // }
+
+    // std::vector<T> weights(n_variable * num_elements);
+    // T max_Vi = vars_vec[0][0];
+    // T min_Vi = vars_vec[0][0];
+    // for(int i=0; i<n_variable; i++){
+    //     for(int j=0; j<num_elements; j++){
+    //         if(max_Vi < vars_vec[i][j]) max_Vi = vars_vec[i][j];
+    //         if(min_Vi > vars_vec[i][j]) min_Vi = vars_vec[i][j];
     //     }
     // }
-
-    // for(int i=0; i<num_elements; i++){
-    //     weights[i] = (Vtot[i] > abs_sum[i]) ? Vtot[i] : abs_sum[i];
+    // T relative_value_range = approximator_eb * (max_Vi - min_Vi);
+    // for(int i=0; i<n_variable; i++){
+    //     for(int j=0; j<num_elements; j++){
+    //         weights[i*num_elements + j] = max(abs(vars_vec[i][j]), relative_value_range) * Vtot[j];
+    //     }
+    //     assign_block_value_3D(n1, n2, n3, n2*n3, n3, block_size, weights.data() + i*num_elements);
     // }
+    // std::vector<int> int_weights = normalize_weights(weights, max_weight);
 
-    for(int i=0; i<n_variable; i++){
-        for(int j=0; j<num_elements; j++){
-            T abs_Vij = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
-            weights[i*num_elements + j] = (Vtot[j] > abs_Vij) ? Vtot[j] : abs_Vij;
+    std::vector<T> weights(num_elements);
+    for(int i=0; i<num_elements; i++){
+        T sum = 0;
+        for(int j=0; j<n_variable; j++){
+            sum += abs(vars_vec[j][i]);
         }
-        assign_block_value_3D(n1, n2, n3, n2*n3, n3, block_size, weights.data() + i*num_elements);
+        weights[i] = sum * Vtot[i];
     }
-    int_weights = normalize_weights(weights, max_weight);
     
     std::string mask_file = rdata_file_prefix + "mask.bin";
     writemask(mask_file.c_str(), mask.data(), mask.size());
-    // std::vector<int> int_weights;
+    std::vector<int> int_weights;
+    std::vector<int> temp_int_weight(num_elements);
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1701,25 +1744,24 @@ void refactor_velocities_and_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1
 
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
-        auto refactor = generateTestWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
-        std::vector<int> tmp_weight(num_elements);
-        memcpy(tmp_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
-        // refactor.QoI = tmp_weight;
-        refactor.copy_int_weights(tmp_weight);
-        refactor.mask = mask;
-        refactor.store_weight = true;
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size);
-        // if(i == 0){
-        //     refactor.QoI = weights;
-        //     refactor.mask = mask;
-        //     refactor.store_weight = true;
-        // }
-        // else{
-        //     refactor.mask = mask;
-        //     refactor.copy_int_weights(int_weights);
-        // }
-        // refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
-        // if(i == 0) int_weights = refactor.get_int_weights();
+        auto refactor = generateWBPRefactor<T>(approximator, encoder, compressor, writer, negabinary);
+        // memcpy(temp_int_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
+        // refactor.copy_int_weights(temp_int_weight);
+        // refactor.QoI = weights[i];
+        // refactor.mask = mask;
+        // refactor.store_weight = true;
+        // refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size);
+        if(i == 0){
+            refactor.QoI = weights;
+            refactor.mask = mask;
+            refactor.store_weight = true;
+        }
+        else{
+            refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        if(i == 0) int_weights = refactor.get_int_weights();
     }
 }
 

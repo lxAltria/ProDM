@@ -465,7 +465,7 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
             auto retriever = ConcatLevelFileRetriever(metadata_file, files);
             reconstructors.push_back(generateWBPReconstructor<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
             if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			else reconstructors.back().copy_int_weights(weights[0], reconstructors[0].get_max_weight());
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
             ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());
@@ -699,7 +699,7 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
             auto retriever = ConcatLevelFileRetriever(metadata_file, files);
             reconstructors.push_back(generateWBPReconstructor_GE<T>(approximator, encoder, compressor, estimator, interpreter, retriever));
             if(i==0) reconstructors.back().fetch_weight = true;
-			else reconstructors.back().copy_int_weights(weights[0]);
+			else reconstructors.back().copy_int_weights(weights[0], reconstructors[0].get_max_weight());
 			reconstructors.back().load_metadata();
 			weights[i] = reconstructors.back().get_int_weights();
             ebs[i] = ldexp(ebs[i], reconstructors[0].get_max_weight());

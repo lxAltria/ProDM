@@ -88,6 +88,7 @@ namespace MDR {
             for(int i=0; i<num_levels; i++){
                 accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i);
             }
+            _accumulated_error = accumulated_error;
             if(accumulated_error < tolerance) return retrieve_sizes;
             std::priority_queue<UnitErrorGain, std::vector<UnitErrorGain>, CompareUnitErrorGain> heap;
             // identify minimal level
@@ -136,13 +137,18 @@ namespace MDR {
             }
             // std::cout << std::endl;
             // std::cout << "Requested tolerance = " << tolerance << ", estimated error = " << accumulated_error << std::endl;
+            _accumulated_error = accumulated_error;
             return retrieve_sizes;
         }
         void print() const {
             std::cout << "Greedy based size interpreter." << std::endl;
         }
+        double get_current_eb(){
+            return _accumulated_error;
+        }
     private:
         ErrorEstimator error_estimator;
+        mutable double _accumulated_error = 0;
     };
 
     struct ConsecutiveUnitErrorGain{
@@ -247,6 +253,7 @@ namespace MDR {
             return ConsecutiveUnitErrorGain(current_efficiency, level, consecutive_num);
         }
         ErrorEstimator error_estimator;
+        double _accumulated_error = 0;
     };
 
 }

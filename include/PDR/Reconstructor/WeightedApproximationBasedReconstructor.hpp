@@ -43,6 +43,7 @@ namespace PDR
                 }
                 level_errors = level_abs_errors;
             }
+            // level_max_error = level_errors[0][0];
 
             // timer.start();
             // Timer interp_retrieve_timer;
@@ -242,6 +243,11 @@ namespace PDR
             return max_weight;
         }
 
+        double get_current_eb(){
+            double current_eb = ldexp(interpreter.get_current_eb(), max_weight);
+            return (level_error_bounds[0] < current_eb) ? level_error_bounds[0] : current_eb;
+        }
+
         std::vector<uint32_t> get_offsets(){
             return retriever.get_offsets();
         }
@@ -250,8 +256,9 @@ namespace PDR
             return int_weights;
         }
 
-        void copy_int_weights(std::vector<int> & completed_weights){
+        void copy_int_weights(std::vector<int> & completed_weights, int max_weight_){
             int_weights = completed_weights;
+            max_weight = max_weight_;
         }
 
         ~WeightedApproximationBasedReconstructor() {}
@@ -375,6 +382,7 @@ namespace PDR
         std::vector<uint32_t> strides;
         bool negabinary = true;
         bool reconstructed = false;
+        // double level_max_error = 0;
 
     public:
         bool fetch_weight = false;
