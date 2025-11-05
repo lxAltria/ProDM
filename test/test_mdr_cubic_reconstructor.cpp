@@ -24,7 +24,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
         auto dims = reconstructor.get_dimensions();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
-        MGARD::print_statistics(data.data(), reconstructed_data, data.size());
+        MGARD::print_statistics(data.data(), reconstructed_data, data.size(), reconstructor.get_retrieved_size());
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
         /* test
@@ -79,7 +79,8 @@ int main(int argc, char ** argv){
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);  
     }
-    string metadata_file = "refactored_cubic_data/metadata.bin";
+    string refactored_path = string(argv[argv_id++]);
+    string metadata_file = refactored_path + "refactored_cubic_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
     {
@@ -93,14 +94,14 @@ int main(int argc, char ** argv){
     }
     vector<string> files;
     for(int i=0; i<num_levels; i++){
-        string filename = "refactored_cubic_data/level_" + to_string(i) + ".bin";
+        string filename = refactored_path + "refactored_cubic_data/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }
 
-    using T = float;
-    using T_stream = uint32_t;
-    // using T = double;
-    // using T_stream = uint64_t;
+    // using T = float;
+    // using T_stream = uint32_t;
+    using T = double;
+    using T_stream = uint64_t;
     auto decomposer = MDR::MGARDCubicDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();

@@ -9,6 +9,7 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
+#include <numeric>
 #include <cstdint>
 
 namespace MDR{

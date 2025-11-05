@@ -1582,13 +1582,24 @@ void refactor_velocities_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1, ui
     // }
     // int_weights = normalize_weights(weights, max_weight);
 
-    std::vector<std::vector<T>> weights(n_variable, std::vector<T>(num_elements));
-    for(int i=0; i<n_variable; i++){
-        for(int j=0; j<num_elements; j++){
-            T abs_Vij = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
-            weights[i][j] = abs_Vij;
+    // std::vector<std::vector<T>> weights(n_variable, std::vector<T>(num_elements));
+    // for(int i=0; i<n_variable; i++){
+    //     for(int j=0; j<num_elements; j++){
+    //         T abs_Vij = (vars_vec[i][j] > 0) ? vars_vec[i][j] : -vars_vec[i][j];
+    //         weights[i][j] = abs_Vij;
+    //     }
+    // }
+
+    std::vector<T> weight(num_elements);
+    for(int i=0; i<num_elements; i++){
+        T sum = 0;
+        for(int j=0; j<n_variable; j++){
+            sum += abs(vars_vec[j][i]);
         }
+        weight[i] = sum;
     }
+
+    std::vector<int> int_weights;
     for(int i=0; i<n_variable; i++){
         std::string rdir_prefix = rdata_file_prefix + var_list[i];
         std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1617,21 +1628,21 @@ void refactor_velocities_square_3D_HPEZ_WBP(std::string dataset, uint32_t n1, ui
         // std::vector<int> tmp_weight(num_elements);
         // memcpy(tmp_weight.data(), int_weights.data() + i*num_elements, num_elements * sizeof(int));
         // refactor.copy_int_weights(tmp_weight);
-        refactor.QoI = weights[i];
-        refactor.mask = mask;
-        refactor.store_weight = true;
-        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
-        // if(i == 0){
-        //     refactor.QoI = abs_sum;
-        //     refactor.mask = mask;
-        //     refactor.store_weight = true;
-        // }
-        // else{
-        //     refactor.mask = mask;
-        //     refactor.copy_int_weights(int_weights);
-        // }
+        // refactor.QoI = weights[i];
+        // refactor.mask = mask;
+        // refactor.store_weight = true;
         // refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
-        // if(i == 0) int_weights = refactor.get_int_weights();
+        if(i == 0){
+            refactor.QoI = weight;
+            refactor.mask = mask;
+            refactor.store_weight = true;
+        }
+        else{
+            refactor.mask = mask;
+            refactor.copy_int_weights(int_weights);
+        }
+        refactor.refactor(vars_vec[i].data(), dims, target_level, num_bitplanes, approximator_eb, max_weight, block_size); 
+        if(i == 0) int_weights = refactor.get_int_weights();
     }
 }
 
