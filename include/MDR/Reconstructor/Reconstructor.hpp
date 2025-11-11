@@ -3,5 +3,6 @@
 
 #include "ComposedReconstructor.hpp"
 #include "WeightReconstructor.hpp"
+#include "BitplaneReconstructor.hpp"
 
 #endif

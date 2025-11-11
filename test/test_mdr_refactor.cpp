@@ -72,7 +72,8 @@ int main(int argc, char ** argv){
     // auto interleaver = MDR::SFCInterleaver<T>();
     // auto interleaver = MDR::BlockedInterleaver<T>();
     // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
     negabinary = true;
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
     // negabinary = false;

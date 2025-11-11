@@ -34,6 +34,10 @@ namespace MDR {
         inline T estimate_error(T error, int level) const {
             return c * error;
         }
+        /////////
+        inline T estimate_error(T error, int level, int num_levels) const {
+            return c * error;
+        }
         inline T estimate_error(T data, T reconstructed_data, int level) const {
             return c * (data - reconstructed_data);
         }
@@ -54,6 +58,10 @@ namespace MDR {
     public:
         MaxErrorEstimatorHB(){}
         inline T estimate_error(T error, int level) const {
+            return error;
+        }
+        ///
+        inline T estimate_error(T error, int level, int num_levels) const {
             return error;
         }
         inline T estimate_error(T data, T reconstructed_data, int level) const {
@@ -87,7 +95,17 @@ namespace MDR {
         }
         MaxErrorEstimatorHBCubic() : MaxErrorEstimatorHBCubic(1) {}
         inline T estimate_error(T error, int level) const {
-            return c * error;
+            return error;
+        }
+        inline T estimate_error(T error, int level, int num_levels) const {
+            if(first_time){
+                C = std::vector<T>(num_levels, 1);
+                for(int i=num_levels-2; i>=0; i--){
+                    C[i] = C[i+1] * c;
+                }
+                first_time = false;
+            }
+            return C[level] * error;
         }
         inline T estimate_error(T data, T reconstructed_data, int level) const {
             return c * (data - reconstructed_data);
@@ -100,6 +118,8 @@ namespace MDR {
         }
     private:
         double c = 0;
+        mutable std::vector<T> C;
+        mutable bool first_time = true;
     };    
 }
 #endif

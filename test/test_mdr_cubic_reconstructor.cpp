@@ -104,7 +104,8 @@ int main(int argc, char ** argv){
     using T_stream = uint64_t;
     auto decomposer = MDR::MGARDCubicDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
     // auto compressor = MDR::DefaultLevelCompressor();
@@ -112,8 +113,9 @@ int main(int argc, char ** argv){
     // auto compressor = MDR::NullLevelCompressor();
 
     auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(3);
-    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+    // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+    auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
     return 0;
 }

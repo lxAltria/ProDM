@@ -3,5 +3,6 @@
 
 #include "BasicSizeInterpreter.hpp"
 #include "GreedyBasedSizeInterpreter.hpp"
+#include "DPBasedSizeInterpreter.hpp"
 
 #endif

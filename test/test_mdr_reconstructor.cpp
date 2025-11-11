@@ -78,7 +78,8 @@ int main(int argc, char ** argv){
     using T_stream = uint64_t;
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
     // auto compressor = MDR::DefaultLevelCompressor();
@@ -87,7 +88,8 @@ int main(int argc, char ** argv){
 
     auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
     auto estimator = MDR::MaxErrorEstimatorHB<T>();
-    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
     return 0;
 }

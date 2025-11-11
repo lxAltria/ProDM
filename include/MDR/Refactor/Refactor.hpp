@@ -4,5 +4,6 @@
 #include "ComposedRefactor.hpp"
 #include "WeightRefactor.hpp"
 #include "QoIRefactor.hpp"
+#include "BitplaneRefactor.hpp"
 
 #endif
