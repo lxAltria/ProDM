@@ -1,5 +1,5 @@
-#ifndef _MDR_COMPOSED_REFACTOR_HPP
-#define _MDR_COMPOSED_REFACTOR_HPP
+#ifndef _MDR_FUSE_COMPOSED_REFACTOR_NEW_HPP
+#define _MDR_FUSE_COMPOSED_REFACTOR_NEw_HPP
 
 #include "RefactorInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
@@ -13,9 +13,9 @@
 namespace MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
-    class ComposedRefactor : public concepts::RefactorInterface<T> {
+    class FuseComposedRefactor_new : public concepts::RefactorInterface<T> {
     public:
-        ComposedRefactor(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
+        FuseComposedRefactor_new(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
@@ -66,10 +66,10 @@ namespace MDR {
             free(metadata);
         }
 
-        ~ComposedRefactor(){}
+        ~FuseComposedRefactor_new(){}
 
         void print() const {
-            std::cout << "Composed refactor with the following components." << std::endl;
+            std::cout << "New Fuse Composed refactor with the following components." << std::endl;
             std::cout << "Decomposer: "; decomposer.print();
             std::cout << "Interleaver: "; interleaver.print();
             std::cout << "Encoder: "; encoder.print();
@@ -84,7 +84,13 @@ namespace MDR {
             // Timer timer;
             // decompose data hierarchically
             // timer.start();
-            decomposer.decompose(data.data(), dimensions, target_level);
+            level_buffers = decomposer.decompose_interleave(data.data(), dimensions, target_level);
+            
+            // std::cout << "decomposed data:" << std::endl;
+            // for(int i=0; i<data.size(); i++){
+            //     std::cout << data[i] << " ";
+            // }
+            // std::cout << std::endl;
             // MGARD::writefile("decomposed_coeff.dat", data.data(), data.size());
             // timer.end();
             // timer.print("Decompose");
@@ -94,18 +100,24 @@ namespace MDR {
             level_squared_errors.clear();
             level_components.clear();
             level_sizes.clear();
-            auto level_dims = compute_level_dims(dimensions, target_level);
-            auto level_elements = compute_level_elements(level_dims, target_level);
-            std::vector<uint32_t> dims_dummy(dimensions.size(), 0);
-            SquaredErrorCollector<T> s_collector = SquaredErrorCollector<T>();
-            for(int i=0; i<=target_level; i++){
+            // auto level_dims = compute_level_dims_new(dimensions, target_level);
+            // auto level_elements = compute_level_elements(level_dims, target_level);
+            // std::vector<uint32_t> dims_dummy(dimensions.size(), 0);
+            // SquaredErrorCollector<T> s_collector = SquaredErrorCollector<T>();
+            for(int i=0; i<level_buffers.size(); i++){
                 // timer.start();
-                const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
-                T * buffer = (T *) malloc(level_elements[i] * sizeof(T));
+                // const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
+                // T * buffer = (T *) malloc(level_elements[i] * sizeof(T));
                 // extract level i component
-                interleaver.interleave(data.data(), dimensions, level_dims[i], prev_dims, reinterpret_cast<T*>(buffer));
+                // interleaver.interleave(data.data(), dimensions, level_dims[i], prev_dims, reinterpret_cast<T*>(buffer), i, target_level);
+
+                // std::cout << "Level " << i << " coefficients:" << std::endl;
+                // for(int j=0; j < level_elements[i]; j++){
+                //     std::cout << buffer[j] << " ";
+                // }
+                // std::cout << std::endl;
                 // compute max coefficient as level error bound
-                T level_max_error = compute_max_abs_value(reinterpret_cast<T*>(buffer), level_elements[i]);
+                T level_max_error = compute_max_abs_value(level_buffers[i].data(), level_buffers[i].size());
                 // std::cout << "\nlevel " << i << " max error = " << level_max_error << std::endl;
                 // MGARD::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);
@@ -121,8 +133,8 @@ namespace MDR {
                 frexp(level_max_error, &level_exp);
                 std::vector<uint32_t> stream_sizes;
                 // std::vector<double> level_sq_err;
-                auto streams = encoder.encode(buffer, level_elements[i], level_exp, num_bitplanes, stream_sizes);
-                free(buffer);
+                auto streams = encoder.encode(level_buffers[i].data(), level_buffers[i].size(), level_exp, num_bitplanes, stream_sizes);
+                // free(buffer);
                 // level_squared_errors.push_back(level_sq_err);
                 // timer.end();
                 // timer.print("Encoding");
@@ -159,6 +171,7 @@ namespace MDR {
         std::vector<std::vector<uint32_t>> level_sizes;
         std::vector<uint32_t> level_num;
         std::vector<std::vector<double>> level_squared_errors;
+        std::vector<std::vector<T>> level_buffers;
     public:
         bool negabinary = false;
     };

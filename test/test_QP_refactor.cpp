@@ -121,6 +121,38 @@ void test_MDR(string filename, string output_path, const vector<uint32_t>& dims,
     evaluate(data, dims, target_level, num_bitplanes, refactor);
 }
 
+template <class T, class T_stream>
+void test_2D_decomposition(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int direction=0){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<(target_level * 2 + 1); i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        // std::cout << "filename = " << filename << std::endl;
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(direction);
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    auto refactor = MDR::FuseComposedRefactor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+    refactor.negabinary = negabinary;
+    refactor.direction = direction;
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    evaluate(data, dims, target_level, num_bitplanes, refactor);
+}
+
 int main(int argc, char ** argv){
 
     int argv_id = 1;
@@ -193,6 +225,12 @@ int main(int argc, char ** argv){
         {
             test_MDR<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes);
             break;
+        }
+        case 3:
+        {
+            int direction = 0;
+            direction = atoi(argv[argv_id ++]);
+            test_2D_decomposition<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes, direction);
         }
         default:
             break;

@@ -75,6 +75,45 @@ namespace MDR {
         }
     };
     template<class T>
+    class MaxErrorEstimatorHB_new : public MaxErrorEstimator<T> {
+    public:
+        MaxErrorEstimatorHB_new(int num_dims){
+            switch(num_dims){
+                case 1:
+                    c = 1;
+                    break; 
+                case 2:
+                    c = 2;
+                    break;
+                case 3:
+                    c = 3;
+                    break;
+                default:
+                    std::cerr << num_dims << "-Dimentional error estimation not implemented." << std::endl;
+                    exit(-1);
+            }
+        }
+        MaxErrorEstimatorHB_new() : MaxErrorEstimatorHB_new(1) {}
+        inline T estimate_error(T error, int level) const {
+            return (level) ? c * error : error;
+        }
+        ///
+        inline T estimate_error(T error, int level, int num_levels) const {
+            return (level) ? c * error : error;;
+        }
+        inline T estimate_error(T data, T reconstructed_data, int level) const {
+            return (level) ? c * (data - reconstructed_data) : data - reconstructed_data;
+        }
+        inline T estimate_error_gain(T base, T current_level_err, T next_level_err, int level) const {
+            return (level) ? c * (current_level_err - next_level_err) : current_level_err - next_level_err;
+        }
+        void print() const {
+            std::cout << "Max absolute error estimator for hierarchical basis." << std::endl;
+        }
+    private:
+        T c = 0;
+    };
+    template<class T>
     class MaxErrorEstimatorHBCubic : public MaxErrorEstimator<T> {
     public:
         MaxErrorEstimatorHBCubic(int num_dims){
@@ -95,7 +134,7 @@ namespace MDR {
         }
         MaxErrorEstimatorHBCubic() : MaxErrorEstimatorHBCubic(1) {}
         inline T estimate_error(T error, int level) const {
-            return error;
+            return c*error;
         }
         inline T estimate_error(T error, int level, int num_levels) const {
             if(first_time){

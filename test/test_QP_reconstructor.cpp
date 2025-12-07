@@ -26,6 +26,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        cout << "Bitrate = " << (reconstructor.get_retrieved_size() * sizeof(T) * 1.0) / data.size() << std::endl;
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -176,6 +177,51 @@ void test_MDR(string filename, string refactored_path, const vector<double>& tol
     evaluate(data, tolerance, reconstructor);
 }
 
+template <class T, class T_stream>
+void test_2D_recomposition(string filename, string refactored_path, const vector<double>& tolerance, int direction=0){
+    string metadata_file = refactored_path + "/refactored_data/metadata.bin";
+    int num_levels = 0;
+    int num_dims = 0;
+    {
+        // metadata interpreter, otherwise information needs to be provided
+        size_t num_bytes = 0;
+        auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
+        num_dims = metadata[0];
+        num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
+        cout << "number of dimension = " << num_dims << ", number of levels = " << num_levels << endl;
+    }
+    vector<string> files;
+    for(int i=0; i<num_levels; i++){
+        string filename = refactored_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(direction);
+    auto interleaver = MDR::DirectInterleaver<T>();
+    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+
+    auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+    auto estimator = MDR::MaxErrorEstimatorHB<T>();
+    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto reconstructor = MDR::FuseComposedReconstructor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+    reconstructor.direction = direction;
+    cout << "loading metadata" << endl;
+    reconstructor.load_metadata();
+
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    std::cout << "read file done: #element = " << num_elements << std::endl;
+    fflush(stdout);
+    evaluate(data, tolerance, reconstructor);
+}
+
 int main(int argc, char ** argv){
 
     int argv_id = 1;
@@ -239,6 +285,12 @@ int main(int argc, char ** argv){
         {
             test_MDR<T, T_stream>(filename, refactored_path, tolerance);
             break;
+        }
+        case 3:
+        {
+            int direction = 0;
+            direction = atoi(argv[argv_id++]);
+            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance, direction);
         }
         default:
             break;

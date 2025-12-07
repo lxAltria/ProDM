@@ -1,5 +1,5 @@
-#ifndef _MDR_COMPOSED_REFACTOR_HPP
-#define _MDR_COMPOSED_REFACTOR_HPP
+#ifndef _MDR_COMPOSED_REFACTOR_NEW_HPP
+#define _MDR_COMPOSED_REFACTOR_NEW_HPP
 
 #include "RefactorInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
@@ -13,14 +13,14 @@
 namespace MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
-    class ComposedRefactor : public concepts::RefactorInterface<T> {
+    class ComposedRefactor_new : public concepts::RefactorInterface<T> {
     public:
-        ComposedRefactor(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
+        ComposedRefactor_new(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -66,7 +66,7 @@ namespace MDR {
             free(metadata);
         }
 
-        ~ComposedRefactor(){}
+        ~ComposedRefactor_new(){}
 
         void print() const {
             std::cout << "Composed refactor with the following components." << std::endl;
@@ -94,7 +94,7 @@ namespace MDR {
             level_squared_errors.clear();
             level_components.clear();
             level_sizes.clear();
-            auto level_dims = compute_level_dims(dimensions, target_level);
+            auto level_dims = compute_level_dims_new(dimensions, target_level);
             auto level_elements = compute_level_elements(level_dims, target_level);
             std::vector<uint32_t> dims_dummy(dimensions.size(), 0);
             SquaredErrorCollector<T> s_collector = SquaredErrorCollector<T>();
@@ -103,7 +103,8 @@ namespace MDR {
                 const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
                 T * buffer = (T *) malloc(level_elements[i] * sizeof(T));
                 // extract level i component
-                interleaver.interleave(data.data(), dimensions, level_dims[i], prev_dims, reinterpret_cast<T*>(buffer));
+                interleaver.interleave(data.data(), dimensions, level_dims[i], prev_dims, reinterpret_cast<T*>(buffer), i, target_level);
+
                 // compute max coefficient as level error bound
                 T level_max_error = compute_max_abs_value(reinterpret_cast<T*>(buffer), level_elements[i]);
                 // std::cout << "\nlevel " << i << " max error = " << level_max_error << std::endl;

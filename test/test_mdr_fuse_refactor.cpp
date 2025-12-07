@@ -24,7 +24,7 @@ void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_le
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
 void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
-    auto refactor = MDR::ComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
+    auto refactor = MDR::FuseComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
     refactor.negabinary = negabinary;
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
@@ -50,7 +50,7 @@ int main(int argc, char ** argv){
 
     string metadata_file = output_path + "/refactored_data/metadata.bin";
     vector<string> files;
-    for(int i=0; i<=target_level; i++){
+    for(int i=0; i<(target_level * num_dims + 1); i++){
         string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }
@@ -67,8 +67,8 @@ int main(int argc, char ** argv){
         std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
     }
 
-    auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
-    auto interleaver = MDR::DirectInterleaver<T>();
+    auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+    auto interleaver = MDR::DirectInterleaver_new<T>();
     // auto interleaver = MDR::SFCInterleaver<T>();
     // auto interleaver = MDR::BlockedInterleaver<T>();
     // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();

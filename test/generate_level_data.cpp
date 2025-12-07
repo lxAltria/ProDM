@@ -10,15 +10,23 @@
 using namespace std;
 
 template <class T>
-void test_decompose(vector<T>& data, const vector<uint32_t>& dims, int target_level){
+void test_decompose(vector<T>& data, const vector<uint32_t>& dims, int target_level, std::string output_file){
     struct timespec start, end;
     int err = 0;
     err = clock_gettime(CLOCK_REALTIME, &start);
-    MDR::MGARDHierarchicalDecomposer<T> decomposer;
-    // MDR::MGARDCubicDecomposer<T> decomposer;
-    decomposer.decompose(data.data(), dims, target_level);
+    MDR::MGARDHierarchicalDecomposer_Interleaver<T> decomposer;
+    auto level_buffers = decomposer.decompose_interleave(data.data(), dims, target_level);
+    auto level_dims = decomposer.get_level_buffer_dims();
     err = clock_gettime(CLOCK_REALTIME, &end);
     cout << "Decomposition time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+    for(int i=0; i<level_buffers.size(); i++){
+        std::string file_name = output_file + "/level" + std::to_string(i);
+        for(int j=0; j<level_dims[i].size(); j++){
+            file_name += "_" + std::to_string(level_dims[i][j]);
+        }
+        file_name += ".dat";
+        MGARD::writefile<T>(file_name.c_str(), level_buffers[i].data(), level_buffers[i].size());
+    }
 }
 
 template <class T>
@@ -26,8 +34,7 @@ void test_recompose(vector<T>& data, const vector<uint32_t>& dims, int target_le
     struct timespec start, end;
     int err = 0;
     err = clock_gettime(CLOCK_REALTIME, &start);
-    MDR::MGARDHierarchicalDecomposer<T> recomposer;
-    // MDR::MGARDCubicDecomposer<T> recomposer;
+    MDR::MGARDCubicDecomposer<T> recomposer;
     recomposer.recompose(data.data(), dims, target_level);
     err = clock_gettime(CLOCK_REALTIME, &end);
     cout << "Recomposition time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
@@ -67,21 +74,19 @@ void test(string filename, const vector<uint32_t>& dims, int target_level, std::
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     auto data_ori(data);
-    test_decompose(data, dims, target_level);
+    test_decompose(data, dims, target_level, output_file);
     // test_recompose(data, dims, target_level);
-    T * data_buffer = (T*) malloc(num_elements * sizeof(T));
-    memcpy(data_buffer, data.data(), num_elements * sizeof(T));
-    // std::cout << dims[1]*dims[2] << " " << dims[2] << std::endl;
-    std::cout << "data_reverse_reorder_3D(" << data.data() << ", " << data_buffer << ", " << dims[0] << ", " << dims[1] << ", " << dims[2] << ", " << dims[1] * dims[2] << ", " << dims[2] << ");" << std::endl;
-    MGARD::data_reverse_reorder_3D(data.data(), data_buffer, dims[0], dims[1], dims[2], dims[1]*dims[2], dims[2]);
-    auto pos = print_statistics(data_ori.data(), data.data(), num_elements);
-    MGARD::writefile<T>(output_file.c_str(), data.data(), num_elements);
-    std::cout << data_ori[pos] << " " << data[pos] << std::endl;
-    std::cout << pos / (dims[1]*dims[2]) << " ";
-    pos = pos % (dims[1]*dims[2]);
-    std::cout << pos / dims[2] << " ";
-    pos = pos % dims[2];
-    std::cout << pos << std::endl;
+    // T * data_buffer = (T*) malloc(num_elements * sizeof(T));
+    // memcpy(data_buffer, data.data(), num_elements * sizeof(T));
+    // MGARD::data_reverse_reorder_3D(data.data(), data_buffer, dims[0], dims[1], dims[2], dims[1]*dims[2], dims[2]);
+    // auto pos = print_statistics(data_ori.data(), data.data(), num_elements);
+    // MGARD::writefile<T>(output_file.c_str(), data.data(), num_elements);
+    // std::cout << data_ori[pos] << " " << data[pos] << std::endl;
+    // std::cout << pos / (dims[1]*dims[2]) << " ";
+    // pos = pos % (dims[1]*dims[2]);
+    // std::cout << pos / dims[2] << " ";
+    // pos = pos % dims[2];
+    // std::cout << pos << std::endl;
 }
 
 int main(int argc, char ** argv){

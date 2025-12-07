@@ -32,6 +32,20 @@ namespace MDR {
         }
         return level_dims;
     }
+    std::vector<std::vector<uint32_t>> compute_level_dims_new(const std::vector<uint32_t>& dims, uint32_t target_level){
+        std::vector<std::vector<uint32_t>> level_dims;
+        for(int i=0; i<=target_level; i++){
+            level_dims.push_back(std::vector<uint32_t>(dims.size()));
+        }
+        for(int i=0; i<dims.size(); i++){
+            int n = dims[i];
+            for(int j=0; j<=target_level; j++){
+                level_dims[target_level - j][i] = n;
+                n = (n >> 1) + (n & 1);
+            }
+        }
+        return level_dims;
+    }
 
     // compute level elements
     /*
@@ -56,6 +70,71 @@ namespace MDR {
             pre_num_elements = num_elements;
         }
         return level_elements;
+    }
+
+    std::vector<uint32_t> compute_level_buffers_size(const std::vector<std::vector<uint32_t>>& level_dims, int target_level){
+        assert(level_dims.size());
+        size_t num_dims = level_dims[0].size();
+        // size_t count;
+        size_t size;
+        std::vector<uint32_t> level_sizes(1 + num_dims * target_level);
+        level_sizes[0] = 1;
+        // std::cout << "level 0, dims = ";
+        for(int i=0; i<num_dims; i++){
+            level_sizes[0] *= level_dims[0][i];
+            // std::cout << level_dims[0][i] << " ";
+        }
+        // std::cout << std::endl;
+        for(size_t l=1; l<=target_level; l++){
+            // count = 0;
+            switch (num_dims){
+                case 1:
+                {
+                    size = level_dims[l][0];
+                    level_sizes[(l-1) * num_dims + 1] = size;
+                    // count += size;
+                    // assert(count == (level_dims[l][0] - level_dims[l-1][0]));
+                    break;
+                }
+                case 2:
+                {
+                    size = (level_dims[l][0] - level_dims[l-1][0]) * level_dims[l-1][1];
+                    // std::cout << "level " << (l-1) * num_dims + 1 << ", dims = " << level_dims[l][0] - level_dims[l-1][0] << " " << level_dims[l-1][1] << std::endl;
+                    level_sizes[(l-1) * num_dims + 1] = size;
+                    // count += size;
+                    size = level_dims[l][0] * (level_dims[l][1] - level_dims[l-1][1]);
+                    // std::cout << "level " << (l-1) * num_dims + 2 << ", dims = " << level_dims[l][0] << " " << level_dims[l][1] - level_dims[l-1][1] << std::endl;
+                    level_sizes[(l-1) * num_dims + 2] = size;
+                    // count += size;
+                    // assert(count == (level_dims[l][0]*level_dims[l][1] - level_dims[l-1][0]*level_dims[l-1][1]));
+                    break;
+                }
+                case 3:
+                {
+                    // n1 (cur_n1 - pre_n1) * pre_n2 * pre_n3
+                    size = (level_dims[l][0] - level_dims[l-1][0]) * level_dims[l-1][1] * level_dims[l-1][2];
+                    // std::cout << "level " << (l-1) * num_dims + 1 << ", dims = " << (level_dims[l][0] - level_dims[l-1][0]) << " " << level_dims[l-1][1] << " " << level_dims[l-1][2] << std::endl;
+                    level_sizes[(l-1) * num_dims + 1] = size;
+                    // count += size;
+                    // n2 cur_n1 * (cur_n2 - pre_n2) * pre_n3
+                    size = level_dims[l][0] * (level_dims[l][1] - level_dims[l-1][1]) * level_dims[l-1][2];
+                    // std::cout << "level " << (l-1) * num_dims + 2 << ", dims = " << level_dims[l][0] << " " << (level_dims[l][1] - level_dims[l-1][1]) << " " << level_dims[l-1][2] << std::endl;
+                    level_sizes[(l-1) * num_dims + 2] = size;
+                    // count += size;
+                    // n3 cur_n1 * cur_n2 * (cur_n3 - pre_n3)
+                    size = level_dims[l][0] * level_dims[l][1] * (level_dims[l][2] - level_dims[l-1][2]);
+                    // std::cout << "level " << (l-1) * num_dims + 3 << ", dims = " << level_dims[l][0] << " " << level_dims[l][1] << " " << (level_dims[l][2] - level_dims[l-1][2]) << std::endl;
+                    level_sizes[(l-1) * num_dims + 3] = size;
+                    // count += size;
+                    // assert(count == (level_dims[l][0]*level_dims[l][1]*level_dims[l][2] - level_dims[l-1][0]*level_dims[l-1][1]*level_dims[l-1][2]));
+                    break;
+                }
+                default:
+                    std::cerr << num_dims << "-Dimentional decomposition not implemented." << std::endl;
+                    exit(-1);
+            }
+        }
+        return level_sizes;
     }
 
     // Simple utility functions
