@@ -73,7 +73,7 @@ void test(string filename, const vector<uint32_t>& dims, int target_level, std::
     memcpy(data_buffer, data.data(), num_elements * sizeof(T));
     // std::cout << dims[1]*dims[2] << " " << dims[2] << std::endl;
     std::cout << "data_reverse_reorder_3D(" << data.data() << ", " << data_buffer << ", " << dims[0] << ", " << dims[1] << ", " << dims[2] << ", " << dims[1] * dims[2] << ", " << dims[2] << ");" << std::endl;
-    MGARD::data_reverse_reorder_3D(data.data(), data_buffer, dims[0], dims[1], dims[2], dims[1]*dims[2], dims[2]);
+    MGARD::data_reverse_reorder_3D_for_generating_purpose(data.data(), data_buffer, dims[0], dims[1], dims[2], dims[1]*dims[2], dims[2]);
     auto pos = print_statistics(data_ori.data(), data.data(), num_elements);
     MGARD::writefile<T>(output_file.c_str(), data.data(), num_elements);
     std::cout << data_ori[pos] << " " << data[pos] << std::endl;
