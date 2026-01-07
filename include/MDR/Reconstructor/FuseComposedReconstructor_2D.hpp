@@ -154,6 +154,7 @@ namespace MDR {
             deserialize(metadata_pos, num_levels, stopping_indices);
             deserialize(metadata_pos, num_levels, level_num);
             negabinary = *(metadata_pos ++);
+            direction = *(metadata_pos ++);
             level_num_bitplanes = std::vector<uint8_t>(num_levels, 0);
             strides = std::vector<uint32_t>(dimensions.size());
             uint32_t stride = 1;
@@ -230,6 +231,7 @@ namespace MDR {
         }
     private:
         bool reconstruct(uint8_t target_level, const std::vector<uint8_t>& prev_level_num_bitplanes, bool progressive=true){
+            decomposer.direction = direction;
             auto num_levels = level_num.size();
             auto reconstruct_dimensions = dimensions;
             // update with stride
@@ -238,6 +240,11 @@ namespace MDR {
             for(int i=0; i<level_buffer_sizes.size(); i++){
                 level_buffers.push_back(std::vector<T>(level_buffer_sizes[i], 0));
             }
+            std::cout << "level_num_bitplanes" << std::endl;
+            for(int i=0; i<level_num_bitplanes.size(); i++){
+                std::cout << int(level_num_bitplanes[i]) << " ";
+            }
+            std::cout << std::endl;
             // auto level_elements = compute_level_elements(level_dims, target_level);
             // std::vector<uint32_t> dims_dummy(reconstruct_dimensions.size(), 0);
             for(int i=0; i<=current_level; i++){
@@ -346,7 +353,6 @@ namespace MDR {
         size_t MGARD_target_level;
         std::vector<uint32_t> strides;
         bool negabinary = true;
-    public:
         int direction = 0;
     };
 }

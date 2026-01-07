@@ -9,5 +9,6 @@
 #include "FuseComposedRefactor.hpp"
 #include "NewFuseComposedRefactor.hpp"
 #include "FuseComposedRefactor_2D.hpp"
+#include "CPRefactor.hpp"
 
 #endif

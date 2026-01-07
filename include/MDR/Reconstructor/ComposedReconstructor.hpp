@@ -54,7 +54,12 @@ namespace MDR {
             if(max_level == -1 || (max_level >= level_num_bitplanes.size())){
                 auto retrieve_sizes = interpreter.interpret_retrieve_size(level_sizes, level_errors, tolerance, level_num_bitplanes);
                 // retrieve data
-                level_components = retriever.retrieve_level_components(level_sizes, retrieve_sizes, prev_level_num_bitplanes, level_num_bitplanes);                
+                level_components = retriever.retrieve_level_components(level_sizes, retrieve_sizes, prev_level_num_bitplanes, level_num_bitplanes);     
+                std::cout << "level_errors:" << std::endl;
+                for(int i=0; i<level_errors.size(); i++){
+                    std::cout << level_errors[i][level_num_bitplanes[i]] << " ";
+                }           
+                std::cout << std::endl;
             }
             else{
                 std::vector<std::vector<uint32_t>> tmp_level_sizes;

@@ -7,11 +7,12 @@
 #include <bitset>
 #include "utils.hpp"
 #include "MDR/Reconstructor/Reconstructor.hpp"
+#include "qoi_utils.hpp"
 
 using namespace std;
 
 template <class T, class Reconstructor>
-void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstructor reconstructor){
+void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor reconstructor){
     struct timespec start, end;
     int err = 0;
     // auto a1 = compute_average(data.data(), dims[0], dims[1], dims[2], 3);
@@ -26,13 +27,14 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * sizeof(T) * 1.0) / data.size() << std::endl;
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
 }
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
-void test(string filename, const vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
+void test(string filename, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
     auto reconstructor = MDR::ComposedReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
@@ -41,6 +43,10 @@ void test(string filename, const vector<double>& tolerance, Decomposer decompose
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    T value_range = MDR::compute_value_range(data);
+    for(int i=0; i<tolerance.size(); i++){
+        tolerance[i] *= value_range;
+    }
     evaluate(data, tolerance, reconstructor);
 }
 
@@ -64,6 +70,7 @@ int main(int argc, char ** argv){
         assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_dims = metadata[0];
         num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
+        cout << "metadata_size = " << num_bytes << endl;
         cout << "number of dimension = " << num_dims << ", number of levels = " << num_levels << endl;
     }
     vector<string> files;

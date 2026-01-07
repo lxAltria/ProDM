@@ -7,6 +7,7 @@
 #include <bitset>
 #include "utils.hpp"
 #include "MDR/Refactor/Refactor.hpp"
+#include "MDR/Tuner/NaiveSamplingTuner.hpp"
 
 using namespace std;
 bool negabinary = true;
@@ -153,6 +154,50 @@ void test_2D_decomposition(string filename, string output_path, const vector<uin
     evaluate(data, dims, target_level, num_bitplanes, refactor);
 }
 
+template<class T, class T_stream>
+void test_2D_Adaptive_decomposition(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int stride=10, int block_size=5){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<(target_level * 2 + 1); i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        // std::cout << "filename = " << filename << std::endl;
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    auto estimator = MDR::MaxErrorEstimatorHB<T>();
+    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto tuner = MDR::NaiveSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>>(decomposer, encoder, compressor, interpreter);
+    tuner.negabinary = negabinary;
+    auto refactor = MDR::FuseComposedRefactor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+    refactor.negabinary = negabinary;
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    struct timespec start, end;
+    int err = 0;
+    cout << "Start Tuning" << endl;
+    err = clock_gettime(CLOCK_REALTIME, &start);
+    tuner.tune(data.data(), dims, target_level, num_bitplanes, stride, block_size);
+    err = clock_gettime(CLOCK_REALTIME, &end);
+    cout << "Tuner time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+    std::cout << "Best direction = " << tuner.get_best_direction() << std::endl;
+    refactor.direction = tuner.get_best_direction();
+    evaluate(data, dims, target_level, num_bitplanes, refactor);
+}
+
 int main(int argc, char ** argv){
 
     int argv_id = 1;
@@ -229,8 +274,22 @@ int main(int argc, char ** argv){
         case 3:
         {
             int direction = 0;
-            direction = atoi(argv[argv_id ++]);
+            if(argv_id < argc){
+                direction = atoi(argv[argv_id ++]);
+            }
             test_2D_decomposition<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes, direction);
+            break;
+        }
+        case 4:
+        {
+            int stride = 10;
+            int block_size = 5;
+            if(argv_id < argc){
+                stride = atoi(argv[argv_id ++]);
+                block_size = atoi(argv[argv_id ++]);
+            }
+            test_2D_Adaptive_decomposition<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes, stride, block_size);
+            break;
         }
         default:
             break;
