@@ -8,5 +8,6 @@
 #include "FuseComposedReconstructor.hpp"
 #include "NewFuseComposedReconstructor.hpp"
 #include "FuseComposedReconstructor_2D.hpp"
+#include "CPReconstructor.hpp"
 
 #endif

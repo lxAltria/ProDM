@@ -283,6 +283,17 @@ T compute_value_range(const std::vector<T>& vec){
 }
 
 template <class T>
+T compute_value_range(const T* vec, uint32_t size){
+	T min = vec[0];
+	T max = vec[0];
+	for(int i=0; i<size; i++){
+		if(vec[i] < min) min = vec[i];
+		if(vec[i] > max) max = vec[i];
+	}
+	return max - min;
+}
+
+template <class T>
 void print_info(const std::string& name, const std::vector<T>& vec){
 	T max = vec[0];
 	T min = vec[0];

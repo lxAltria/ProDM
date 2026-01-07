@@ -137,16 +137,132 @@ namespace MDR {
             }
             // std::cout << std::endl;
             std::cout << "Requested tolerance = " << tolerance << ", estimated error = " << accumulated_error << std::endl;
-            // std::cout << "level indexes: " << std::endl;
-            // for(int i=0; i<num_levels; i++){
-            //     std::cout << (int)index[i] << " ";
-            // }
-            // std::cout << std::endl;
+            std::cout << "level indexes: " << std::endl;
+            for(int i=0; i<num_levels; i++){
+                std::cout << (int)index[i] << " ";
+            }
+            std::cout << std::endl;
             _accumulated_error = accumulated_error;
             return retrieve_sizes;
         }
         void print() const {
             std::cout << "Greedy based size interpreter." << std::endl;
+        }
+        double get_current_eb(){
+            return _accumulated_error;
+        }
+    private:
+        ErrorEstimator error_estimator;
+        mutable double _accumulated_error = 0;
+    };
+    /** 
+     * greedy bit-plane retrieval with sign exculsion (excluding the first component) considering data structure
+     * A 2D example:
+     * The data is decomposed into 2 level, @ stands for level 0 with eb0, o stands for level 1 coeff block 0 with eb1, while x stands for level 1 coeff block 1 with eb2.
+     * @@@oo
+     * @@@oo
+     * @@@oo
+     * xxxxx
+     * xxxxx
+     * During error estimation, such (eb0 + eb1 + eb2) from original SignExcludeGreedyBasedSizeInterpreter can never happen, the real situation is we should compute the accumulated errors 
+     * for o and x seperately like (eb0 + eb1) and (eb0 + eb2) since their errors will never affect each other.
+     * Here, a 2D nested vector contains the structure information {{0, 1}, {0, 2}}
+    */
+    template<class ErrorEstimator>
+    class StructureAwareSignExcludeGreedyBasedSizeInterpreter : public concepts::SizeInterpreterInterface {
+    public:
+        StructureAwareSignExcludeGreedyBasedSizeInterpreter(const ErrorEstimator& e){
+            error_estimator = e;
+        }
+        std::vector<uint32_t> interpret_retrieve_size(const std::vector<std::vector<uint32_t>>& level_sizes, const std::vector<std::vector<double>>& level_errors, double tolerance, std::vector<uint8_t>& index) const {
+            int num_levels = level_sizes.size();
+            std::vector<uint32_t> retrieve_sizes(num_levels, 0);
+            return retrieve_sizes;
+        }
+        std::vector<uint32_t> interpret_retrieve_size(const std::vector<std::vector<uint32_t>>& level_sizes, const std::vector<std::vector<double>>& level_errors, double tolerance, std::vector<uint8_t>& index, std::vector<std::vector<uint8_t>> structures) const {
+            // for(int i=0; i<level_errors.size(); i++){
+            //     for(int j=0; j<level_errors[i].size(); j++){
+            //         std::cout << level_errors[i][j] << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+            int num_levels = level_sizes.size();
+            int num_blocks = structures.size();
+            std::vector<uint32_t> real_retrieve_sizes(num_levels, 0);
+            std::vector<std::vector<uint32_t>> retrieve_sizes(num_blocks, std::vector<uint32_t>(num_levels, 0));
+            std::vector<double> accumulated_errors(num_blocks, 0);
+            for(int i=0; i<num_blocks; i++){
+                for(int j : structures[i]){
+                    // std::cout << "block " << i << ", level " << (int)j << std::endl;
+                    accumulated_errors[i] += error_estimator.estimate_error(level_errors[j][index[j]], j);
+                }
+            }
+            if(compute_max_abs_value(accumulated_errors.data(), num_blocks) < tolerance) return real_retrieve_sizes;
+            std::vector<std::priority_queue<UnitErrorGain, std::vector<UnitErrorGain>, CompareUnitErrorGain>> heaps(num_blocks);
+            std::vector<std::vector<uint8_t>> indices(num_blocks, index);
+            for(int i=0; i<num_blocks; i++){
+                // identify minimal level
+                double min_error = accumulated_errors[i];
+                for(int j : structures[i]){
+                    min_error -= error_estimator.estimate_error(level_errors[j][indices[i][j]], j);
+                    min_error += error_estimator.estimate_error(level_errors[j].back(), j);
+                    // fetch the first component if index is 0
+                    if(indices[i][j] == 0){
+                        retrieve_sizes[i][j] += level_sizes[j][indices[i][j]];
+                        accumulated_errors[i] -= error_estimator.estimate_error(level_errors[j][indices[i][j]], j);
+                        accumulated_errors[i] += error_estimator.estimate_error(level_errors[j][indices[i][j] + 1], j);
+                        indices[i][j] ++;
+                        // std::cout << i;
+                    }
+                    // push the next one
+                    if(indices[i][j] != level_sizes[j].size()){
+                        double error_gain = error_estimator.estimate_error_gain(accumulated_errors[i], level_errors[j][indices[i][j]], level_errors[j][indices[i][j] + 1], j);
+                        heaps[i].push(UnitErrorGain(error_gain / level_sizes[j][indices[i][j]], j));
+                    }
+                    // if(min_error < tolerance){
+                    //     // the min error of first 0~i levels meets the tolerance
+                    //     // num_levels = i + 1;
+                    //     break;
+                    // }
+                }
+            }
+
+            std::vector<bool> tolerance_mets(num_blocks, false);
+            for(int i=0; i<num_blocks; i++){
+                while((!tolerance_mets[i]) && (!heaps[i].empty())){
+                    auto unit_error_gain = heaps[i].top();
+                    heaps[i].pop();
+                    int j = unit_error_gain.level;
+                    int x = indices[i][j];
+                    retrieve_sizes[i][j] += level_sizes[j][x];
+                    accumulated_errors[i] -= error_estimator.estimate_error(level_errors[j][x], j);
+                    accumulated_errors[i] += error_estimator.estimate_error(level_errors[j][x + 1], j);
+                    if(accumulated_errors[i] < tolerance) tolerance_mets[i] = true;
+                    indices[i][j] ++;
+                    if(indices[i][j] != level_sizes[j].size()){
+                        double error_gain = error_estimator.estimate_error_gain(accumulated_errors[i], level_errors[j][indices[i][j]], level_errors[j][indices[i][j] + 1], j);
+                        heaps[i].push(UnitErrorGain(error_gain / level_sizes[j][indices[i][j]], j));
+                    }
+                }
+            }
+            // std::cout << std::endl;
+            for(int i=0; i<num_blocks; i++){
+                for(int j: structures[i]){
+                    if(retrieve_sizes[i][j] > real_retrieve_sizes[j]) real_retrieve_sizes[j] = retrieve_sizes[i][j];
+                    if(indices[i][j] > index[j]) index[j] = indices[i][j];
+                }
+            }
+            std::cout << "Requested tolerance = " << tolerance << ", estimated error = " << compute_max_abs_value(accumulated_errors.data(), num_blocks) << std::endl;
+            std::cout << "level indexes: " << std::endl;
+            for(int i=0; i<num_levels; i++){
+                std::cout << (int)index[i] << " ";
+            }
+            std::cout << std::endl;
+            _accumulated_error = compute_max_abs_value(accumulated_errors.data(), num_blocks);
+            return real_retrieve_sizes;
+        }
+        void print() const {
+            std::cout << "Strcutre Aware Sign Exclude Greedy based size interpreter." << std::endl;
         }
         double get_current_eb(){
             return _accumulated_error;

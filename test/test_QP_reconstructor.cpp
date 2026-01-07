@@ -7,11 +7,12 @@
 #include <bitset>
 #include "utils.hpp"
 #include "MDR/Reconstructor/Reconstructor.hpp"
+#include "qoi_utils.hpp"
 
 using namespace std;
 
 template <class T, class Reconstructor>
-void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstructor reconstructor){
+void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor reconstructor){
     struct timespec start, end;
     int err = 0;
     // auto a1 = compute_average(data.data(), dims[0], dims[1], dims[2], 3);
@@ -33,7 +34,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
 }
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
-void test(string filename, const vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
+void test(string filename, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
     auto reconstructor = MDR::ComposedReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
@@ -46,7 +47,7 @@ void test(string filename, const vector<double>& tolerance, Decomposer decompose
 }
 
 template <class T, class T_stream>
-void test_BitplaneReconstructor(string filename, string refactored_path, const vector<double>& tolerance){
+void test_BitplaneReconstructor(string filename, string refactored_path, vector<double>& tolerance){
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -86,11 +87,15 @@ void test_BitplaneReconstructor(string filename, string refactored_path, const v
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    // T value_range = MDR::compute_value_range(data);
+    // for(int i=0; i<tolerance.size(); i++){
+    //     tolerance[i] *= value_range;
+    // }
     evaluate(data, tolerance, reconstructor);
 }
 
 template <class T, class T_stream>
-void test_XORBitplaneReconstructor(string filename, string refactored_path, const vector<double>& tolerance){
+void test_XORBitplaneReconstructor(string filename, string refactored_path, vector<double>& tolerance){
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -130,11 +135,15 @@ void test_XORBitplaneReconstructor(string filename, string refactored_path, cons
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    // T value_range = MDR::compute_value_range(data);
+    // for(int i=0; i<tolerance.size(); i++){
+    //     tolerance[i] *= value_range;
+    // }
     evaluate(data, tolerance, reconstructor);
 }
 
 template <class T, class T_stream>
-void test_MDR(string filename, string refactored_path, const vector<double>& tolerance){
+void test_MDR(string filename, string refactored_path, vector<double>& tolerance){
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -174,11 +183,15 @@ void test_MDR(string filename, string refactored_path, const vector<double>& tol
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    // T value_range = MDR::compute_value_range(data);
+    // for(int i=0; i<tolerance.size(); i++){
+    //     tolerance[i] *= value_range;
+    // }
     evaluate(data, tolerance, reconstructor);
 }
 
 template <class T, class T_stream>
-void test_2D_recomposition(string filename, string refactored_path, const vector<double>& tolerance, int direction=0){
+void test_2D_recomposition(string filename, string refactored_path, vector<double>& tolerance){
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -196,7 +209,7 @@ void test_2D_recomposition(string filename, string refactored_path, const vector
         string filename = refactored_path + "/refactored_data/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }
-    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(direction);
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
     auto interleaver = MDR::DirectInterleaver<T>();
     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
@@ -211,7 +224,6 @@ void test_2D_recomposition(string filename, string refactored_path, const vector
     auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     auto reconstructor = MDR::FuseComposedReconstructor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
-    reconstructor.direction = direction;
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
 
@@ -219,6 +231,10 @@ void test_2D_recomposition(string filename, string refactored_path, const vector
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    // T value_range = MDR::compute_value_range(data);
+    // for(int i=0; i<tolerance.size(); i++){
+    //     tolerance[i] *= value_range;
+    // }
     evaluate(data, tolerance, reconstructor);
 }
 
@@ -288,9 +304,13 @@ int main(int argc, char ** argv){
         }
         case 3:
         {
-            int direction = 0;
-            direction = atoi(argv[argv_id++]);
-            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance, direction);
+            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance);
+            break;
+        }
+        case 4:
+        {
+            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance);
+            break;
         }
         default:
             break;

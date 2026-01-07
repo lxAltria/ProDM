@@ -25,6 +25,28 @@ void test_decompose(vector<T>& data, const vector<uint32_t>& dims, int target_le
             file_name += "_" + std::to_string(level_dims[i][j]);
         }
         file_name += ".dat";
+        std::cout << file_name << std::endl;
+        MGARD::writefile<T>(file_name.c_str(), level_buffers[i].data(), level_buffers[i].size());
+    }
+}
+
+template <class T>
+void test_cubic_decompose(vector<T>& data, const vector<uint32_t>& dims, int target_level, std::string output_file){
+    struct timespec start, end;
+    int err = 0;
+    err = clock_gettime(CLOCK_REALTIME, &start);
+    MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T> decomposer;
+    auto level_buffers = decomposer.decompose_interleave(data.data(), dims, target_level);
+    auto level_dims = decomposer.get_level_buffer_dims();
+    err = clock_gettime(CLOCK_REALTIME, &end);
+    cout << "Decomposition time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+    for(int i=0; i<level_buffers.size(); i++){
+        std::string file_name = output_file + "/level" + std::to_string(i);
+        for(int j=0; j<level_dims[i].size(); j++){
+            file_name += "_" + std::to_string(level_dims[i][j]);
+        }
+        file_name += "_cubic.dat";
+        std::cout << file_name << std::endl;
         MGARD::writefile<T>(file_name.c_str(), level_buffers[i].data(), level_buffers[i].size());
     }
 }
@@ -70,11 +92,12 @@ int print_statistics(const T * data_ori, const T * data_dec, size_t data_size){
 }
 
 template <class T>
-void test(string filename, const vector<uint32_t>& dims, int target_level, std::string output_file){
+void test(string filename, const vector<uint32_t>& dims, int target_level, std::string output_file, string interp_method){
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     auto data_ori(data);
-    test_decompose(data, dims, target_level, output_file);
+    if(!strcmp(interp_method.c_str(), "linear")) test_decompose(data, dims, target_level, output_file);
+    if(!strcmp(interp_method.c_str(), "cubic")) test_cubic_decompose(data, dims, target_level, output_file);
     // test_recompose(data, dims, target_level);
     // T * data_buffer = (T*) malloc(num_elements * sizeof(T));
     // memcpy(data_buffer, data.data(), num_elements * sizeof(T));
@@ -90,26 +113,32 @@ void test(string filename, const vector<uint32_t>& dims, int target_level, std::
 }
 
 int main(int argc, char ** argv){
-    string filename = string(argv[1]);
-    int type = atoi(argv[2]); // 0 for float, 1 for double
-    int target_level = atoi(argv[3]);
-    const int num_dims = atoi(argv[4]);
+    int argv_id = 1;
+    string filename = string(argv[argv_id++]);
+    int type = atoi(argv[argv_id++]); // 0 for float, 1 for double
+    int target_level = atoi(argv[argv_id++]);
+    const int num_dims = atoi(argv[argv_id++]);
     vector<uint32_t> dims(num_dims);
     for(int i=0; i<dims.size(); i++){
-       dims[i] = atoi(argv[5 + i]);
+       dims[i] = atoi(argv[argv_id++]);
        cout << dims[i] << " ";
     }
     cout << endl;
-    string output_file = string(argv[5 + num_dims]);
+    string output_file = string(argv[argv_id++]);
+    string interp_method = string(argv[argv_id++]);
+    if(strcmp(interp_method.c_str(), "linear") && strcmp(interp_method.c_str(), "cubic")){
+        std::cerr << "Only two interpolation methods provided: linear or cubic" << std::endl;
+        exit(-1);
+    }
     switch(type){
         case 0:
             {
-                test<float>(filename, dims, target_level, output_file);
+                test<float>(filename, dims, target_level, output_file, interp_method);
                 break;
             }
         case 1:
             {
-                test<double>(filename, dims, target_level, output_file);
+                test<double>(filename, dims, target_level, output_file, interp_method);
                 break;
             }
         default:
