@@ -50,7 +50,7 @@ int main(int argc, char ** argv){
 
     string metadata_file = output_path + "/refactored_data/metadata.bin";
     vector<string> files;
-    for(int i=0; i<10; i++){
+    for(int i=0; i<target_level + 9; i++){
         string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }

@@ -92,11 +92,31 @@ namespace MDR {
             // decompose data hierarchically
             // timer.start();
             T value_range = compute_value_range(data);
-            auto decomposed_buffers = decomposer.decompose_interleave(data.data(), dimensions, target_level);
-            decomposed_buffer_dims = decomposer.get_level_buffer_dims();
+            std::vector<std::vector<T>> decomposed_buffers;
+            if(target_level == 1){
+                decomposed_buffers = decomposer.decompose_interleave(data.data(), dimensions, target_level);               
+                decomposed_buffer_dims = decomposer.get_level_buffer_dims();    
+            }
+            else if (target_level > 1){
+                auto decomposed_buffers_level_1 = decomposer.decompose_interleave(data.data(), dimensions, 1);
+                decomposed_buffer_dims = decomposer.get_level_buffer_dims();
+                // std::cout << decomposed_buffer_dims[0][0] << " " << decomposed_buffer_dims[0][1] << " " << decomposed_buffer_dims[0][2] << std::endl;
+                decomposed_buffers = decomposer.decompose_interleave_combine_levels(decomposed_buffers_level_1[0].data(), decomposed_buffer_dims[0], target_level - 1);
+                // std::cout << "decomposed_buffers.size() = " << decomposed_buffers.size() << "\n";
+                for(int i=1; i<decomposed_buffers_level_1.size(); i++){
+                    decomposed_buffers.push_back(decomposed_buffers_level_1[i]);
+                }
+                // std::cout << "decomposed_buffers.size() = " << decomposed_buffers.size() << "\n";
+                decomposed_buffers_level_1.clear();
+            }
+            // auto decomposed_buffers = decomposer.decompose_interleave(data.data(), dimensions, target_level);
+            // decomposed_buffer_dims = decomposer.get_level_buffer_dims();
             structures.resize(decomposed_buffer_dims.size() - 1);
             for(int i=0; i<structures.size(); i++){
-                structures[i].push_back(0);
+                // structures[i].push_back(0);
+                for(int j=0; j<target_level; j++){
+                    structures[i].push_back(j);
+                }
             }
             auto coeff_decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
             auto estimator = MDR::MaxErrorEstimatorHB<T>();
@@ -111,7 +131,10 @@ namespace MDR {
             level_components.clear();
             level_sizes.clear();
             std::vector<std::vector<T>> level_buffers;
-            level_buffers.push_back(decomposed_buffers[0]);
+            // level_buffers.push_back(decomposed_buffers[0]);
+            for(int i=0; i<target_level; i++){
+                level_buffers.push_back(decomposed_buffers[i]);
+            }
             // // Encoder level 0 first
             // {
             //     int i=0;
@@ -131,8 +154,7 @@ namespace MDR {
 
             // Tune
             // std::cout << "Tuning" << std::endl;
-            uint8_t num_levels = 1;
-            for(int i=1; i<decomposed_buffers.size(); i++){
+            for(int i=target_level; i<decomposed_buffers.size(); i++){
                 auto tuner = MDR::NaiveSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
                                                  Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
                                                  MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
@@ -141,34 +163,36 @@ namespace MDR {
                 // coeff_interp_directions.push_back(tuner.get_best_direction());
                 coeff_interp_directions.push_back(2);
                 if(coeff_interp_directions.back() == -1) {
-                    structures[i-1].push_back(num_levels++);
+                    structures[i-target_level].push_back(i);
                 }
                 else {
                     for(int j=0; j<coeff_target_level+1; j++){
-                        structures[i-1].push_back(num_levels + j);
+                        structures[i-target_level].push_back(i + j);
                     }
-                    num_levels += coeff_target_level + 1;
                 }
             }
+            // for(int i=0; i<coeff_interp_directions.size(); i++){
+            //     std::cout << "coeff_interp_directions[" << i << "] = " << (int)coeff_interp_directions[i] << std::endl;
+            // }
 
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
-            uint8_t num_level_1 = 1;
-            for(int i=1; i<decomposed_buffers.size(); i++){
+            for(int i=target_level; i<decomposed_buffers.size(); i++){
                 if(coeff_interp_directions[i-1] == -1){
                     level_buffers.push_back(decomposed_buffers[i]);
-                    num_level_1++;
                 }
                 else{
-                    coeff_decomposer.direction = coeff_interp_directions[i-1];
-                    auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i], coeff_target_level);
+                    coeff_decomposer.direction = coeff_interp_directions[i-target_level];
+                    // std::cout << "direction = " << (int)coeff_interp_directions[i - target_level] << std::endl;
+                    std::cout << decomposed_buffer_dims[i-target_level+1][0] << " " << decomposed_buffer_dims[i-target_level+1][1] << " " << decomposed_buffer_dims[i-target_level+1][2] << std::endl;
+                    // std::cout << "decomposed_buffers[" << i << "].size() = " << decomposed_buffers[i].size() << std::endl;
+                    auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level);
                     for(int j=0; j<coeff_target_level+1; j++){
                         level_buffers.push_back(decomposed_coeff_buffers[j]);
+                        // std::cout << "level_buffers[" << level_buffers.size() - 1 << "] = decomposed_coeff_buffers[" << j << "]" << std::endl;
                     }
-                    num_level_1 += coeff_target_level + 1;
                 }
             }
-            assert(num_levels == num_level_1);
             
             decomposed_buffers.clear();
             
