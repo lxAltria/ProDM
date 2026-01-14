@@ -57,15 +57,15 @@ namespace MDR {
                 std::vector<uint32_t> retrieve_sizes(level_error_bounds.size(), 0);
                 std::cout << "tolerance = " << tolerance << std::endl;
                 if(abs(tolerance - 0.00300502) < 0.001){
-                    level_num_bitplanes = {uint8_t(8), uint8_t(1), uint8_t(0), uint8_t(0), uint8_t(2), uint8_t(3), uint8_t(3), uint8_t(2), uint8_t(2), uint8_t(2)};
+                    level_num_bitplanes = {uint8_t(14), uint8_t(10), uint8_t(6), uint8_t(5), uint8_t(1), uint8_t(0), uint8_t(0), uint8_t(2), uint8_t(3), uint8_t(3), uint8_t(2), uint8_t(2), uint8_t(2)};
                 } else if(abs(tolerance - 0.000300502) < 0.0001){
-                    level_num_bitplanes = {uint8_t(10), uint8_t(6), uint8_t(5), uint8_t(4), uint8_t(6), uint8_t(7), uint8_t(8), uint8_t(7), uint8_t(6), uint8_t(6)};
+                    level_num_bitplanes = {uint8_t(17), uint8_t(12), uint8_t(9), uint8_t(6), uint8_t(6), uint8_t(5), uint8_t(4), uint8_t(6), uint8_t(7), uint8_t(8), uint8_t(7), uint8_t(6), uint8_t(6)};
                 } else if(abs(tolerance - 0.0000300502) < 0.00001){
-                    level_num_bitplanes = {uint8_t(14), uint8_t(9), uint8_t(8), uint8_t(6), uint8_t(9), uint8_t(10), uint8_t(10), uint8_t(10), uint8_t(9), uint8_t(9)};
+                    level_num_bitplanes = {uint8_t(22), uint8_t(17), uint8_t(14), uint8_t(10), uint8_t(9), uint8_t(8), uint8_t(6), uint8_t(9), uint8_t(10), uint8_t(10), uint8_t(10), uint8_t(9), uint8_t(9)};
                 } else if(abs(tolerance - 0.00000300502) < 0.000001){
-                    level_num_bitplanes = {uint8_t(17), uint8_t(13), uint8_t(11), uint8_t(9), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(12), uint8_t(12)};
+                    level_num_bitplanes = {uint8_t(26), uint8_t(21), uint8_t(17), uint8_t(14), uint8_t(13), uint8_t(11), uint8_t(9), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(12), uint8_t(12)};
                 } else if(abs(tolerance - 0.000000300502) < 0.0000001){
-                    level_num_bitplanes = {uint8_t(21), uint8_t(16), uint8_t(14), uint8_t(12), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(15), uint8_t(15)};
+                    level_num_bitplanes = {uint8_t(30), uint8_t(25), uint8_t(21), uint8_t(18), uint8_t(16), uint8_t(14), uint8_t(12), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(15), uint8_t(15)};
                 }
                 for(int i=0; i<level_error_bounds.size(); i++){
                     for(int j=prev_level_num_bitplanes[i]; j<level_num_bitplanes[i]; j++){
@@ -164,6 +164,7 @@ namespace MDR {
             deserialize(metadata_pos, num_levels, stopping_indices);
             deserialize(metadata_pos, num_levels, level_num);
             coeff_target_level = 2;
+            mdr_target_level = num_levels - num_dims * (coeff_target_level + 1);
             deserialize(metadata_pos, num_dims + 1, decomposed_buffer_dims);
             deserialize(metadata_pos, num_dims, coeff_interp_directions);
             deserialize(metadata_pos, num_dims, structures);
@@ -223,7 +224,9 @@ namespace MDR {
             level_buffers.resize(num_levels);
             for(int i=0; i<num_levels; i++){
                 level_buffers[i].resize(level_elements[i]);
+                // std::cout << "level_buffers[" << i << "].size() = " << level_buffers[i].size() << std::endl;
             }
+            // decomposed_buffers.clear();
             decomposed_buffers.resize(decomposed_buffer_dims.size());
 
             for(int i=0; i<=current_level; i++){
@@ -241,9 +244,14 @@ namespace MDR {
             // decompose data to current level
             if(current_level >= 0){
                 if(current_level){
-                    decomposed_buffers[0] = level_buffers[0];
+                    std::vector<std::vector<T>> tmp_decomposed_buffers;
+                    for(int i=0; i<mdr_target_level; i++){
+                        tmp_decomposed_buffers.push_back(level_buffers[i]);
+                    }
+                    auto tmp_data = decomposer.reposition_recompose_split_levels(tmp_decomposed_buffers, decomposed_buffer_dims[0], mdr_target_level - 1);
+                    decomposed_buffers[0] = tmp_data;
                     auto coeff_decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
-                    uint8_t num_level_1 = 1;
+                    uint8_t num_level_1 = mdr_target_level;
                     for(int i=1; i<decomposed_buffer_dims.size(); i++){
                         if(coeff_interp_directions[i - 1] == -1){
                             decomposed_buffers[i] = level_buffers[num_level_1++];
@@ -304,23 +312,34 @@ namespace MDR {
                 // decomposer.recompose(data.data(), reconstruct_dimensions, target_level - current_level, this->strides);                
             }
             else{
-                decomposed_buffers[0] = level_buffers[0];
+                std::vector<std::vector<T>> tmp_decomposed_buffers;
+                for(int i=0; i<mdr_target_level; i++){
+                    tmp_decomposed_buffers.push_back(level_buffers[i]);
+                }
+                auto tmp_data = decomposer.reposition_recompose_split_levels(tmp_decomposed_buffers, decomposed_buffer_dims[0], mdr_target_level - 1);
+                decomposed_buffers[0] = tmp_data;
+                // std::cout << "decomposed_buffers[0].size() = " << decomposed_buffers[0].size() << std::endl;
                 auto coeff_decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
-                uint8_t num_level_1 = 1;
+                uint8_t num_level_1 = mdr_target_level;
                 for(int i=1; i<decomposed_buffer_dims.size(); i++){
                     if(coeff_interp_directions[i - 1] == -1){
                         decomposed_buffers[i] = level_buffers[num_level_1++];
                     }
                     else{
                         coeff_decomposer.direction = coeff_interp_directions[i - 1];
+                        // std::cout << "direction = " << (int)coeff_interp_directions[i - 1] << std::endl;
                         std::vector<std::vector<T>> decomposed_coeff_buffers(coeff_target_level + 1);
+                        // std::cout << decomposed_buffer_dims[i][0] << " " << decomposed_buffer_dims[i][1] << " " << decomposed_buffer_dims[i][2] << std::endl;
                         for(int j=0; j<coeff_target_level+1; j++){
+                            // std::cout << "decomposed_coeff_buffers[" << j << "] = level_buffers[" << num_level_1 + j << "]" << std::endl;
                             decomposed_coeff_buffers[j] = level_buffers[num_level_1 + j];
                         }
                         num_level_1 += coeff_target_level + 1;
                         decomposed_buffers[i] = coeff_decomposer.reposition_recompose_split_levels(decomposed_coeff_buffers, decomposed_buffer_dims[i], coeff_target_level);
+                        // std::cout << "decomposed_buffers[" << i << "].size() = " << decomposed_buffers[i].size() << std::endl;
                     }
                 }
+                // std::cout << reconstruct_dimensions[0] << " " << reconstruct_dimensions[1] << " " << reconstruct_dimensions[2] << std::endl;
                 data = decomposer.reposition_recompose(decomposed_buffers, reconstruct_dimensions, 1, this->strides);
             }
             current_dimensions = reconstruct_dimensions;
@@ -367,6 +386,7 @@ namespace MDR {
         std::vector<uint32_t> level_elements;
         int current_level = -1;
         int coeff_target_level;
+        int mdr_target_level = 0;
         std::vector<uint32_t> strides;
         bool negabinary = true;
     };
