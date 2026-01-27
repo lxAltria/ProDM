@@ -9,7 +9,7 @@
 #include "MDR/LosslessCompressor/LevelCompressor.hpp"
 #include "MDR/Writer/Writer.hpp"
 #include "MDR/RefactorUtils.hpp"
-#include "MDR/Tuner/NaiveSamplingTuner.hpp"
+#include "MDR/Tuner/Tuner.hpp"
 
 namespace MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
@@ -123,7 +123,7 @@ namespace MDR {
             auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
             uint8_t coeff_target_level = 2;
             uint32_t coeff_stride = 15;
-            uint32_t coeff_block_size = 5;
+            uint32_t coeff_block_size = 9;
 
             // encode level by level
             level_error_bounds.clear();
@@ -155,13 +155,12 @@ namespace MDR {
             // Tune
             // std::cout << "Tuning" << std::endl;
             for(int i=target_level; i<decomposed_buffers.size(); i++){
-                auto tuner = MDR::NaiveSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
+                auto tuner = MDR::ProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
                                                  Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
                                                  MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
                 // tuner.copy_in_level_0_info(value_range, level_error_bounds[0], level_sizes[0]);
-                // tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
-                // coeff_interp_directions.push_back(tuner.get_best_direction());
-                coeff_interp_directions.push_back(2);
+                tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
+                coeff_interp_directions.push_back(tuner.get_best_direction());
                 if(coeff_interp_directions.back() == -1) {
                     structures[i-target_level].push_back(i);
                 }
@@ -171,9 +170,9 @@ namespace MDR {
                     }
                 }
             }
-            // for(int i=0; i<coeff_interp_directions.size(); i++){
-            //     std::cout << "coeff_interp_directions[" << i << "] = " << (int)coeff_interp_directions[i] << std::endl;
-            // }
+            for(int i=0; i<coeff_interp_directions.size(); i++){
+                std::cout << "coeff_interp_directions[" << i << "] = " << (int)coeff_interp_directions[i] << std::endl;
+            }
 
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
@@ -183,7 +182,7 @@ namespace MDR {
                 }
                 else{
                     coeff_decomposer.direction = coeff_interp_directions[i-target_level];
-                    // std::cout << "direction = " << (int)coeff_interp_directions[i - target_level] << std::endl;
+                    std::cout << "direction = " << (int)coeff_interp_directions[i - target_level] << std::endl;
                     std::cout << decomposed_buffer_dims[i-target_level+1][0] << " " << decomposed_buffer_dims[i-target_level+1][1] << " " << decomposed_buffer_dims[i-target_level+1][2] << std::endl;
                     // std::cout << "decomposed_buffers[" << i << "].size() = " << decomposed_buffers[i].size() << std::endl;
                     auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level);

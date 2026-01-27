@@ -9,5 +9,6 @@
 #include "NewFuseComposedReconstructor.hpp"
 #include "FuseComposedReconstructor_2D.hpp"
 #include "CPReconstructor.hpp"
+#include "OrderedCPReconstructor.hpp"
 
 #endif
