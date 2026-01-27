@@ -7,6 +7,7 @@
 #include <bitset>
 #include "utils.hpp"
 #include "MDR/Reconstructor/Reconstructor.hpp"
+#include "qoi_utils.hpp"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
 }
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
-void test(string filename, const vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
+void test(string filename, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
     auto reconstructor = MDR::ComposedReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
@@ -67,6 +68,10 @@ void test(string filename, const vector<double>& tolerance, Decomposer decompose
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    T value_range = MDR::compute_value_range(data);
+    for(int i=0; i<tolerance.size(); i++){
+        tolerance[i] *= value_range;
+    }
     evaluate(data, tolerance, reconstructor);
 }
 
