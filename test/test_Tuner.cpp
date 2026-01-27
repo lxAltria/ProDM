@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "MDR/Tuner/NaiveSamplingTuner.hpp"
+#include "MDR/Tuner/Tuner.hpp"
 
 using namespace std;
 bool negabinary = true;
@@ -25,7 +25,8 @@ void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_le
 
 template<class T, class Decomposer, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter>
 void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int stride, int block_size, Decomposer decomposer, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter){
-    auto tuner = MDR::NaiveSamplingTuner<T, Decomposer, Encoder, Compressor, SizeInterpreter, ErrorEstimator>(decomposer, encoder, compressor, interpreter);
+    // auto tuner = MDR::NaiveSamplingTuner<T, Decomposer, Encoder, Compressor, SizeInterpreter, ErrorEstimator>(decomposer, encoder, compressor, interpreter);
+    auto tuner  = MDR::ProfilingSamplingTuner<T, Decomposer, Encoder, Compressor, SizeInterpreter, ErrorEstimator>(decomposer, encoder, compressor, interpreter);
     tuner.negabinary = negabinary;
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);

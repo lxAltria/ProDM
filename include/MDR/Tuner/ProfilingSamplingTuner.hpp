@@ -1,5 +1,5 @@
-#ifndef _MDR_NAIVE_SAMPLING_TUNER_HPP
-#define _MDR_NAIVE_SAMPLING_TUNER_HPP
+#ifndef _MDR_PROFILING_SAMPLING_TUNER_HPP
+#define _MDR_PROFILING_SAMPLING_TUNER_HPP
 
 #include "TunerInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
@@ -14,9 +14,9 @@
 
 namespace MDR{
     template<class T, class Decomposer, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator>
-    class NaiveSamplingTuner : public concepts::TunerInterface<T> {
+    class ProfilingSamplingTuner : public concepts::TunerInterface<T> {
     public:
-        NaiveSamplingTuner(Decomposer decomposer, Encoder encoder, Compressor compressor, SizeInterpreter interpreter)
+        ProfilingSamplingTuner(Decomposer decomposer, Encoder encoder, Compressor compressor, SizeInterpreter interpreter)
             : decomposer(decomposer), encoder(encoder), compressor(compressor), interpreter(interpreter) {}
         void tune(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, uint32_t stride=15, uint32_t block_size=5) {
             // std::cout << "Input: stride = " << (int) stride << ", block_size = " << (int) block_size << std::endl;
@@ -39,7 +39,10 @@ namespace MDR{
             }
             // Timer timer;
             // timer.start();
-            MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
+            std::vector<std::vector<size_t>> starts;
+            MGARD::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 2);
+            MGARD::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
+            // MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
             std::vector<double> ebs = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5};
             T value_range = compute_value_range(data_, num_elements);
@@ -80,10 +83,10 @@ namespace MDR{
             level_0_sizes = level_0_sizes_;
         }
 
-        ~NaiveSamplingTuner(){}
+        ~ProfilingSamplingTuner(){}
 
         void print() const {
-            std::cout << "Naive Sampling Tuner with the following components." << std::endl;
+            std::cout << "Profiling Sampling Tuner with the following components." << std::endl;
             std::cout << "Decomposer: "; decomposer.print();
             std::cout << "Encoder:"; encoder.print();
             std::cout << "Interperter:"; interpreter.print();

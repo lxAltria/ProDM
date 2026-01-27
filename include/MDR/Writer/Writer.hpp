@@ -3,5 +3,6 @@
 
 #include "FileWriter.hpp"
 #include "HPSSFileWriter.hpp"
+#include "OrderedFileWriter.hpp"
 
 #endif
