@@ -278,7 +278,7 @@ namespace MDR {
         // PSZ levels
         std::vector<T> reposition_recompose(std::vector<std::vector<T>>& level_buffers, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) {
             std::vector<T> data;
-            MGARD::Repositioner_Recomposer_new<T> repositioner_recomposer;
+            MGARD::Repositioner_Recomposer<T> repositioner_recomposer;
             std::vector<size_t> dims(dimensions.begin(), dimensions.end());
             if(strides.size() == 0){
                 data = repositioner_recomposer.recompose(level_buffers, dims, target_level, false, true);

@@ -79,8 +79,8 @@ int main(int argc, char ** argv){
     // using T_stream = uint32_t;
     using T = double;
     using T_stream = uint64_t;
-    auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-    // auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+    // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+    auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
     auto interleaver = MDR::DirectInterleaver_new<T>();
     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();

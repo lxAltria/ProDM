@@ -54,33 +54,59 @@ namespace MDR {
             size_t retrieve_size = 0;
             size_t prev_num_chunks = num_chunks;            
             // double best_error = level_error_perstep.back();
-            double best_error = (level_error_perstep.size() >= 2) 
-                        ? level_error_perstep[level_error_perstep.size() - 2] 
-                        : level_error_perstep.back();
+            // double best_error = (level_error_perstep.size() >= 2) 
+            //             ? level_error_perstep[level_error_perstep.size() - 2] 
+            //             : level_error_perstep.back();
 
-            if (tolerance < best_error) {
-                tolerance = best_error;
-            }
+            // if (tolerance < best_error) {
+            //     tolerance = best_error;
+            // }
             if (prev_num_chunks > 0 && level_error_perstep[prev_num_chunks - 1] <= tolerance) {
                 return data.data();
             }
 
+            double estimated_error = 0;
+            size_t prev_coeff_combined_bps = idx_coeff_combined_bps;
+            auto tmp_level_bitplanes(level_num_bitplanes);
             for (size_t i = prev_num_chunks; i < level_chunk_order.size(); i++)
             {
                 size_t lv = level_chunk_order[i];
-                size_t sz = level_sizes[lv][level_num_bitplanes[lv]++];
+                size_t sz = 0;
+                if(lv < mdr_target_level){
+                    sz = level_sizes[lv][level_num_bitplanes[lv]++];
+                    level_retrieve_sizes[lv] += sz;
+                }
+                else {
+                    for(size_t j=0; j<coeff_combined_bps[idx_coeff_combined_bps].size(); j++){
+                        uint8_t coeff_level = coeff_combined_bps[idx_coeff_combined_bps][j];
+                        level_retrieve_sizes[coeff_level] += level_sizes[coeff_level][level_num_bitplanes[coeff_level]];
+                        sz += level_sizes[coeff_level][level_num_bitplanes[coeff_level]++];
+                    }
+                    idx_coeff_combined_bps++;
+                }
                 chunk_sizes.push_back(sz);
                 retrieve_size += sz;
                 if (level_error_perstep[i] <= tolerance) {
+                    estimated_error = level_error_perstep[i];
                     num_chunks = i + 1;
                     break;
                 }
             }
-            std::cout << "tolerance = " << tolerance << ", level_num_bitplanes" << std::endl;
+            std::cout << "****Tolerance = " << tolerance << ", estimated_error = " << estimated_error << ", level_num_bitplanes" << std::endl;
             for(size_t i=0; i<level_num_bitplanes.size(); i++){
                 std::cout << (int)level_num_bitplanes[i] << " ";
             }
             std::cout << std::endl;
+            std::cout << "<<<<level_retrieve_sizes:" << std::endl;
+            for(size_t i=0; i<level_retrieve_sizes.size(); i++){
+                std::cout << level_retrieve_sizes[i] << " ";
+            }
+            std::cout << std::endl;
+            // std::cout << "<<<<chunk_sizes:" << std::endl;
+            // for(size_t i=0; i<chunk_sizes.size(); i++){
+            //     std::cout << chunk_sizes[i] << " ";
+            // }
+            // std::cout << std::endl;
             if (retrieve_size > 0 && num_chunks == prev_num_chunks) {
                 num_chunks = level_chunk_order.size();
             }
@@ -92,8 +118,22 @@ namespace MDR {
             
             for (size_t i = prev_num_chunks; i < num_chunks; i++){
                 size_t lv = level_chunk_order[i];
-                level_components[lv].push_back(ordered_components + offset);
-                offset += chunk_sizes[i];
+                if(lv < mdr_target_level) {
+                    level_components[lv].push_back(ordered_components + offset);
+                    offset += chunk_sizes[i];
+                }
+                else {
+                    size_t tmp_offset = offset;
+                    for(size_t j=0; j<coeff_combined_bps[prev_coeff_combined_bps].size(); j++){
+                        uint8_t coeff_level = coeff_combined_bps[prev_coeff_combined_bps][j];
+                        size_t coeff_offset = level_sizes[coeff_level][tmp_level_bitplanes[coeff_level]++];
+                        level_components[coeff_level].push_back(ordered_components + offset);
+                        offset += coeff_offset;
+                    }
+                    // std::cout << "offset = " << offset << ", last_offset = " << tmp_offset << ", chunk_sizes[" << i << "] = " << chunk_sizes[i] << std::endl;
+                    // assert((offset - tmp_offset) == chunk_sizes[i]);
+                    prev_coeff_combined_bps++;
+                }
             }
             // check whether to reconstruct to full resolution
             int skipped_level = 0;
@@ -193,8 +233,6 @@ namespace MDR {
             deserialize(p, num_levels, level_elements);
             deserialize(p, num_levels, stopping_indices);
             negabinary = (*(p++) != 0);
-            coeff_target_level = 2;
-            mdr_target_level = num_levels - num_dims * (coeff_target_level + 1);
             uint16_t chunk_num = 0;
             memcpy(&chunk_num, p, sizeof(uint16_t));
             p += sizeof(uint16_t);
@@ -202,6 +240,16 @@ namespace MDR {
             deserialize(p, chunk_num, level_error_perstep);
             deserialize(p, num_dims + 1, decomposed_buffer_dims);
             deserialize(p, num_dims, coeff_interp_directions);
+            uint16_t coeff_combined_bp_num = 0;
+            memcpy(&coeff_combined_bp_num, p, sizeof(uint16_t));
+            p += sizeof(uint16_t);
+            deserialize(p, coeff_combined_bp_num, coeff_combined_bps);
+            mdr_target_level = num_levels;
+            coeff_target_level = 2;
+            for(int i=0; i<coeff_interp_directions.size(); i++){
+                mdr_target_level -= (coeff_interp_directions[i] == -1) ? 1 : (coeff_target_level + 1);
+            }    
+            level_retrieve_sizes.resize(num_levels, 0);
 
             level_num_bitplanes = std::vector<uint8_t>(num_levels, 0);
             level_num = std::vector<uint32_t>(num_levels, 1);
@@ -274,6 +322,9 @@ namespace MDR {
                     memcpy(level_buffers[i].data(), level_decoded_data, level_elements[i] * sizeof(T));
                     compressor.decompress_release();
                     free(level_decoded_data);                    
+                }
+                else{
+                    memset(level_buffers[i].data(), 0, level_elements[i] * sizeof(T));
                 }
             }
             // decompose data to current level
@@ -428,6 +479,9 @@ namespace MDR {
         std::vector<uint8_t> level_chunk_order;
         std::vector<double> level_error_perstep;
         std::vector<uint32_t> chunk_sizes;
+        std::vector<size_t> level_retrieve_sizes;
+        std::vector<std::vector<uint8_t>> coeff_combined_bps;
+        size_t idx_coeff_combined_bps = 0;
     };
 }
 #endif

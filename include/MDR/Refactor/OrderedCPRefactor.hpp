@@ -55,9 +55,19 @@ namespace MDR {
 
             std::vector<std::vector<uint8_t>> layer_order;
             std::vector<std::vector<double>> layer_error_perstep;
+            uint8_t start_level = target_level;
             for(int i=0; i<coeff_interp_directions.size(); i++){
                 std::vector<double> tmp_error_perstep;
-                std::vector<uint8_t> tmp_order = get_chunks_order_greedy_coefficient(level_errors, target_level + i * (coeff_target_level + 1), coeff_target_level + 1, tmp_error_perstep);
+                std::vector<uint8_t> tmp_order;
+                if(coeff_interp_directions[i] == -1){
+                    tmp_order = std::vector<uint8_t>(num_bitplanes, start_level);
+                    tmp_error_perstep = level_errors[start_level];
+                    start_level++;
+                } 
+                else {
+                    tmp_order = get_chunks_order_greedy_coefficient(level_errors, start_level, coeff_target_level + 1, tmp_error_perstep);
+                    start_level += (coeff_target_level + 1);
+                }
                 // std::cout << "layer_order[" << i << "]" << std::endl;
                 // for(int j=0; j<tmp_order.size(); j++){
                 //     std::cout << (int)tmp_order[j] << " ";
@@ -68,25 +78,55 @@ namespace MDR {
             }
             std::vector<double> coefficient_error_perstep;
             std::vector<uint8_t> coefficient_order = get_chunks_order_max_coeffcient(layer_error_perstep, layer_order, coefficient_error_perstep);
-            std::cout << "coefficient_error_perstep" << std::endl;
-            for(int i=0; i<coefficient_order.size(); i++){
-                std::cout << "(" << (int)coefficient_order[i] << ", " << coefficient_error_perstep[i] << ") ";
-            }
-            std::cout << std::endl;
-            level_chunk_order = get_chunks_order_overall(level_errors, coefficient_error_perstep, coefficient_order, target_level, level_error_perstep);
-            std::cout << "level_error_perstep" << std::endl;
-            for(int i=0; i<level_error_perstep.size(); i++){
-                std::cout << "(" << (int)level_chunk_order[i] << ", " << level_error_perstep[i] << ") ";
-            }
-            std::cout << std::endl;
+            std::vector<double> combined_coeff_error_perstep = combine_coeff_bitplanes_after_max_order(coefficient_error_perstep, coefficient_order);
+            // int step = 0;
+            // std::cout << "coefficient_error_perstep.size() = " << coefficient_error_perstep.size() << std::endl;
+            // for(int i=0; i<coefficient_order.size(); i++){
+            //     std::cout << setprecision(17) << "(" << (int)coefficient_order[i] << ", " << coefficient_error_perstep[i] << ") ";
+            //     step++;
+            //     if(step == 5){
+            //         step = 0;
+            //         std::cout << std::endl;
+            //     }
+            // }
+            // std::cout << std::endl;
+            // std::cout << "coefficient_equivelant_test" << std::endl;
+            // int tmp_c = 0;
+            // while(tmp_c + 1 < coefficient_order.size()){
+            //     if(approx_equal(coefficient_error_perstep[tmp_c], coefficient_error_perstep[tmp_c+1])){
+            //         std::cout << coefficient_error_perstep[tmp_c] << " ";
+            //     } else {
+            //         std::cout << coefficient_error_perstep[tmp_c] << std::endl;
+            //     }
+            //     tmp_c++;
+            // }
+            // level_chunk_order = get_chunks_order_overall(level_errors, coefficient_error_perstep, coefficient_order, target_level, level_error_perstep);
+            level_chunk_order = get_chunks_order_overall(level_errors, combined_coeff_error_perstep, target_level, level_error_perstep);
+            // std::vector<uint8_t> tmp_consumed(level_sizes.size(), 0);
+            // std::cout << "level_error_perstep.size() = " << level_error_perstep.size() << std::endl;
+            // step = 0;
+            // for(int i=0; i<level_error_perstep.size(); i++){
+            //     std::cout << "(" << (int)level_chunk_order[i] << ", " << level_error_perstep[i] << ", " << level_sizes[level_chunk_order[i]][tmp_consumed[level_chunk_order[i]]++] << ") ";
+            //     step++;
+            //     if(step == 5) {
+            //         step = 0;
+            //         std::cout << std::endl;
+            //     }
+            // }
+            // std::cout << std::endl;
             write_metadata();
 
             // Calculate total size
-            std::vector<uint8_t> consumed(level_sizes.size(), 0);
+            std::vector<int> consumed(target_level + 1, 0);
             uint64_t total_size_64 = 0;
+            size_t idx_coeff_combined_bps = 0;
             for (uint8_t lev : level_chunk_order) {
-                uint8_t j = consumed[lev];
-                total_size_64 += level_sizes[lev][j];
+                int j = consumed[lev];
+                if(lev < target_level) total_size_64 += level_sizes[lev][j];
+                else {
+                    total_size_64 += coeff_sizes[idx_coeff_combined_bps];
+                    idx_coeff_combined_bps++;
+                }
                 consumed[lev] = j + 1;
             }
 
@@ -95,13 +135,21 @@ namespace MDR {
 
             std::vector<uint8_t> packed(total_size);
             uint8_t* dst = packed.data();
+            idx_coeff_combined_bps = 0;
             // copy every chunk
             std::fill(consumed.begin(), consumed.end(), 0);
             for (uint8_t lev : level_chunk_order) {
-                uint8_t j = consumed[lev];
-                uint32_t sz = level_sizes[lev][j];
-                std::memcpy(dst, level_components[lev][j], sz);
-                dst += sz;
+                int j = consumed[lev];
+                if(lev < target_level){
+                    uint32_t sz = level_sizes[lev][j];
+                    std::memcpy(dst, level_components[lev][j], sz);
+                    dst += sz;
+                } else {
+                    uint32_t sz = coeff_sizes[idx_coeff_combined_bps];
+                    std::memcpy(dst, coeff_components[idx_coeff_combined_bps].data(), sz);
+                    idx_coeff_combined_bps++;
+                    dst += sz;
+                }
                 consumed[lev] = j + 1;
             }
 
@@ -126,7 +174,9 @@ namespace MDR {
                 + get_size(level_chunk_order)                                     
                 + get_size(level_error_perstep)
                 + get_size(decomposed_buffer_dims)
-                + get_size(coeff_interp_directions);                            
+                + get_size(coeff_interp_directions)
+                + sizeof(uint16_t)  // coeff_combined_bp_num
+                + get_size(coeff_combined_bps);                           
 
             uint8_t* metadata = static_cast<uint8_t*>(malloc(metadata_size));
             uint8_t* p = metadata;
@@ -147,6 +197,10 @@ namespace MDR {
             serialize(level_error_perstep, p);
             serialize(decomposed_buffer_dims, p);
             serialize(coeff_interp_directions, p);
+            const uint16_t coeff_combined_bp_num = coeff_combined_bps.size();
+            memcpy(p, &coeff_combined_bp_num, sizeof(uint16_t));
+            p += sizeof(uint16_t);
+            serialize(coeff_combined_bps, p);
 
             return metadata;
         }
@@ -168,6 +222,12 @@ namespace MDR {
             std::cout << "Encoder: "; encoder.print();
         }
     private:
+        inline bool approx_equal(double a, double b) const {
+            constexpr double rel = 1e-3;
+            double scale = std::max(std::abs(a), std::abs(b));
+            return std::abs(a - b) <= std::min(rel * scale, 1e-12);
+        }
+
         std::vector<uint8_t> get_chunks_order_greedy_coefficient(const std::vector<std::vector<double>>& level_errors, const uint8_t start_level, const uint8_t num_levels, std::vector<double>& error_perstep) const {
             // for(int i=start_level; i<start_level + num_levels; i++){
             //     for(int j=0; j<level_errors[i].size(); j++){
@@ -175,6 +235,7 @@ namespace MDR {
             //     }
             //     std::cout << std::endl;
             // }
+            auto error_estimator = MDR::MaxErrorEstimatorHB<T>();
             std::vector<uint8_t> index(level_sizes.size(), 0);
             int end_level = start_level + num_levels;
             double accumulated_error = 0;
@@ -257,18 +318,88 @@ namespace MDR {
                 count++;
                 index[max_layer]++;
             }
-            // assert(count == order.size());
             return order;
         }
 
+        std::vector<double> combine_coeff_bitplanes_after_max_order(const std::vector<double>& error_perstep, const std::vector<uint8_t>& order){
+            std::vector<double> coeff_error_perstep;
+            int idx = 0;
+            std::vector<size_t> index(level_sizes.size(), 0);
+            // get coeff_combined_bps & coeff_sizes & coeff_error_perstep
+            while(idx < error_perstep.size()){
+                coeff_error_perstep.push_back(error_perstep[idx]);
+                std::vector<uint8_t> tmp_bps;
+                if((idx + 1 < error_perstep.size()) && (approx_equal(error_perstep[idx], error_perstep[idx + 1]))){
+                    tmp_bps.push_back(order[idx]);
+                    uint32_t tmp_size = level_sizes[order[idx]][index[order[idx]]++];
+                    while((idx + 1 < error_perstep.size()) && (approx_equal(error_perstep[idx], error_perstep[idx + 1]))){
+                        idx++;
+                        tmp_bps.push_back(order[idx]);
+                        tmp_size += level_sizes[order[idx]][index[order[idx]]++];
+                    }
+                    coeff_sizes.push_back(tmp_size);
+                } else {
+                    tmp_bps.push_back(order[idx]);
+                    coeff_sizes.push_back(level_sizes[order[idx]][index[order[idx]]++]);
+                }
+                coeff_combined_bps.push_back(tmp_bps);
+                idx++;
+            }
+            /*
+            size_t bps_count = 0;
+            for(int i=0; i<coeff_combined_bps.size(); i++){
+                bps_count += coeff_combined_bps[i].size();
+            }
+            std::cout << "bps_count = " << bps_count << std::endl;
+            uint32_t coeff_total_size = 0;
+            for(int i=0; i<coeff_sizes.size(); i++){
+                coeff_total_size += coeff_sizes[i];
+            }
+            std::cout << "coeff_total_size = " << coeff_total_size << std::endl;
+            uint32_t coeff_levels_total_size = 0;
+            for(int i=4; i<13; i++){
+                for(int j=0; j<level_sizes[i].size(); j++){
+                    coeff_levels_total_size += level_sizes[i][j];
+                }
+            }
+            std::cout << "coeff_levels_total_size = " << coeff_levels_total_size << std::endl;
+            for(int i=0; i<coeff_error_perstep.size(); i++){
+                std::cout << "(";
+                for(int j=0; j<coeff_combined_bps[i].size(); j++){
+                    std::cout << (int) coeff_combined_bps[i][j] << ", ";
+                }
+                std::cout << coeff_error_perstep[i] << ") ";
+            }
+            std::cout << std::endl;
+            // */
+
+            // malloc space for memcpy from level_components to coeff_components
+            for(int i=0; i<coeff_sizes.size(); i++){
+                coeff_components.push_back(std::vector<uint8_t>(coeff_sizes[i], 0));
+            }
+            std::fill(index.begin(), index.end(), 0);
+            for(int i=0; i<coeff_combined_bps.size(); i++){
+                uint8_t * dst = coeff_components[i].data();
+                for(int j=0; j<coeff_combined_bps[i].size(); j++){
+                    memcpy(dst, level_components[coeff_combined_bps[i][j]][index[coeff_combined_bps[i][j]]], level_sizes[coeff_combined_bps[i][j]][index[coeff_combined_bps[i][j]]]);
+                    dst += level_sizes[coeff_combined_bps[i][j]][index[coeff_combined_bps[i][j]]++];
+                }
+            }
+            // std::cout << "coeff_combined_bps.size() = " << coeff_combined_bps.size() << ", coeff_sizes.size() = " << coeff_sizes.size() << ", coeff_error_perstep.size() = " << coeff_error_perstep.size() << ", coeff_components.size() = " << coeff_components.size() << std::endl;
+            return coeff_error_perstep;
+        }
+
         std::vector<uint8_t> get_chunks_order_overall(const std::vector<std::vector<double>>& level_errors, const std::vector<double>& coefficient_error_perstep, 
-                                                      const std::vector<uint8_t>& coefficient_order, const uint8_t coefficient_start_level, std::vector<double>& error_perstep){
+                                                      const uint8_t coefficient_start_level, std::vector<double>& error_perstep){
+            auto error_estimator = MDR::MaxErrorEstimatorHBCubic<T>(dimensions.size());
+            // auto error_estimator = MDR::MaxErrorEstimatorHB<T>();
             std::vector<uint8_t> index(level_sizes.size(), 0);
             int num_levels = coefficient_start_level;
             int idx_coefficient = 0;
+            // int idx_data = 0;
             double accumulated_error = coefficient_error_perstep[idx_coefficient];
             for(int i=0; i<num_levels; i++){
-                accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i);
+                accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
             }
             std::priority_queue<UnitErrorGain, std::vector<UnitErrorGain>, CompareUnitErrorGain> heap;
             // identify minimal level
@@ -281,15 +412,16 @@ namespace MDR {
 
             // levels(exclude coefficients)
             for(int i=0; i<num_levels; i++){
-                min_error -= error_estimator.estimate_error(level_errors[i][index[i]], i);
-                min_error += error_estimator.estimate_error(level_errors[i].back(), i);
+                min_error -= error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+                min_error += error_estimator.estimate_error(level_errors[i].back(), i, num_levels);
                 // fetch the first component if index is 0
                 if(index[i] == 0){
-                    accumulated_error -= error_estimator.estimate_error(level_errors[i][index[i]], i);
-                    accumulated_error += error_estimator.estimate_error(level_errors[i][index[i] + 1], i);
+                    accumulated_error -= error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+                    accumulated_error += error_estimator.estimate_error(level_errors[i][index[i] + 1], i, num_levels);
                     index[i] ++;
                     order.push_back(static_cast<uint8_t>(i));
                     error_perstep.push_back(accumulated_error);
+                    // idx_data++;
                     // std::cout << i << " ";
                 }
                 // push the next one
@@ -301,21 +433,20 @@ namespace MDR {
             // layers(coefficients)
             {
                 // fetch the first component if index is 0
-                if(index[coefficient_order[idx_coefficient]] == 0){
+                if(idx_coefficient == 0){
                     accumulated_error -= coefficient_error_perstep[idx_coefficient];
                     accumulated_error += coefficient_error_perstep[idx_coefficient + 1];
-                    index[coefficient_order[idx_coefficient]]++;
-                    order.push_back(static_cast<uint8_t>(coefficient_order[idx_coefficient]));
+                    order.push_back(static_cast<uint8_t>(num_levels));
                     error_perstep.push_back(accumulated_error);
                     idx_coefficient++;
                 }
                 // push the next one
-                if(idx_coefficient < coefficient_order.size()){
+                if(idx_coefficient < coefficient_error_perstep.size()){
                     double error_gain = coefficient_error_perstep[idx_coefficient] - coefficient_error_perstep[idx_coefficient + 1];
-                    heap.push(UnitErrorGain(error_gain / level_sizes[coefficient_order[idx_coefficient]][index[coefficient_order[idx_coefficient]]], coefficient_order[idx_coefficient]));
+                    heap.push(UnitErrorGain(error_gain / coeff_sizes[idx_coefficient], num_levels));
                 }
             }
-
+            // std::cout << "idx_data = " << idx_data << std::endl;
             while(!heap.empty()){
                 auto unit_error_gain = heap.top();
                 heap.pop();
@@ -323,50 +454,144 @@ namespace MDR {
                 int j = index[i];
                 if(i < num_levels){
                     double tmp_error = accumulated_error;
-                    accumulated_error -= error_estimator.estimate_error(level_errors[i][j], i);
-                    accumulated_error += error_estimator.estimate_error(level_errors[i][j + 1], i);
-                    std::cout << "level " << i << ", " << accumulated_error << " = " << tmp_error << " - " <<  error_estimator.estimate_error(level_errors[i][j], i) << " + " << error_estimator.estimate_error(level_errors[i][j + 1], i) << std::endl;
-                    index[i] ++;
-                    if(index[i] != level_sizes[i].size()){
+                    accumulated_error -= error_estimator.estimate_error(level_errors[i][j], i, num_levels);
+                    accumulated_error += error_estimator.estimate_error(level_errors[i][j + 1], i, num_levels);
+                    index[i]++;
+                    if(index[i] < level_sizes[i].size()){
                         double error_gain = error_estimator.estimate_error_gain(accumulated_error, level_errors[i][index[i]], level_errors[i][index[i] + 1], i);
                         heap.push(UnitErrorGain(error_gain / level_sizes[i][index[i]], i));
+                        // std::cout << "data: heap.push(), level " << i << ", bp " << (int)index[i] << std::endl;
                     }
                     order.push_back(static_cast<uint8_t>(i));
                     error_perstep.push_back(accumulated_error);
+                    // idx_data++;
                 } else {
                     double tmp_error = accumulated_error;
                     accumulated_error -= coefficient_error_perstep[idx_coefficient];
                     accumulated_error += coefficient_error_perstep[idx_coefficient + 1];
-                    std::cout << "level " << i << ", " << accumulated_error << " = " << tmp_error << " - " << coefficient_error_perstep[idx_coefficient] << " + " << coefficient_error_perstep[idx_coefficient + 1] << std::endl;
-                    index[i] ++;
+                    // std::cout << "level " << i << ", " << accumulated_error << " = " << tmp_error << " - " << coefficient_error_perstep[idx_coefficient] << " + " << coefficient_error_perstep[idx_coefficient + 1] << std::endl;
                     idx_coefficient++;
-                    if(idx_coefficient < coefficient_order.size()){
-                        while((abs(coefficient_error_perstep[idx_coefficient] - coefficient_error_perstep[idx_coefficient + 1]) < 1e-12) && (idx_coefficient < coefficient_order.size())){
-                            order.push_back(static_cast<uint8_t>(coefficient_order[idx_coefficient]));
-                            error_perstep.push_back(accumulated_error);
-                            index[coefficient_order[idx_coefficient]]++;
-                            idx_coefficient++;
-                        }
+                    if(idx_coefficient < coefficient_error_perstep.size()){
                         double error_gain = coefficient_error_perstep[idx_coefficient] - coefficient_error_perstep[idx_coefficient + 1];
-                        heap.push(UnitErrorGain(error_gain / level_sizes[coefficient_order[idx_coefficient]][index[coefficient_order[idx_coefficient]]], coefficient_order[idx_coefficient]));
-                        if(coefficient_order[idx_coefficient] == 12) {
-                            std::cout << "***level 12 " << "\n";
-                            std::cout << std::setprecision(std::numeric_limits<double>::max_digits10) << error_gain << " = " << coefficient_error_perstep[idx_coefficient] << " - " << coefficient_error_perstep[idx_coefficient + 1] << "\n";
-                            std::cout << "unit_error_gain = " << error_gain << " / " << level_sizes[coefficient_order[idx_coefficient]][index[coefficient_order[idx_coefficient]]] << "\n";
-                        }
+                        heap.push(UnitErrorGain(error_gain / coeff_sizes[idx_coefficient], num_levels));
                     }
-                    order.push_back(static_cast<uint8_t>(i));
+                    order.push_back(static_cast<uint8_t>(num_levels));
                     error_perstep.push_back(accumulated_error);
                 }
-                auto heap_copy = heap;
-                while (!heap_copy.empty()) {
-                    auto [w, id] = heap_copy.top();
-                    std::cout << w << ", " << id << "\n";
-                    heap_copy.pop();
-                }
             }
+            // std::cout << "idx_data = " << idx_data << ", idx_coefficient = " << idx_coefficient << ", order.size() = " << order.size() << ", error_perstep.size() = " << error_perstep.size() << ", index" << std::endl;
+            // for(int i=0; i<index.size(); i++){
+            //     std::cout << (int)index[i] << " ";
+            // }
+            // std::cout << std::endl;
             return order;
         }
+
+        // std::vector<uint8_t> get_chunks_order_overall(const std::vector<std::vector<double>>& level_errors, const std::vector<double>& coefficient_error_perstep, 
+        //                                               const std::vector<uint8_t>& coefficient_order, const uint8_t coefficient_start_level, std::vector<double>& error_perstep){
+        //     auto error_estimator = MDR::MaxErrorEstimatorHBCubic<T>(dimensions.size());
+        //     // auto error_estimator = MDR::MaxErrorEstimatorHB<T>();
+        //     std::vector<uint8_t> index(level_sizes.size(), 0);
+        //     int num_levels = coefficient_start_level;
+        //     int idx_coefficient = 0;
+        //     // int idx_data = 0;
+        //     double accumulated_error = coefficient_error_perstep[idx_coefficient];
+        //     for(int i=0; i<num_levels; i++){
+        //         accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+        //     }
+        //     std::priority_queue<UnitErrorGain, std::vector<UnitErrorGain>, CompareUnitErrorGain> heap;
+        //     // identify minimal level
+        //     double min_error = accumulated_error;
+
+        //     std::vector<uint8_t> order;
+        //     order.reserve([&](){
+        //         size_t s=0; for(const auto& v: level_sizes) s+=v.size(); return s;
+        //     }()); // allocate enough space for it
+
+        //     // levels(exclude coefficients)
+        //     for(int i=0; i<num_levels; i++){
+        //         min_error -= error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+        //         min_error += error_estimator.estimate_error(level_errors[i].back(), i, num_levels);
+        //         // fetch the first component if index is 0
+        //         if(index[i] == 0){
+        //             accumulated_error -= error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+        //             accumulated_error += error_estimator.estimate_error(level_errors[i][index[i] + 1], i, num_levels);
+        //             index[i] ++;
+        //             order.push_back(static_cast<uint8_t>(i));
+        //             error_perstep.push_back(accumulated_error);
+        //             // idx_data++;
+        //             // std::cout << i << " ";
+        //         }
+        //         // push the next one
+        //         if(index[i] != level_sizes[i].size()){
+        //             double error_gain = error_estimator.estimate_error_gain(accumulated_error, level_errors[i][index[i]], level_errors[i][index[i] + 1], i);
+        //             heap.push(UnitErrorGain(error_gain / level_sizes[i][index[i]], i));
+        //         }
+        //     }
+        //     // layers(coefficients)
+        //     {
+        //         // fetch the first component if index is 0
+        //         if(index[coefficient_order[idx_coefficient]] == 0){
+        //             accumulated_error -= coefficient_error_perstep[idx_coefficient];
+        //             accumulated_error += coefficient_error_perstep[idx_coefficient + 1];
+        //             index[coefficient_order[idx_coefficient]]++;
+        //             order.push_back(static_cast<uint8_t>(coefficient_order[idx_coefficient]));
+        //             error_perstep.push_back(accumulated_error);
+        //             idx_coefficient++;
+        //         }
+        //         // push the next one
+        //         if(idx_coefficient < coefficient_order.size()){
+        //             double error_gain = coefficient_error_perstep[idx_coefficient] - coefficient_error_perstep[idx_coefficient + 1];
+        //             heap.push(UnitErrorGain(error_gain / level_sizes[coefficient_order[idx_coefficient]][index[coefficient_order[idx_coefficient]]], coefficient_order[idx_coefficient]));
+        //         }
+        //     }
+        //     // std::cout << "idx_data = " << idx_data << std::endl;
+        //     while(!heap.empty()){
+        //         auto unit_error_gain = heap.top();
+        //         heap.pop();
+        //         int i = unit_error_gain.level;
+        //         int j = index[i];
+        //         if(i < num_levels){
+        //             double tmp_error = accumulated_error;
+        //             accumulated_error -= error_estimator.estimate_error(level_errors[i][j], i, num_levels);
+        //             accumulated_error += error_estimator.estimate_error(level_errors[i][j + 1], i, num_levels);
+        //             index[i]++;
+        //             if(index[i] < level_sizes[i].size()){
+        //                 double error_gain = error_estimator.estimate_error_gain(accumulated_error, level_errors[i][index[i]], level_errors[i][index[i] + 1], i);
+        //                 heap.push(UnitErrorGain(error_gain / level_sizes[i][index[i]], i));
+        //                 // std::cout << "data: heap.push(), level " << i << ", bp " << (int)index[i] << std::endl;
+        //             }
+        //             order.push_back(static_cast<uint8_t>(i));
+        //             error_perstep.push_back(accumulated_error);
+        //             // idx_data++;
+        //         } else {
+        //             double tmp_error = accumulated_error;
+        //             accumulated_error -= coefficient_error_perstep[idx_coefficient];
+        //             accumulated_error += coefficient_error_perstep[idx_coefficient + 1];
+        //             // std::cout << "level " << i << ", " << accumulated_error << " = " << tmp_error << " - " << coefficient_error_perstep[idx_coefficient] << " + " << coefficient_error_perstep[idx_coefficient + 1] << std::endl;
+        //             index[i] ++;
+        //             idx_coefficient++;
+        //             while((idx_coefficient < coefficient_order.size()) && (abs(coefficient_error_perstep[idx_coefficient] - coefficient_error_perstep[idx_coefficient + 1]) < 1e-12)){
+        //                 order.push_back(static_cast<uint8_t>(coefficient_order[idx_coefficient]));
+        //                 error_perstep.push_back(accumulated_error);
+        //                 index[coefficient_order[idx_coefficient]]++;
+        //                 idx_coefficient++;
+        //             }
+        //             if(idx_coefficient < coefficient_order.size()){
+        //                 double error_gain = coefficient_error_perstep[idx_coefficient] - coefficient_error_perstep[idx_coefficient + 1];
+        //                 heap.push(UnitErrorGain(error_gain / level_sizes[coefficient_order[idx_coefficient]][index[coefficient_order[idx_coefficient]]], coefficient_order[idx_coefficient]));
+        //             }
+        //             order.push_back(static_cast<uint8_t>(i));
+        //             error_perstep.push_back(accumulated_error);
+        //         }
+        //     }
+        //     // std::cout << "idx_data = " << idx_data << ", idx_coefficient = " << idx_coefficient << ", order.size() = " << order.size() << ", error_perstep.size() = " << error_perstep.size() << ", index" << std::endl;
+        //     // for(int i=0; i<index.size(); i++){
+        //     //     std::cout << (int)index[i] << " ";
+        //     // }
+        //     // std::cout << std::endl;
+        //     return order;
+        // }
 
         bool refactor(uint8_t target_level, uint8_t num_bitplanes){
             uint8_t max_level = log2(*min_element(dimensions.begin(), dimensions.end())) - 1;
@@ -420,7 +645,6 @@ namespace MDR {
                 auto tuner = MDR::ProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
                                                  Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
                                                  MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
-                // tuner.copy_in_level_0_info(value_range, level_error_bounds[0], level_sizes[0]);
                 tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
                 coeff_interp_directions.push_back(tuner.get_best_direction());
                 // coeff_interp_directions.push_back(2);
@@ -432,7 +656,7 @@ namespace MDR {
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
             for(int i=target_level; i<decomposed_buffers.size(); i++){
-                if(coeff_interp_directions[i-1] == -1){
+                if(coeff_interp_directions[i-target_level] == -1){
                     level_buffers.push_back(decomposed_buffers[i]);
                 }
                 else{
@@ -524,7 +748,6 @@ namespace MDR {
         Encoder encoder;
         Compressor compressor;
         ErrorCollector collector;
-        MDR::MaxErrorEstimatorHB<T> error_estimator;
         Writer writer;
         std::vector<T> data;
         std::vector<uint32_t> dimensions;
@@ -539,6 +762,9 @@ namespace MDR {
         std::vector<uint32_t> level_elements;
         std::vector<uint8_t> level_chunk_order;
         std::vector<double> level_error_perstep;
+        std::vector<std::vector<uint8_t>> coeff_components;
+        std::vector<uint32_t> coeff_sizes;
+        std::vector<std::vector<uint8_t>> coeff_combined_bps;
         uint8_t coeff_target_level = 2;
     public:
         bool negabinary = false;

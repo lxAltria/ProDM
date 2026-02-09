@@ -82,6 +82,7 @@ namespace MDR {
                           << std::endl;
             }
             fclose(file);
+            total_retrieved_size += read_bytes;
             return metadata;
         }
 
@@ -113,7 +114,7 @@ namespace MDR {
         std::string data_file;
         uint32_t offset;
         uint8_t* components;
-        size_t total_retrieved_size;
+        mutable size_t total_retrieved_size;
     };
 
 } // namespace MDR

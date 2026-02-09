@@ -154,19 +154,23 @@ namespace MDR {
 
             // Tune
             // std::cout << "Tuning" << std::endl;
+            uint8_t tmp_num_level = target_level;
             for(int i=target_level; i<decomposed_buffers.size(); i++){
-                auto tuner = MDR::ProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
-                                                 Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
-                                                 MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
-                // tuner.copy_in_level_0_info(value_range, level_error_bounds[0], level_sizes[0]);
-                tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
-                coeff_interp_directions.push_back(tuner.get_best_direction());
+                // auto tuner = MDR::ProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
+                //                                  Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
+                //                                  MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
+                // // tuner.copy_in_level_0_info(value_range, level_error_bounds[0], level_sizes[0]);
+                // tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
+                // coeff_interp_directions.push_back(tuner.get_best_direction());
+                coeff_interp_directions.push_back(2);
                 if(coeff_interp_directions.back() == -1) {
-                    structures[i-target_level].push_back(i);
+                    structures[i-target_level].push_back(tmp_num_level);
+                    tmp_num_level++;
                 }
                 else {
                     for(int j=0; j<coeff_target_level+1; j++){
-                        structures[i-target_level].push_back(i + j);
+                        structures[i-target_level].push_back(tmp_num_level);
+                        tmp_num_level++;
                     }
                 }
             }
@@ -177,7 +181,7 @@ namespace MDR {
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
             for(int i=target_level; i<decomposed_buffers.size(); i++){
-                if(coeff_interp_directions[i-1] == -1){
+                if(coeff_interp_directions[i-target_level] == -1){
                     level_buffers.push_back(decomposed_buffers[i]);
                 }
                 else{
