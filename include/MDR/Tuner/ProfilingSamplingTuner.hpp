@@ -52,7 +52,9 @@ namespace MDR{
             }
             uint32_t total_retrieved_size = 0;
             for(auto tolerance : ebs){
-                total_retrieved_size += test_reconstruct(tolerance, 0);
+                uint32_t retrieved_size = test_reconstruct(tolerance, 0);
+                std::cout << "Tolerance: " << tolerance << ", retrieved_size = " << retrieved_size << std::endl;
+                total_retrieved_size += retrieved_size;
             }
             std::cout << "total retrieved size = " << total_retrieved_size << std::endl;
             uint32_t min_total_retrieved_size = total_retrieved_size;
@@ -61,7 +63,9 @@ namespace MDR{
                 test_refactor(direction, target_level, num_bitplanes, block_size);
                 uint32_t total_retrieved_size = 0;
                 for(auto tolerance : ebs){
-                    total_retrieved_size += test_reconstruct(tolerance, target_level);
+                    uint32_t retrieved_size = test_reconstruct(tolerance, target_level);
+                    std::cout << "Tolerance: " << tolerance << ", retrieved_size = " << retrieved_size << std::endl;
+                    total_retrieved_size += retrieved_size;
                 }
                 std::cout << "total retrieved size = " << total_retrieved_size << std::endl;
                 if(total_retrieved_size < min_total_retrieved_size){

@@ -67,8 +67,8 @@ int main(int argc, char ** argv){
         std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
     }
 
-    auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-    // auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+    // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+    auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
     auto interleaver = MDR::DirectInterleaver_new<T>();
     // auto interleaver = MDR::SFCInterleaver<T>();
     // auto interleaver = MDR::BlockedInterleaver<T>();

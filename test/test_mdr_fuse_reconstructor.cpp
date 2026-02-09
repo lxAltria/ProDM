@@ -7,6 +7,7 @@
 #include <bitset>
 #include "utils.hpp"
 #include "MDR/Reconstructor/Reconstructor.hpp"
+#include "qoi_utils.hpp"
 
 using namespace std;
 
@@ -32,7 +33,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
 }
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
-void test(string filename, const vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
+void test(string filename, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
     auto reconstructor = MDR::FuseComposedReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
@@ -41,6 +42,10 @@ void test(string filename, const vector<double>& tolerance, Decomposer decompose
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
+    T value_range = MDR::compute_value_range(data);
+    for(int i=0; i<tolerance.size(); i++){
+        tolerance[i] *= value_range;
+    }
     evaluate(data, tolerance, reconstructor);
 }
 
@@ -76,8 +81,8 @@ int main(int argc, char ** argv){
     // using T_stream = uint32_t;
     using T = double;
     using T_stream = uint64_t;
-    auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-    // auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+    // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+    auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
     auto interleaver = MDR::DirectInterleaver_new<T>();
     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
@@ -88,9 +93,12 @@ int main(int argc, char ** argv){
     // auto compressor = MDR::NullLevelCompressor();
 
     auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    auto estimator = MDR::MaxErrorEstimatorHB<T>();
-    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    // auto estimator = MDR::MaxErrorEstimatorHB<T>();
+    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+    // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
     // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);

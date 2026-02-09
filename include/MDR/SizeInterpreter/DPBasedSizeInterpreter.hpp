@@ -119,7 +119,7 @@ namespace MDR {
             return retrieve_sizes;
         }
         void print() const {
-            std::cout << "Greedy based size interpreter." << std::endl;
+            std::cout << "DP based size interpreter." << std::endl;
         }
         double get_current_eb(){
             return _accumulated_error;

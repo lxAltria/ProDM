@@ -83,8 +83,8 @@ int main(int argc, char ** argv){
     // using T_stream = uint32_t;
     using T = double;
     using T_stream = uint64_t;
-    auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-    // auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+    // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+    auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
     auto interleaver = MDR::DirectInterleaver_new<T>();
     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
@@ -95,8 +95,8 @@ int main(int argc, char ** argv){
     // auto compressor = MDR::NullLevelCompressor();
 
     auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    auto estimator = MDR::MaxErrorEstimatorHB<T>();
-    auto interpreter = MDR::StructureAwareSignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>();
+    auto interpreter = MDR::StructureAwareSignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
     // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);

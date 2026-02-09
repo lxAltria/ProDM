@@ -52,27 +52,27 @@ namespace MDR {
             // timer.start();
             auto prev_level_num_bitplanes(level_num_bitplanes);
             if(max_level == -1 || (max_level >= level_num_bitplanes.size())){
-                // // auto retrieve_sizes = interpreter.interpret_retrieve_size(level_sizes, level_errors, tolerance, level_num_bitplanes);
-                // auto retrieve_sizes = interpreter.interpret_retrieve_size(level_sizes, level_errors, tolerance, level_num_bitplanes, structures);
-                std::vector<uint32_t> retrieve_sizes(level_error_bounds.size(), 0);
-                std::cout << "tolerance = " << tolerance << std::endl;
-                if(abs(tolerance - 0.00300502) < 0.001){
-                    level_num_bitplanes = {uint8_t(14), uint8_t(10), uint8_t(6), uint8_t(5), uint8_t(1), uint8_t(0), uint8_t(0), uint8_t(2), uint8_t(3), uint8_t(3), uint8_t(2), uint8_t(2), uint8_t(2)};
-                } else if(abs(tolerance - 0.000300502) < 0.0001){
-                    level_num_bitplanes = {uint8_t(17), uint8_t(12), uint8_t(9), uint8_t(6), uint8_t(6), uint8_t(5), uint8_t(4), uint8_t(6), uint8_t(7), uint8_t(8), uint8_t(7), uint8_t(6), uint8_t(6)};
-                } else if(abs(tolerance - 0.0000300502) < 0.00001){
-                    level_num_bitplanes = {uint8_t(22), uint8_t(17), uint8_t(14), uint8_t(10), uint8_t(9), uint8_t(8), uint8_t(6), uint8_t(9), uint8_t(10), uint8_t(10), uint8_t(10), uint8_t(9), uint8_t(9)};
-                } else if(abs(tolerance - 0.00000300502) < 0.000001){
-                    level_num_bitplanes = {uint8_t(26), uint8_t(21), uint8_t(17), uint8_t(14), uint8_t(13), uint8_t(11), uint8_t(9), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(12), uint8_t(12)};
-                } else if(abs(tolerance - 0.000000300502) < 0.0000001){
-                    level_num_bitplanes = {uint8_t(30), uint8_t(25), uint8_t(21), uint8_t(18), uint8_t(16), uint8_t(14), uint8_t(12), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(15), uint8_t(15)};
-                }
-                for(int i=0; i<level_error_bounds.size(); i++){
-                    for(int j=prev_level_num_bitplanes[i]; j<level_num_bitplanes[i]; j++){
-                        retrieve_sizes[i] += level_sizes[i][j];
-                    }
-                    // std::cout << "retrieve_sizes[" << i << "] = " << retrieve_sizes[i] << std::endl;
-                }
+                // auto retrieve_sizes = interpreter.interpret_retrieve_size(level_sizes, level_errors, tolerance, level_num_bitplanes);
+                auto retrieve_sizes = interpreter.interpret_retrieve_size(level_sizes, level_errors, tolerance, level_num_bitplanes, structures);
+                // std::vector<uint32_t> retrieve_sizes(level_error_bounds.size(), 0);
+                // std::cout << "tolerance = " << tolerance << std::endl;
+                // if(abs(tolerance - 0.00300502) < 0.001){
+                //     level_num_bitplanes = {uint8_t(14), uint8_t(10), uint8_t(6), uint8_t(5), uint8_t(1), uint8_t(0), uint8_t(0), uint8_t(2), uint8_t(3), uint8_t(3), uint8_t(2), uint8_t(2), uint8_t(2)};
+                // } else if(abs(tolerance - 0.000300502) < 0.0001){
+                //     level_num_bitplanes = {uint8_t(17), uint8_t(12), uint8_t(9), uint8_t(6), uint8_t(6), uint8_t(5), uint8_t(4), uint8_t(6), uint8_t(7), uint8_t(8), uint8_t(7), uint8_t(6), uint8_t(6)};
+                // } else if(abs(tolerance - 0.0000300502) < 0.00001){
+                //     level_num_bitplanes = {uint8_t(22), uint8_t(17), uint8_t(14), uint8_t(10), uint8_t(9), uint8_t(8), uint8_t(6), uint8_t(9), uint8_t(10), uint8_t(10), uint8_t(10), uint8_t(9), uint8_t(9)};
+                // } else if(abs(tolerance - 0.00000300502) < 0.000001){
+                //     level_num_bitplanes = {uint8_t(26), uint8_t(21), uint8_t(17), uint8_t(14), uint8_t(13), uint8_t(11), uint8_t(9), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(13), uint8_t(12), uint8_t(12)};
+                // } else if(abs(tolerance - 0.000000300502) < 0.0000001){
+                //     level_num_bitplanes = {uint8_t(30), uint8_t(25), uint8_t(21), uint8_t(18), uint8_t(16), uint8_t(14), uint8_t(12), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(16), uint8_t(15), uint8_t(15)};
+                // }
+                // for(int i=0; i<level_error_bounds.size(); i++){
+                //     for(int j=prev_level_num_bitplanes[i]; j<level_num_bitplanes[i]; j++){
+                //         retrieve_sizes[i] += level_sizes[i][j];
+                //     }
+                //     // std::cout << "retrieve_sizes[" << i << "] = " << retrieve_sizes[i] << std::endl;
+                // }
                 // retrieve data
                 level_components = retriever.retrieve_level_components(level_sizes, retrieve_sizes, prev_level_num_bitplanes, level_num_bitplanes);                
             }
@@ -163,12 +163,15 @@ namespace MDR {
             deserialize(metadata_pos, num_levels, level_elements);
             deserialize(metadata_pos, num_levels, stopping_indices);
             deserialize(metadata_pos, num_levels, level_num);
-            coeff_target_level = 2;
-            mdr_target_level = num_levels - num_dims * (coeff_target_level + 1);
             deserialize(metadata_pos, num_dims + 1, decomposed_buffer_dims);
             deserialize(metadata_pos, num_dims, coeff_interp_directions);
             deserialize(metadata_pos, num_dims, structures);
             negabinary = *(metadata_pos ++);
+            coeff_target_level = 2;
+            mdr_target_level = num_levels;
+            for(int i=0; i<coeff_interp_directions.size(); i++){
+                mdr_target_level -= (coeff_interp_directions[i] == -1) ? 1 : (coeff_target_level + 1);
+            }
             level_num_bitplanes = std::vector<uint8_t>(num_levels, 0);
             strides = std::vector<uint32_t>(dimensions.size());
             uint32_t stride = 1;
@@ -179,6 +182,13 @@ namespace MDR {
             data = std::vector<T>(stride, 0);
             free(metadata);
             std::cout << "load metadata done" << std::endl;
+            for(int i=0; i < structures.size(); i++){
+                std::cout << "structures[" << i << "]" << std::endl;
+                for(int j=0; j < structures[i].size(); j++){
+                    std::cout << (int) structures[i][j] << " ";
+                }
+                std::cout << std::endl;
+            }
         }
 
         const std::vector<uint32_t>& get_dimensions(){
@@ -239,6 +249,9 @@ namespace MDR {
                     memcpy(level_buffers[i].data(), level_decoded_data, level_elements[i] * sizeof(T));
                     compressor.decompress_release();
                     free(level_decoded_data);                    
+                }
+                else{
+                    memset(level_buffers[i].data(), 0, level_elements[i] * sizeof(T));
                 }
             }
             // decompose data to current level
