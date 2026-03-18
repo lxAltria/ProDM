@@ -95,7 +95,7 @@ int main(int argc, char ** argv){
     // auto compressor = MDR::NullLevelCompressor();
 
     auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>();
+    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
     auto interpreter = MDR::StructureAwareSignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);

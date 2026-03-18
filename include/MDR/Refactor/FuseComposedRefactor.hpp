@@ -48,6 +48,7 @@ namespace MDR {
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
+                            + sizeof(uint8_t)   // interpolation type: 0 - per level, 1 - per layer 
                             // + get_size(level_squared_errors) 
                             + get_size(level_sizes) // level information
                             + get_size(stopping_indices) + get_size(level_num) + 1; // one byte for whether negabinary encoding is used 
@@ -57,6 +58,7 @@ namespace MDR {
             serialize(dimensions, metadata_pos);
             *(metadata_pos ++) = (uint8_t) level_error_bounds.size();
             serialize(level_error_bounds, metadata_pos);
+            *(metadata_pos ++) = static_cast<uint8_t>(0);
             // serialize(level_squared_errors, metadata_pos);
             serialize(level_sizes, metadata_pos);
             serialize(stopping_indices, metadata_pos);

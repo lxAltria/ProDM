@@ -11,28 +11,8 @@
 
 using namespace std;
 
-std::vector<uint32_t> dims;
-
-template<class T>
-void print_max_error_pos(const T * ori_data, const T * reconstructed_data, const size_t num_elements){
-    size_t max_pos = 0;
-    double max_diff = 0;
-    for(size_t i=0; i<num_elements; i++){
-        double diff = abs(ori_data[i] - reconstructed_data[i]);
-        if(diff > max_diff) {
-            max_diff = diff;
-            max_pos = i;
-        }
-    }
-    std::cout << max_pos / (dims[1]*dims[2]) << " ";
-    max_pos = max_pos % (dims[1]*dims[2]);
-    std::cout << max_pos / dims[2] << " ";
-    max_pos = max_pos % dims[2];
-    std::cout << max_pos << std::endl;
-}
-
 template <class T, class Reconstructor>
-void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor reconstructor){
+void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstructor reconstructor){
     struct timespec start, end;
     int err = 0;
     // auto a1 = compute_average(data.data(), dims[0], dims[1], dims[2], 3);
@@ -45,18 +25,15 @@ void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor re
         cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
         auto dims = reconstructor.get_dimensions();
         size_t retrieved_size = reconstructor.get_retrieved_size();
-        cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
+        cout << "Retrieval size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
-        print_max_error_pos(data.data(), reconstructed_data, data.size());
-        // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
-        // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
 }
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
 void test(string filename, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
-    auto reconstructor = MDR::OrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+    auto reconstructor = MDR::OrderedReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
 
@@ -81,9 +58,8 @@ int main(int argc, char ** argv){
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);  
     }
-    string refactored_path = string(argv[argv_id++]);
-    int encoder_option = 0;
-    encoder_option = atoi(argv[argv_id ++]);
+    string refactored_path = string(argv[argv_id ++]);
+    int encoder_option = atoi(argv[argv_id ++]);
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     string data_file = refactored_path + "/refactored_data/data.bin";
     int num_levels = 0;
@@ -94,15 +70,7 @@ int main(int argc, char ** argv){
         auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
         assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_dims = metadata[0];
-        const uint8_t * p = metadata.data();
-        p++;
-        MDR::deserialize(p, num_dims, dims);
-        for(int i=0; i<num_dims; i++){
-            std::cout << dims[i] << " ";
-        }
-        cout << endl;
         num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
-        cout << "metadata_size = " << num_bytes << endl;
         cout << "number of dimension = " << num_dims << ", number of levels = " << num_levels << endl;
     }
 
@@ -111,11 +79,9 @@ int main(int argc, char ** argv){
         using T_stream = uint32_t;
         // using T = double;
         // using T_stream = uint64_t;
-        // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
         auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
-        auto interleaver = MDR::DirectInterleaver_new<T>();
-        // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-        // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+        // auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
+        auto interleaver = MDR::DirectInterleaver<T>();
         // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -125,29 +91,22 @@ int main(int argc, char ** argv){
         auto retriever = MDR::OrderedFileRetriever(metadata_file, data_file);
         auto estimator = MDR::MaxErrorEstimatorHB<T>();
         auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-        // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-        // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
-        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
         if(encoder_option == 0){
             auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         } else if (encoder_option == 1) {
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else {
+        }else {
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         }
     } else if (!strcmp(data_type.c_str(), "-d")){
-        // using T = float;
-        // using T_stream = uint32_t;
         using T = double;
         using T_stream = uint64_t;
-        // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
         auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
-        auto interleaver = MDR::DirectInterleaver_new<T>();
-        // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-        // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+        // auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
+        auto interleaver = MDR::DirectInterleaver<T>();
         // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
         // auto compressor = MDR::DefaultLevelCompressor();
@@ -157,16 +116,13 @@ int main(int argc, char ** argv){
         auto retriever = MDR::OrderedFileRetriever(metadata_file, data_file);
         auto estimator = MDR::MaxErrorEstimatorHB<T>();
         auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-        // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-        // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
-        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
         if(encoder_option == 0){
             auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         } else if (encoder_option == 1) {
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else {
+        }else {
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         }

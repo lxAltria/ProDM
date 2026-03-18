@@ -9,7 +9,7 @@
 #include "MDR/Tuner/Tuner.hpp"
 
 using namespace std;
-bool negabinary = false;
+bool negabinary = true;
 
 template <class T, class Tuner>
 void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int stride, int block_size, Tuner tuner){
@@ -20,18 +20,13 @@ void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_le
     tuner.tune(data.data(), dims, target_level, num_bitplanes, stride, block_size);
     err = clock_gettime(CLOCK_REALTIME, &end);
     cout << "Tuner time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
-    std::vector<uint32_t> interp_order = tuner.get_best_interp_order();
-    std::cout << "best interp order = ";
-    for(int i=0; i<interp_order.size(); i++){
-        std::cout << interp_order[i] << " ";
-    }
-    std::cout << std::endl;
+    std::cout << "Best direction = " << tuner.get_best_direction() << std::endl;
 }
 
-template<class T, class Level_Decomposer, class Layer_Decomposer, class Encoder, class Compressor, class Level_ErrorEstimator, class Layer_ErrorEstimator, class Level_SizeInterpreter, class Layer_SizeInterpreter>
-void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int stride, int block_size, Level_Decomposer level_decomposer, Layer_Decomposer layer_decomposer, Encoder encoder, Compressor compressor, Level_ErrorEstimator level_estimator, Layer_ErrorEstimator layer_estimator, Level_SizeInterpreter level_interpreter, Layer_SizeInterpreter layer_interpreter){
+template<class T, class Decomposer, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter>
+void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int stride, int block_size, Decomposer decomposer, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter){
     // auto tuner = MDR::CoeffNaiveSamplingTuner<T, Decomposer, Encoder, Compressor, SizeInterpreter, ErrorEstimator>(decomposer, encoder, compressor, interpreter);
-    auto tuner  = MDR::ProfilingSamplingTuner<T, Level_Decomposer, Layer_Decomposer, Encoder, Compressor, Level_SizeInterpreter, Layer_SizeInterpreter, Level_ErrorEstimator, Layer_ErrorEstimator>(level_decomposer, layer_decomposer, encoder, compressor, level_interpreter, layer_interpreter);
+    auto tuner  = MDR::CoeffProfilingSamplingTuner<T, Decomposer, Encoder, Compressor, SizeInterpreter, ErrorEstimator>(decomposer, encoder, compressor, interpreter);
     tuner.negabinary = negabinary;
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
@@ -69,20 +64,16 @@ int main(int argc, char ** argv){
         std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
     }
 
-    auto level_decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
-    auto layer_decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
-    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
-    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
-    // negabinary = true;
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
+    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    negabinary = true;
     auto compressor = MDR::AdaptiveLevelCompressor(64);
-    auto level_estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+    auto estimator = MDR::MaxErrorEstimatorHB<T>();
     // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    auto level_interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(level_estimator);
-    auto layer_estimator = MDR::MaxErrorEstimatorHBCubic_new<T>(1);
-    auto layer_interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(layer_estimator);
-    // auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
 
-    test<T>(filename, dims, target_level, num_bitplanes, stride, block_size, level_decomposer, layer_decomposer, encoder, compressor, level_estimator, layer_estimator, level_interpreter, layer_interpreter);
+    test<T>(filename, dims, target_level, num_bitplanes, stride, block_size, decomposer, encoder, compressor, estimator, interpreter);
     return 0;
 }

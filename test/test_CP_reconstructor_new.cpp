@@ -12,13 +12,12 @@
 using namespace std;
 
 template <class T, class Reconstructor>
-void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstructor reconstructor){
+void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor reconstructor){
     struct timespec start, end;
     int err = 0;
     // auto a1 = compute_average(data.data(), dims[0], dims[1], dims[2], 3);
     // auto a12 = compute_average(data.data(), dims[0], dims[1], dims[2], 5);
     for(int i=0; i<tolerance.size(); i++){
-        cout << "Start reconstruction" << endl;
         err = clock_gettime(CLOCK_REALTIME, &start);
         auto reconstructed_data = reconstructor.progressive_reconstruct(tolerance[i], -1);
         err = clock_gettime(CLOCK_REALTIME, &end);
@@ -27,6 +26,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * sizeof(T) * 1.0) / data.size() << std::endl;
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -34,7 +34,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
 
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
 void test(string filename, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
-    auto reconstructor = MDR::ComposedReconstructor_new<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+    auto reconstructor = MDR::CPReconstructor_new<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     cout << "loading metadata" << endl;
     reconstructor.load_metadata();
 
@@ -69,6 +69,7 @@ int main(int argc, char ** argv){
         assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_dims = metadata[0];
         num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
+        cout << "metadata_size = " << num_bytes << endl;
         cout << "number of dimension = " << num_dims << ", number of levels = " << num_levels << endl;
     }
     vector<string> files;
@@ -77,17 +78,12 @@ int main(int argc, char ** argv){
         files.push_back(filename);
     }
 
-    std::vector<uint32_t> interp_order(num_dims);
-    for(int i=0; i<num_dims; i++){
-        interp_order[i] = atoi(argv[argv_id ++]);
-    }
-
     // using T = float;
     // using T_stream = uint32_t;
     using T = double;
     using T_stream = uint64_t;
+    // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
     auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
-    decomposer.interp_order = interp_order;
     auto interleaver = MDR::DirectInterleaver_new<T>();
     // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
@@ -98,10 +94,9 @@ int main(int argc, char ** argv){
     // auto compressor = MDR::NullLevelCompressor();
 
     auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    // auto estimator = MDR::MaxErrorEstimatorHB_new<T>(num_dims);
-    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(1);
-    // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB_new<T>>(estimator);
-    auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+    auto estimator = MDR::MaxErrorEstimatorHBCubic_new<T>(1);
+    // auto interpreter = MDR::StructureAwareSignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+    auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
     // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
     // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
     test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);

@@ -10,6 +10,8 @@
 
 using namespace std;
 bool negabinary = true;
+bool greedy = false;
+bool bfs = false;
 
 template <class T, class Refactor>
 void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Refactor refactor){
@@ -20,12 +22,15 @@ void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_le
     refactor.refactor(data.data(), dims, target_level, num_bitplanes);
     err = clock_gettime(CLOCK_REALTIME, &end);
     cout << "Refactor time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+    // refactor.print();
 }
 
-template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
-void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
-    auto refactor = MDR::FuseComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
+template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class ErrorEstimator, class Writer>
+void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, ErrorEstimator estimator, Writer writer){
+    auto refactor = MDR::OrderedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, ErrorEstimator, Writer>(decomposer, interleaver, encoder, compressor, collector, estimator, writer);
     refactor.negabinary = negabinary;
+    refactor.greedy = greedy;
+    refactor.bfs = bfs;
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     evaluate(data, dims, target_level, num_bitplanes, refactor);
@@ -48,15 +53,19 @@ int main(int argc, char ** argv){
         dims[i] = atoi(argv[argv_id ++]);
     }
     string output_path = string(argv[argv_id++]);
+    int interpreter_option = 0;
+    interpreter_option = atoi(argv[argv_id ++]);
+    if(interpreter_option == 0){
+        greedy = true;
+    } else if (interpreter_option == 1){
+        bfs = true;
+    }
     int encoder_option = 0;
     encoder_option = atoi(argv[argv_id ++]);
 
-    string metadata_file = output_path + "/refactored_data/metadata.bin";
-    vector<string> files;
-    for(int i=0; i<(target_level * num_dims + 1); i++){
-        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
-        files.push_back(filename);
-    }
+    string metadata_file = output_path +  "/refactored_data/metadata.bin";
+    string data_file = output_path + "/refactored_data/data.bin";
+    
     if(!strcmp(data_type.c_str(), "-f")){
         using T = float;
         using T_stream = uint32_t;
@@ -64,86 +73,72 @@ int main(int argc, char ** argv){
             num_bitplanes = 32;
             std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
         }
-        // using T = double;
-        // using T_stream = uint64_t;
-        // if(num_bitplanes > 64){
-        //     num_bitplanes = 64;
-        //     std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
-        // }
-
-        // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+        // auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
         auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
-        auto interleaver = MDR::DirectInterleaver_new<T>();
+        auto interleaver = MDR::DirectInterleaver<T>();
         // auto interleaver = MDR::SFCInterleaver<T>();
         // auto interleaver = MDR::BlockedInterleaver<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
         // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-        // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
         // negabinary = true;
-        
+        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // negabinary = false;
         // auto compressor = MDR::DefaultLevelCompressor();
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         // auto compressor = MDR::NullLevelCompressor();
         auto collector = MDR::SquaredErrorCollector<T>();
-        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        auto writer = MDR::OrderedFileWriter(metadata_file, data_file);
 
         if(encoder_option == 0){
             auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else if(encoder_option == 1){
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, estimator, writer);
+        } else if (encoder_option == 1){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, estimator, writer);
         } else {
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             negabinary = false;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, estimator, writer);
         }
     } else if (!strcmp(data_type.c_str(), "-d")){
-        // using T = float;
-        // using T_stream = uint32_t;
-        // if(num_bitplanes > 32){
-        //     num_bitplanes = 32;
-        //     std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
-        // }
         using T = double;
         using T_stream = uint64_t;
         if(num_bitplanes > 64){
             num_bitplanes = 64;
             std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
         }
-
-        // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+        // auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
         auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
-        auto interleaver = MDR::DirectInterleaver_new<T>();
+        auto interleaver = MDR::DirectInterleaver<T>();
         // auto interleaver = MDR::SFCInterleaver<T>();
         // auto interleaver = MDR::BlockedInterleaver<T>();
         // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
         // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-        // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
         // negabinary = true;
-        
+        // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        // negabinary = false;
         // auto compressor = MDR::DefaultLevelCompressor();
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         // auto compressor = MDR::NullLevelCompressor();
         auto collector = MDR::SquaredErrorCollector<T>();
-        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-        // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+        auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        auto writer = MDR::OrderedFileWriter(metadata_file, data_file);
 
         if(encoder_option == 0){
             auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else if (encoder_option == 1) {
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, estimator, writer);
+        } else if (encoder_option == 1){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, estimator, writer);
         } else {
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             negabinary = false;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, estimator, writer);
         }
     } else {
         std::cerr << "Only two float type supported: -f or -d" << std::endl;

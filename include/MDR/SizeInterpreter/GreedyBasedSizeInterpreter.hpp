@@ -86,7 +86,7 @@ namespace MDR {
             std::vector<uint32_t> retrieve_sizes(num_levels, 0);
             double accumulated_error = 0;
             for(int i=0; i<num_levels; i++){
-                accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i);
+                accumulated_error += error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
             }
             _accumulated_error = accumulated_error;
             if(accumulated_error < tolerance) return retrieve_sizes;
@@ -94,13 +94,13 @@ namespace MDR {
             // identify minimal level
             double min_error = accumulated_error;
             for(int i=0; i<num_levels; i++){
-                min_error -= error_estimator.estimate_error(level_errors[i][index[i]], i);
-                min_error += error_estimator.estimate_error(level_errors[i].back(), i);
+                min_error -= error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+                min_error += error_estimator.estimate_error(level_errors[i].back(), i, num_levels);
                 // fetch the first component if index is 0
                 if(index[i] == 0){
                     retrieve_sizes[i] += level_sizes[i][index[i]];
-                    accumulated_error -= error_estimator.estimate_error(level_errors[i][index[i]], i);
-                    accumulated_error += error_estimator.estimate_error(level_errors[i][index[i] + 1], i);
+                    accumulated_error -= error_estimator.estimate_error(level_errors[i][index[i]], i, num_levels);
+                    accumulated_error += error_estimator.estimate_error(level_errors[i][index[i] + 1], i, num_levels);
                     index[i] ++;
                     // std::cout << i;
                 }
@@ -123,8 +123,8 @@ namespace MDR {
                 int i = unit_error_gain.level;
                 int j = index[i];
                 retrieve_sizes[i] += level_sizes[i][j];
-                accumulated_error -= error_estimator.estimate_error(level_errors[i][j], i);
-                accumulated_error += error_estimator.estimate_error(level_errors[i][j + 1], i);
+                accumulated_error -= error_estimator.estimate_error(level_errors[i][j], i, num_levels);
+                accumulated_error += error_estimator.estimate_error(level_errors[i][j + 1], i, num_levels);
                 if(accumulated_error < tolerance){
                     tolerance_met = true;
                 }
@@ -150,6 +150,12 @@ namespace MDR {
         }
         double get_current_eb(){
             return _accumulated_error;
+        }
+        void copy_in_cp_levels(std::vector<int> cp_levels){
+            error_estimator.cp_levels = cp_levels;
+        }
+        void reset(){
+            _accumulated_error = 0;
         }
     private:
         ErrorEstimator error_estimator;

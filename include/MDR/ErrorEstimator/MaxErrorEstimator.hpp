@@ -147,10 +147,10 @@ namespace MDR {
             return C[level] * error;
         }
         inline T estimate_error(T data, T reconstructed_data, int level) const {
-            return c * (data - reconstructed_data);
+            return C[level] * (data - reconstructed_data);
         }
         inline T estimate_error_gain(T base, T current_level_err, T next_level_err, int level) const {
-            return c * (current_level_err - next_level_err);
+            return C[level] * (current_level_err - next_level_err);
         }
         void print() const {
             std::cout << "Max absolute error estimator for hierarchical basis." << std::endl;
@@ -159,6 +159,59 @@ namespace MDR {
         double c = 0;
         mutable std::vector<T> C;
         mutable bool first_time = true;
-    };    
+    };
+    template<class T>
+    class MaxErrorEstimatorHBCubic_new : public MaxErrorEstimator<T> {
+    public:
+        MaxErrorEstimatorHBCubic_new(int num_dims){
+            switch(num_dims){
+                case 1:
+                    c = 5.0/4;
+                    break;
+                case 2:
+                    c = (5.0/4) * (5.0/4);
+                    break;
+                case 3:
+                    c = (5.0/4) * (5.0/4) * (5.0/4);
+                    break;
+                default:
+                    std::cerr << num_dims << "-Dimentional error estimation not implemented." << std::endl;
+                    exit(-1);
+            }
+        }
+        MaxErrorEstimatorHBCubic_new() : MaxErrorEstimatorHBCubic_new(1) {}
+        inline T estimate_error(T error, int level) const {
+            return c*error;
+        }
+        inline T estimate_error(T error, int level, int num_levels) const {
+            if(first_time){
+                C = std::vector<T>(num_levels, 1);
+                for(int i=num_levels-2; i>=0; i--){
+                    if(std::find(cp_levels.begin(), cp_levels.end(), i) != cp_levels.end()){
+                        C[i] = C[i+1];
+                    }
+                    else{
+                        C[i] = C[i+1] * c;
+                    }
+                }
+                first_time = false;
+            }
+            return C[level] * error;
+        }
+        inline T estimate_error(T data, T reconstructed_data, int level) const {
+            return C[level] * (data - reconstructed_data);
+        }
+        inline T estimate_error_gain(T base, T current_level_err, T next_level_err, int level) const {
+            return C[level] * (current_level_err - next_level_err);
+        }
+        void print() const {
+            std::cout << "Max absolute error estimator for hierarchical basis." << std::endl;
+        }
+        std::vector<int> cp_levels;
+    private:
+        double c = 0;
+        mutable std::vector<T> C;
+        mutable bool first_time = true;
+    };
 }
 #endif

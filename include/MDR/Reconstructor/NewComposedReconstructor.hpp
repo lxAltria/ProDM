@@ -27,13 +27,14 @@ namespace MDR {
         T * reconstruct(double tolerance, int max_level=-1){
             // Timer timer;
             // timer.start();
+            decomposer.interp_order = interp_order;
             std::vector<std::vector<double>> level_abs_errors;
-            uint8_t target_level = level_error_bounds.size() - 1;
+            uint8_t target_level = (level_error_bounds.size() - 1) / dimensions.size();
             std::vector<std::vector<double>>& level_errors = level_squared_errors;
             if(std::is_base_of<MaxErrorEstimator<T>, ErrorEstimator>::value){
                 // std::cout << "ErrorEstimator is base of MaxErrorEstimator, computing absolute error" << std::endl;
                 MaxErrorCollector<T> collector = MaxErrorCollector<T>();
-                for(int i=0; i<=target_level; i++){
+                for(int i=0; i<level_error_bounds.size(); i++){
                     auto collected_error = collector.collect_level_error(NULL, 0, level_sizes[i].size(), level_error_bounds[i]);
                     level_abs_errors.push_back(collected_error);
                 }
@@ -84,10 +85,11 @@ namespace MDR {
             // target_level -= skipped_level;
             // timer.end();
             // timer.print("Interpret and retrieval");
-            int reconstruct_level = target_level - skipped_level;
+            // int reconstruct_level = target_level - skipped_level;
+            int reconstruct_level = level_error_bounds.size() - 1;
             // std::cout << "skipped_level = " << skipped_level << ", target_level = " << +target_level << std::endl;
 
-            bool success = reconstruct(reconstruct_level, prev_level_num_bitplanes);
+            bool success = reconstruct(target_level, prev_level_num_bitplanes);
             retriever.release();
             if(success){
                 current_level = reconstruct_level;
@@ -137,10 +139,13 @@ namespace MDR {
             deserialize(metadata_pos, num_dims, dimensions);
             uint8_t num_levels = *(metadata_pos ++);
             deserialize(metadata_pos, num_levels, level_error_bounds);
+            uint8_t interpolation_type = *(metadata_pos ++);
             // deserialize(metadata_pos, num_levels, level_squared_errors);
             deserialize(metadata_pos, num_levels, level_sizes);
+            deserialize(metadata_pos, num_levels, level_elements);
             deserialize(metadata_pos, num_levels, stopping_indices);
             deserialize(metadata_pos, num_levels, level_num);
+            deserialize(metadata_pos, num_dims, interp_order);
             negabinary = *(metadata_pos ++);
             level_num_bitplanes = std::vector<uint8_t>(num_levels, 0);
             strides = std::vector<uint32_t>(dimensions.size());
@@ -186,14 +191,19 @@ namespace MDR {
     private:
         bool reconstruct(uint8_t target_level, const std::vector<uint8_t>& prev_level_num_bitplanes, bool progressive=true){
             auto num_levels = level_num.size();
-            auto level_dims = compute_level_dims_new(dimensions, num_levels - 1);
+            auto level_dims = compute_level_dims_new(dimensions, target_level);
             auto reconstruct_dimensions = level_dims[target_level];
             // update with stride
             std::vector<T> cur_data(data);
             memset(data.data(), 0, data.size() * sizeof(T));
+            level_buffers.resize(num_levels);
+            for(int i=0; i<num_levels; i++){
+                level_buffers[i].resize(level_elements[i]);
+                // std::cout << "level_buffers[" << i << "].size() = " << level_buffers[i].size() << std::endl;
+            }
 
-            auto level_elements = compute_level_elements(level_dims, target_level);
-            std::vector<uint32_t> dims_dummy(reconstruct_dimensions.size(), 0);
+            // auto level_elements = compute_level_elements(level_dims, target_level);
+            // std::vector<uint32_t> dims_dummy(reconstruct_dimensions.size(), 0);
             for(int i=0; i<=current_level; i++){
                 if(level_num_bitplanes[i] - prev_level_num_bitplanes[i] > 0){
                     compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
@@ -202,14 +212,19 @@ namespace MDR {
                     else frexp(level_error_bounds[i], &level_exp);
                     auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
                     compressor.decompress_release();
-                    const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
-                    interleaver.reposition(level_decoded_data, reconstruct_dimensions, level_dims[i], prev_dims, data.data(), i, target_level, this->strides);
+                    memcpy(level_buffers[i].data(), level_decoded_data, level_elements[i] * sizeof(T));
+                    // const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
+                    // interleaver.reposition(level_decoded_data, reconstruct_dimensions, level_dims[i], prev_dims, data.data(), i, target_level, this->strides);
                     free(level_decoded_data);                    
+                } else {
+                    memset(level_buffers[i].data(), 0, level_elements[i] * sizeof(T));
                 }
             }
             // decompose data to current level
             if(current_level >= 0){
-                if(current_level) decomposer.recompose(data.data(), current_dimensions, current_level, this->strides);
+                if(current_level) {
+                    data = decomposer.reposition_recompose(level_buffers, reconstruct_dimensions, target_level, this->strides);
+                }
                 // std::cout << "update data\n";
                 // update data with strides
                 if(current_dimensions.size() == 1){
@@ -239,22 +254,23 @@ namespace MDR {
                 }
             }
             // decompose data to target level
-            for(int i=current_level+1; i<=target_level; i++){
+            for(int i=current_level+1; i<num_levels; i++){
                 compressor.decompress_level(level_components[i], level_sizes[i], prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], stopping_indices[i]);
                 int level_exp = 0;
                 if(negabinary) frexp(level_error_bounds[i] / 4, &level_exp);
                 else frexp(level_error_bounds[i], &level_exp);
                 auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
                 compressor.decompress_release();
-                const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
-                interleaver.reposition(level_decoded_data, reconstruct_dimensions, level_dims[i], prev_dims, data.data(), i, target_level, this->strides);
+                memcpy(level_buffers[i].data(), level_decoded_data, level_elements[i] * sizeof(T));
+                // const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
+                // interleaver.reposition(level_decoded_data, reconstruct_dimensions, level_dims[i], prev_dims, data.data(), i, target_level, this->strides);
                 free(level_decoded_data);                    
             }
             if(current_level >= 0){
-                decomposer.recompose(data.data(), reconstruct_dimensions, target_level - current_level, this->strides);                
+                // decomposer.recompose(data.data(), reconstruct_dimensions, target_level - current_level, this->strides);                
             }
             else{
-                decomposer.recompose(data.data(), reconstruct_dimensions, target_level, this->strides);
+                data = decomposer.reposition_recompose(level_buffers, reconstruct_dimensions, target_level, this->strides);
             }
             current_dimensions = reconstruct_dimensions;
             return true;
@@ -292,6 +308,9 @@ namespace MDR {
         std::vector<std::vector<uint32_t>> level_sizes;
         std::vector<uint32_t> level_num;
         std::vector<std::vector<double>> level_squared_errors;
+        std::vector<uint32_t> level_elements;
+        std::vector<std::vector<T>> level_buffers;
+        std::vector<uint32_t> interp_order;
         int current_level = -1;
         std::vector<uint32_t> strides;
         bool negabinary = true;
