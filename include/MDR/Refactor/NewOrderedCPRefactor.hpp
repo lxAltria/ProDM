@@ -1,5 +1,5 @@
-#ifndef _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_HPP
-#define _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_HPP
+#ifndef _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_NEW_HPP
+#define _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_NEW_HPP
 
 #include "RefactorInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
@@ -17,9 +17,9 @@
 namespace MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
-    class OrderedCPRefactor : public concepts::RefactorInterface<T> {
+    class OrderedCPRefactor_new : public concepts::RefactorInterface<T> {
     public:
-        OrderedCPRefactor(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
+        OrderedCPRefactor_new(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
@@ -257,7 +257,6 @@ namespace MDR {
             metadata_size =
                 sizeof(uint8_t)  + get_size(dimensions)
                 + sizeof(uint8_t)  + get_size(level_error_bounds)  
-                + sizeof(uint8_t)   // interpolation type: 0 - per level, 1 - per layer
                 + get_size(level_sizes)                            
                 + get_size(level_elements)
                 + get_size(stopping_indices)
@@ -277,7 +276,6 @@ namespace MDR {
             serialize(dimensions, p);
             *(p++) = (uint8_t) level_error_bounds.size();
             serialize(level_error_bounds, p);
-            *(p++) = static_cast<uint8_t>(0);
             serialize(level_sizes, p);
             serialize(level_elements, p);
             serialize(stopping_indices, p);
@@ -306,7 +304,7 @@ namespace MDR {
             free(metadata);
         }
 
-        ~OrderedCPRefactor(){}
+        ~OrderedCPRefactor_new(){}
 
         void print() const {
             std::cout << "Ordered coefficient prediction refactor with the following components." << std::endl;
@@ -738,7 +736,7 @@ namespace MDR {
                 auto decomposed_buffers_level_1 = decomposer.decompose_interleave(data.data(), dimensions, 1);
                 decomposed_buffer_dims = decomposer.get_level_buffer_dims();
                 // std::cout << decomposed_buffer_dims[0][0] << " " << decomposed_buffer_dims[0][1] << " " << decomposed_buffer_dims[0][2] << std::endl;
-                decomposed_buffers = decomposer.decompose_interleave_combine_levels(decomposed_buffers_level_1[0].data(), decomposed_buffer_dims[0], target_level - 1);
+                decomposed_buffers = decomposer.decompose_interleave(decomposed_buffers_level_1[0].data(), decomposed_buffer_dims[0], target_level - 1);
                 // std::cout << "decomposed_buffers.size() = " << decomposed_buffers.size() << "\n";
                 for(int i=1; i<decomposed_buffers_level_1.size(); i++){
                     decomposed_buffers.push_back(decomposed_buffers_level_1[i]);
@@ -751,6 +749,8 @@ namespace MDR {
             auto coeff_decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
             auto estimator = MDR::MaxErrorEstimatorHB<T>();
             auto coeff_interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+            using T_stream = typename std::conditional<std::is_same<T, double>::value, uint64_t, uint32_t>::type;
+            auto coeff_encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
             uint32_t coeff_stride = 15;
             uint32_t coeff_block_size = 9;
 
@@ -770,8 +770,8 @@ namespace MDR {
                 std::cout << "Tuning" << std::endl;
                 for(int i=target_level; i<decomposed_buffers.size(); i++){
                     auto tuner = MDR::CoeffProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
-                                                     Encoder, Compressor, MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
-                                                     MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, coeff_interpreter);
+                                                     MDR::NegaBinaryBPEncoder<T, T_stream>, Compressor, MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
+                                                     MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, coeff_encoder, compressor, coeff_interpreter);
                     tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
                     coeff_interp_directions.push_back(tuner.get_best_direction());
                     // coeff_interp_directions.push_back(2);

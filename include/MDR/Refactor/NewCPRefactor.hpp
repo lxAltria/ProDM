@@ -1,5 +1,5 @@
-#ifndef _MDR_COEFFICIENT_PREDICTION_REFACTOR_HPP
-#define _MDR_COEFFICIENT_PREDICTION_REFACTOR_HPP
+#ifndef _MDR_COEFFICIENT_PREDICTION_REFACTOR_NEW_HPP
+#define _MDR_COEFFICIENT_PREDICTION_REFACTOR_NEW_HPP
 
 #include "RefactorInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
@@ -14,14 +14,15 @@
 namespace MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
-    class CPRefactor : public concepts::RefactorInterface<T> {
+    class CPRefactor_new : public concepts::RefactorInterface<T> {
     public:
-        CPRefactor(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
+        CPRefactor_new(Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
             Timer timer;
             timer.start();
+            interp_order = decomposer.interp_order;
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -49,31 +50,36 @@ namespace MDR {
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
+                            + sizeof(uint8_t)   // interpolation type: 0 - per level, 1 - per layer 
                             // + get_size(level_squared_errors) 
                             + get_size(level_sizes) // level information
                             + get_size(level_elements)
-                            + get_size(stopping_indices) + get_size(level_num) + get_size(decomposed_buffer_dims) 
-                            + get_size(coeff_interp_directions) + get_size(structures) + 1; // one byte for whether negabinary encoding is used 
+                            + get_size(stopping_indices) + get_size(level_num) + get_size(interp_order)
+                            + get_size(decomposed_buffer_dims) 
+                            + get_size(coeff_interp_directions) + sizeof(uint8_t) + get_size(cp_levels) + 1; // one byte for whether negabinary encoding is used 
             uint8_t * metadata = (uint8_t *) malloc(metadata_size);
             uint8_t * metadata_pos = metadata;
             *(metadata_pos ++) = (uint8_t) dimensions.size();
             serialize(dimensions, metadata_pos);
             *(metadata_pos ++) = (uint8_t) level_error_bounds.size();
             serialize(level_error_bounds, metadata_pos);
+            *(metadata_pos ++) = static_cast<uint8_t>(1);
             // serialize(level_squared_errors, metadata_pos);
             serialize(level_sizes, metadata_pos);
             serialize(level_elements, metadata_pos);
             serialize(stopping_indices, metadata_pos);
             serialize(level_num, metadata_pos);
+            serialize(interp_order, metadata_pos);
             serialize(decomposed_buffer_dims, metadata_pos);
             serialize(coeff_interp_directions, metadata_pos);
-            serialize(structures, metadata_pos);
+            *(metadata_pos ++) = (uint8_t) cp_levels.size();
+            serialize(cp_levels, metadata_pos);
             *(metadata_pos ++) = (uint8_t) negabinary;
             writer.write_metadata(metadata, metadata_size);
             free(metadata);
         }
 
-        ~CPRefactor(){}
+        ~CPRefactor_new(){}
 
         void print() const {
             std::cout << "Coefficient prediction refactor with the following components." << std::endl;
@@ -101,23 +107,17 @@ namespace MDR {
                 auto decomposed_buffers_level_1 = decomposer.decompose_interleave(data.data(), dimensions, 1);
                 decomposed_buffer_dims = decomposer.get_level_buffer_dims();
                 // std::cout << decomposed_buffer_dims[0][0] << " " << decomposed_buffer_dims[0][1] << " " << decomposed_buffer_dims[0][2] << std::endl;
-                decomposed_buffers = decomposer.decompose_interleave_combine_levels(decomposed_buffers_level_1[0].data(), decomposed_buffer_dims[0], target_level - 1);
+                decomposed_buffers = decomposer.decompose_interleave(decomposed_buffers_level_1[0].data(), decomposed_buffer_dims[0], target_level - 1);
                 // std::cout << "decomposed_buffers.size() = " << decomposed_buffers.size() << "\n";
                 for(int i=1; i<decomposed_buffers_level_1.size(); i++){
                     decomposed_buffers.push_back(decomposed_buffers_level_1[i]);
                 }
                 // std::cout << "decomposed_buffers.size() = " << decomposed_buffers.size() << "\n";
-                decomposed_buffers_level_1.clear();
-            }
+            }   
+            int un_cp_levels = decomposed_buffers.size() - dimensions.size();
             // auto decomposed_buffers = decomposer.decompose_interleave(data.data(), dimensions, target_level);
             // decomposed_buffer_dims = decomposer.get_level_buffer_dims();
-            structures.resize(decomposed_buffer_dims.size() - 1);
-            for(int i=0; i<structures.size(); i++){
-                // structures[i].push_back(0);
-                for(int j=0; j<target_level; j++){
-                    structures[i].push_back(j);
-                }
-            }
+            
             auto coeff_decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
             auto estimator = MDR::MaxErrorEstimatorHB<T>();
             auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
@@ -132,7 +132,7 @@ namespace MDR {
             level_sizes.clear();
             std::vector<std::vector<T>> level_buffers;
             // level_buffers.push_back(decomposed_buffers[0]);
-            for(int i=0; i<target_level; i++){
+            for(int i=0; i<un_cp_levels; i++){
                 level_buffers.push_back(decomposed_buffers[i]);
             }
             // // Encoder level 0 first
@@ -154,44 +154,41 @@ namespace MDR {
 
             // Tune
             // std::cout << "Tuning" << std::endl;
-            uint8_t tmp_num_level = target_level;
-            for(int i=target_level; i<decomposed_buffers.size(); i++){
-                // auto tuner = MDR::CoeffProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
-                //                                  Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
-                //                                  MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
-                // // tuner.copy_in_level_0_info(value_range, level_error_bounds[0], level_sizes[0]);
-                // tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
-                // coeff_interp_directions.push_back(tuner.get_best_direction());
-                coeff_interp_directions.push_back(2);
-                if(coeff_interp_directions.back() == -1) {
-                    structures[i-target_level].push_back(tmp_num_level);
-                    tmp_num_level++;
-                }
-                else {
-                    for(int j=0; j<coeff_target_level+1; j++){
-                        structures[i-target_level].push_back(tmp_num_level);
-                        tmp_num_level++;
-                    }
+            uint8_t tmp_num_level = un_cp_levels;
+            if(!coeff_interp_directions.size()){
+                for(int i=un_cp_levels; i<decomposed_buffers.size(); i++){
+                    auto tuner = MDR::CoeffProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
+                                                    Encoder, Compressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
+                                                    MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, interpreter);
+                    // // tuner.copy_in_level_0_info(value_range, level_error_bounds[0], level_sizes[0]);
+                    tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-un_cp_levels+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
+                    coeff_interp_directions.push_back(tuner.get_best_direction());
+                    // coeff_interp_directions.push_back(2);
                 }
             }
+            std::cout << "coeff_interp_directions = ";
             for(int i=0; i<coeff_interp_directions.size(); i++){
-                std::cout << "coeff_interp_directions[" << i << "] = " << (int)coeff_interp_directions[i] << std::endl;
+                std::cout << (int)coeff_interp_directions[i] << " ";
             }
+            std::cout << std::endl;
 
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
-            for(int i=target_level; i<decomposed_buffers.size(); i++){
-                if(coeff_interp_directions[i-target_level] == -1){
+            for(int i=un_cp_levels; i<decomposed_buffers.size(); i++){
+                if(coeff_interp_directions[i - un_cp_levels] == -1){
                     level_buffers.push_back(decomposed_buffers[i]);
                 }
                 else{
-                    coeff_decomposer.direction = coeff_interp_directions[i-target_level];
-                    std::cout << "direction = " << (int)coeff_interp_directions[i - target_level] << std::endl;
-                    std::cout << decomposed_buffer_dims[i-target_level+1][0] << " " << decomposed_buffer_dims[i-target_level+1][1] << " " << decomposed_buffer_dims[i-target_level+1][2] << std::endl;
+                    coeff_decomposer.direction = coeff_interp_directions[i - un_cp_levels];
+                    std::cout << "direction = " << (int)coeff_interp_directions[i - un_cp_levels] << std::endl;
+                    std::cout << decomposed_buffer_dims[i - un_cp_levels + 1][0] << " " << decomposed_buffer_dims[i - un_cp_levels + 1][1] << " " << decomposed_buffer_dims[i - un_cp_levels + 1][2] << std::endl;
                     // std::cout << "decomposed_buffers[" << i << "].size() = " << decomposed_buffers[i].size() << std::endl;
-                    auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level);
+                    auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i - un_cp_levels + 1], coeff_target_level);
                     for(int j=0; j<coeff_target_level+1; j++){
                         level_buffers.push_back(decomposed_coeff_buffers[j]);
+                        if(j < coeff_target_level){
+                            cp_levels.push_back(level_buffers.size() - 1);
+                        }
                         // std::cout << "level_buffers[" << level_buffers.size() - 1 << "] = decomposed_coeff_buffers[" << j << "]" << std::endl;
                     }
                 }
@@ -282,11 +279,12 @@ namespace MDR {
         std::vector<std::vector<uint32_t>> level_sizes;
         std::vector<uint32_t> level_num;
         std::vector<std::vector<double>> level_squared_errors;
-        std::vector<int> coeff_interp_directions;
         std::vector<std::vector<uint32_t>> decomposed_buffer_dims;
-        std::vector<std::vector<uint8_t>> structures;
+        std::vector<int> cp_levels;
         std::vector<uint32_t> level_elements;
+        std::vector<uint32_t> interp_order;
     public:
+        std::vector<int> coeff_interp_directions;
         bool negabinary = false;
     };
 }

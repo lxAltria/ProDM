@@ -209,7 +209,6 @@ namespace MDR {
             deserialize(p, num_dims, dimensions);
             uint8_t num_levels = *(p++);
             deserialize(p, num_levels, level_error_bounds);
-            uint8_t interpolation_type = *(p++);
             deserialize(p, num_levels, level_sizes);
             deserialize(p, num_levels, stopping_indices);
             negabinary = (*(p++) != 0);
@@ -240,7 +239,6 @@ namespace MDR {
             deserialize(p, num_dims, dimensions);
             uint8_t num_levels = *(p++);
             deserialize(p, num_levels, level_error_bounds);
-            uint8_t interpolation_type = *(p++);
             deserialize(p, num_levels, level_sizes);
             deserialize(p, num_levels, level_elements);
             deserialize(p, num_levels, stopping_indices);

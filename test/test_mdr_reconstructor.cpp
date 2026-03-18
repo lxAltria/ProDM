@@ -27,7 +27,7 @@ void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor re
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
-        std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * sizeof(T) * 1.0) / data.size() << std::endl;
+        std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }

@@ -47,7 +47,7 @@ void test(string filename, vector<double>& tolerance, Decomposer decomposer, Int
 }
 
 template <class T, class T_stream>
-void test_BitplaneReconstructor(string filename, string refactored_path, vector<double>& tolerance){
+void test_BitplaneReconstructor(string filename, string refactored_path, vector<double>& tolerance, int encoder_option=0){
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -67,7 +67,7 @@ void test_BitplaneReconstructor(string filename, string refactored_path, vector<
     }
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
@@ -79,19 +79,39 @@ void test_BitplaneReconstructor(string filename, string refactored_path, vector<
     auto estimator = MDR::MaxErrorEstimatorHB<T>();
     auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    auto reconstructor = MDR::BitplaneReconstructor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
-    cout << "loading metadata" << endl;
-    reconstructor.load_metadata();
+    if(encoder_option == 0){
+        std::cout << "NegaBinaryBPEncoder" << std::endl;
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto reconstructor = MDR::BitplaneReconstructor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+        cout << "loading metadata" << endl;
+        reconstructor.load_metadata();
 
-    size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
-    std::cout << "read file done: #element = " << num_elements << std::endl;
-    fflush(stdout);
-    // T value_range = MDR::compute_value_range(data);
-    // for(int i=0; i<tolerance.size(); i++){
-    //     tolerance[i] *= value_range;
-    // }
-    evaluate(data, tolerance, reconstructor);
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        std::cout << "read file done: #element = " << num_elements << std::endl;
+        fflush(stdout);
+        // T value_range = MDR::compute_value_range(data);
+        // for(int i=0; i<tolerance.size(); i++){
+        //     tolerance[i] *= value_range;
+        // }
+        evaluate(data, tolerance, reconstructor);
+    } else {
+        std::cout << "PerBitBPEncoder" << std::endl;
+        auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        auto reconstructor = MDR::BitplaneReconstructor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::PerBitBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+        cout << "loading metadata" << endl;
+        reconstructor.load_metadata();
+
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        std::cout << "read file done: #element = " << num_elements << std::endl;
+        fflush(stdout);
+        // T value_range = MDR::compute_value_range(data);
+        // for(int i=0; i<tolerance.size(); i++){
+        //     tolerance[i] *= value_range;
+        // }
+        evaluate(data, tolerance, reconstructor);
+    }
 }
 
 template <class T, class T_stream>
@@ -191,7 +211,7 @@ void test_MDR(string filename, string refactored_path, vector<double>& tolerance
 }
 
 template <class T, class T_stream>
-void test_2D_recomposition(string filename, string refactored_path, vector<double>& tolerance){
+void test_2D_recomposition(string filename, string refactored_path, vector<double>& tolerance, int encoder_option=0){
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -211,7 +231,7 @@ void test_2D_recomposition(string filename, string refactored_path, vector<doubl
     }
     auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
     auto interleaver = MDR::DirectInterleaver<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
@@ -223,19 +243,39 @@ void test_2D_recomposition(string filename, string refactored_path, vector<doubl
     auto estimator = MDR::MaxErrorEstimatorHB<T>();
     auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    auto reconstructor = MDR::FuseComposedReconstructor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
-    cout << "loading metadata" << endl;
-    reconstructor.load_metadata();
+    if(encoder_option == 0){
+        std::cout << "NegaBinaryBPEncoder" << std::endl;
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto reconstructor = MDR::FuseComposedReconstructor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+        cout << "loading metadata" << endl;
+        reconstructor.load_metadata();
 
-    size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
-    std::cout << "read file done: #element = " << num_elements << std::endl;
-    fflush(stdout);
-    // T value_range = MDR::compute_value_range(data);
-    // for(int i=0; i<tolerance.size(); i++){
-    //     tolerance[i] *= value_range;
-    // }
-    evaluate(data, tolerance, reconstructor);
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        std::cout << "read file done: #element = " << num_elements << std::endl;
+        fflush(stdout);
+        // T value_range = MDR::compute_value_range(data);
+        // for(int i=0; i<tolerance.size(); i++){
+        //     tolerance[i] *= value_range;
+        // }
+        evaluate(data, tolerance, reconstructor);
+    } else {
+        std::cout << "PerBitBPEncoder" << std::endl;
+        auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        auto reconstructor = MDR::FuseComposedReconstructor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::PerBitBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+        cout << "loading metadata" << endl;
+        reconstructor.load_metadata();
+
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        std::cout << "read file done: #element = " << num_elements << std::endl;
+        fflush(stdout);
+        // T value_range = MDR::compute_value_range(data);
+        // for(int i=0; i<tolerance.size(); i++){
+        //     tolerance[i] *= value_range;
+        // }
+        evaluate(data, tolerance, reconstructor);
+    }
 }
 
 int main(int argc, char ** argv){
@@ -289,7 +329,11 @@ int main(int argc, char ** argv){
     switch(option){
         case 0:
         {
-            test_BitplaneReconstructor<T, T_stream>(filename, refactored_path, tolerance);
+            int encoder_option = 0;
+            if(argv_id < argc){
+                encoder_option = atoi(argv[argv_id ++]);
+            }
+            test_BitplaneReconstructor<T, T_stream>(filename, refactored_path, tolerance, encoder_option);
             break;
         }
         case 1:
@@ -304,14 +348,18 @@ int main(int argc, char ** argv){
         }
         case 3:
         {
-            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance);
+            int encoder_option = 0;
+            if(argv_id < argc){
+                encoder_option = atoi(argv[argv_id ++]);
+            }
+            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance, encoder_option);
             break;
         }
-        case 4:
-        {
-            test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance);
-            break;
-        }
+        // case 4:
+        // {
+        //     test_2D_recomposition<T, T_stream>(filename, refactored_path, tolerance);
+        //     break;
+        // }
         default:
             break;
     }

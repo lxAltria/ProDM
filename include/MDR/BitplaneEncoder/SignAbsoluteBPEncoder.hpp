@@ -1,25 +1,22 @@
-#ifndef _MDR_XORNEGABINARY_BP_ENCODER_HPP
-#define _MDR_XORNEGABINARY_BP_ENCODER_HPP
+#ifndef _MDR_SIGN_ABSOLUTE_BP_ENCODER_HPP
+#define _MDR_SIGN_ABSOLUTE_BP_ENCODER_HPP
 
 #include "BitplaneEncoderInterface.hpp"
-#include <unordered_map>
 
 namespace MDR {
     // general bitplane encoder that encodes data by block using T_stream type buffer
     template<class T_data, class T_stream>
-    class XORNegaBinaryBPEncoder : public concepts::BitplaneEncoderInterface<T_data> {
+    class SignAbsoluteBPEncoder : public concepts::BitplaneEncoderInterface<T_data> {
     public:
-        XORNegaBinaryBPEncoder(){
-            static_assert(std::is_floating_point<T_data>::value, "XORNegaBinaryBPEncoder: input data must be floating points.");
-            static_assert(!std::is_same<T_data, long double>::value, "XORNegaBinaryBPEncoder: long double is not supported.");
-            static_assert(std::is_unsigned<T_stream>::value, "XORNegaBinaryBPEncoder: streams must be unsigned integers.");
-            static_assert(std::is_integral<T_stream>::value, "XORNegaBinaryBPEncoder: streams must be unsigned integers.");
+        SignAbsoluteBPEncoder(){
+            static_assert(std::is_floating_point<T_data>::value, "SignAbsoluteBPEncoder: input data must be floating points.");
+            static_assert(!std::is_same<T_data, long double>::value, "SignAbsoluteBPEncoder: long double is not supported.");
+            static_assert(std::is_unsigned<T_stream>::value, "SignAbsoluteEncoder: streams must be unsigned integers.");
+            static_assert(std::is_integral<T_stream>::value, "SignAbsoluteEncoder: streams must be unsigned integers.");
         }
 
         std::vector<uint8_t *> encode(T_data const * data, int32_t n, int32_t exp, uint8_t num_bitplanes, std::vector<uint32_t>& stream_sizes) const {
             assert(num_bitplanes > 0);
-            // leave room for negabinary format
-            exp += 2;
             // determine block size based on bitplane integer type
             uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
             std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n - 1)/block_size + 1, 0);
@@ -131,8 +128,6 @@ namespace MDR {
 
         // decode the data and record necessary information for progressiveness
         T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
-            auto it = level_table.find(level);
-            int decoded_bp = (it == level_table.end()) ? 0 : it->second;
             uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
             T_data * data = (T_data *) malloc(n * sizeof(T_data));
             if(num_bitplanes == 0){
@@ -148,67 +143,44 @@ namespace MDR {
             for(int i=0; i<streams.size(); i++){
                 streams_pos[i] = reinterpret_cast<T_stream const *>(streams[i]);
             }
-            if(it == level_table.end()){
-                if(last_2_data.size() <= level){
-                    last_2_data.resize(level + 1);
-                    last_1_data.resize(level + 1);
-                }
-                for(int i=0; i<n - block_size; i+=block_size){
-                    last_2_data[level].push_back(std::vector<unsigned char>(block_size));
-                    last_1_data[level].push_back(std::vector<unsigned char>(block_size));
-                }
-                {
-                    int rest_size = n % block_size;
-                    if(!rest_size) rest_size = block_size;
-                    last_2_data[level].push_back(std::vector<unsigned char>(rest_size));
-                    last_1_data[level].push_back(std::vector<unsigned char>(rest_size));
-                }
-                level_table[level] = num_bitplanes;
-            } else {
-                it->second += num_bitplanes;
-            }
             std::vector<T_fp> int_data_buffer(block_size, 0);
             // decode
             const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
             T_data * data_pos = data;
             // std::cout << "ending_bitplane = " << +ending_bitplane << std::endl;
             if(ending_bitplane % 2 == 0){
-                int block_idx = 0;
                 for(int i=0; i<n - block_size; i+=block_size){
                     memset(int_data_buffer.data(), 0, block_size * sizeof(T_fp));
-                    decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data(), level, block_idx, decoded_bp);
+                    decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<block_size; j++){
                         *(data_pos++) = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp);
                     }
-                    block_idx++;
                 }
                 // leftover
                 {
                     int rest_size = n % block_size;
                     if(rest_size == 0) rest_size = block_size;
                     memset(int_data_buffer.data(), 0, rest_size * sizeof(T_fp));
-                    decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data(), level, block_idx, decoded_bp);
+                    decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<rest_size; j++){
                         *(data_pos++) = ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp);
                     }
                 }                
             }
             else{
-                int block_idx = 0;
                 for(int i=0; i<n - block_size; i+=block_size){
                     memset(int_data_buffer.data(), 0, block_size * sizeof(T_fp));
-                    decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data(), level, block_idx, decoded_bp);
+                    decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<block_size; j++){
                         *(data_pos++) = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp);
                     }
-                    block_idx++;
                 }
                 // leftover
                 {
                     int rest_size = n % block_size;
                     if(rest_size == 0) rest_size = block_size;
                     memset(int_data_buffer.data(), 0, rest_size * sizeof(T_fp));
-                    decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data(), level, block_idx, decoded_bp);
+                    decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<rest_size; j++){
                         *(data_pos++) = - ldexp((T_data) negabinary2binary(int_data_buffer[j]), - ending_bitplane + exp);
                     }
@@ -218,7 +190,7 @@ namespace MDR {
         }
 
         void print() const {
-            std::cout << "XORNegaBinary bitplane encoder" << std::endl;
+            std::cout << "NegaBinary bitplane encoder" << std::endl;
         }
     private:
         template<class T>
@@ -268,54 +240,22 @@ namespace MDR {
             for(int k=num_bitplanes - 1; k>=0; k--){
                 T_stream bitplane_value = 0;
                 T_stream bitplane_index = num_bitplanes - 1 - k;
-                if(k < num_bitplanes - 2){
-                    for (int i=0; i<n; i++){
-                        T_stream last_2_bit = (T_stream)((data[i] >> (k + 2)) & 1u);
-                        T_stream last_1_bit = (T_stream)((data[i] >> (k + 1)) & 1u);
-                        T_stream current_bit = (T_stream)((data[i] >> k) & 1u);
-                        bitplane_value += (T_stream)(last_2_bit ^ last_1_bit ^ current_bit) << i;
-                    }
-                }
-                else{
-                    for (int i=0; i<n; i++){
-                        bitplane_value += (T_stream)((data[i] >> k) & 1u) << i;
-                    }
+                for (int i=0; i<n; i++){
+                    bitplane_value += (T_stream)((data[i] >> k) & 1u) << i;
                 }
                 *(streams_pos[bitplane_index] ++) = bitplane_value;
             }
         }
         template <class T_int>
-        inline void decode_block(std::vector<T_stream const *>& streams_pos, size_t n, uint8_t num_bitplanes, T_int * data, int level, int block_index, int decoded_bp) const {
-            // First time decode 1 bitplane has not been considered. But it is rare.
-            int remaining_first_bp = std::max(0, 2 - decoded_bp);
+        inline void decode_block(std::vector<T_stream const *>& streams_pos, size_t n, uint8_t num_bitplanes, T_int * data) const {
             for(int k=num_bitplanes - 1; k>=0; k--){
                 T_stream bitplane_index = num_bitplanes - 1 - k;
                 T_stream bitplane_value = *(streams_pos[bitplane_index] ++);
-                if(k >= num_bitplanes - remaining_first_bp){
-                    for (int i=0; i<n; i++){
-                        data[i] += ((bitplane_value >> i) & 1u) << k;
-                    }
-                }
-                else {
-                    for (int i=0; i<n; i++){
-                        T_stream last_2_bit = (T_stream)(last_2_data[level][block_index][i]);
-                        T_stream last_1_bit = (T_stream)(last_1_data[level][block_index][i]);
-                        T_stream temp = last_2_bit ^ last_1_bit;
-                        T_stream current_bit = ((bitplane_value >> i) & 1u);
-                        T_stream recovered_bit = (!current_bit) ? temp : (1-temp);
-                        data[i] += recovered_bit << k;
-                    }
-                }
                 for (int i=0; i<n; i++){
-                    last_2_data[level][block_index][i] = last_1_data[level][block_index][i];
-                    last_1_data[level][block_index][i] = static_cast<unsigned char>((data[i] >> k) & 1u);
+                    data[i] += ((bitplane_value >> i) & 1u) << k;
                 }
             }
         }
-
-        mutable std::unordered_map<int, int> level_table;
-        mutable std::vector<std::vector<std::vector<unsigned char>>> last_2_data; // [level][block_idx][i]
-        mutable std::vector<std::vector<std::vector<unsigned char>>> last_1_data;
     };
 }
 #endif

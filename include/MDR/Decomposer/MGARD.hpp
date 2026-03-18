@@ -380,10 +380,12 @@ namespace MDR {
             std::vector<size_t> dims(dimensions.begin(), dimensions.end());
             if(strides.size() == 0){
                 level_buffers = decomposer_interleaver.decompose(data, dims, target_level, true, false);
+                level_buffer_dims = decomposer_interleaver.get_level_buffer_dims();
             }
             else{
                 std::vector<size_t> strs(strides.begin(), strides.end());
                 level_buffers = decomposer_interleaver.decompose(data, dims, target_level, true, false, strs);
+                level_buffer_dims = decomposer_interleaver.get_level_buffer_dims();
             }
             return level_buffers;
         }
@@ -403,6 +405,58 @@ namespace MDR {
         void print() const {
             std::cout << "MGARD hierarchical new decomposer & interleaver" << std::endl;
         }
+        std::vector<std::vector<uint32_t>> get_level_buffer_dims(){
+            return level_buffer_dims;
+        }
+    private:
+        std::vector<std::vector<uint32_t>> level_buffer_dims;
+    };
+    template<class T>
+    class MGARDHierarchical_Cubic_Decomposer_Interleaver_new : public concepts::DecomposerInterface<T> {
+    public:
+        MGARDHierarchical_Cubic_Decomposer_Interleaver_new(){}
+        void decompose(T * data, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) const {}
+        void recompose(T * data, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) const {}
+        std::vector<std::vector<T>> decompose_interleave(T * data, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) {
+            level_buffer_dims.clear();
+            std::vector<std::vector<T>> level_buffers;
+            MGARD::Decomposer_Interleaver_new<T> decomposer_interleaver;
+            decomposer_interleaver.interp_order = interp_order;
+            std::vector<size_t> dims(dimensions.begin(), dimensions.end());
+            if(strides.size() == 0){
+                level_buffers = decomposer_interleaver.decompose(data, dims, target_level, false, true);
+                level_buffer_dims = decomposer_interleaver.get_level_buffer_dims();
+            }
+            else{
+                std::vector<size_t> strs(strides.begin(), strides.end());
+                level_buffers = decomposer_interleaver.decompose(data, dims, target_level, false, true, strs);
+                level_buffer_dims = decomposer_interleaver.get_level_buffer_dims();
+            }
+            return level_buffers;
+        }
+        std::vector<T> reposition_recompose(std::vector<std::vector<T>>& level_buffers, const std::vector<uint32_t>& dimensions, uint32_t target_level, std::vector<uint32_t> strides=std::vector<uint32_t>()) {
+            std::vector<T> data;
+            MGARD::Repositioner_Recomposer_new<T> repositioner_recomposer;
+            repositioner_recomposer.interp_order = interp_order;
+            std::vector<size_t> dims(dimensions.begin(), dimensions.end());
+            if(strides.size() == 0){
+                data = repositioner_recomposer.recompose(level_buffers, dims, target_level, false, true);
+            }
+            else{
+                std::vector<size_t> strs(strides.begin(), strides.end());
+                data = repositioner_recomposer.recompose(level_buffers, dims, target_level, false, true, strs);
+            }
+            return data;
+        }
+        void print() const {
+            std::cout << "MGARD hierarchical new decomposer & interleaver" << std::endl;
+        }
+        std::vector<uint32_t> interp_order = {0, 1, 2};
+        std::vector<std::vector<uint32_t>> get_level_buffer_dims(){
+            return level_buffer_dims;
+        }
+    private:
+        std::vector<std::vector<uint32_t>> level_buffer_dims;
     };
     template<class T>
     class MGARDHierarchical_Coeff_Decomposer_Interleaver : public concepts::DecomposerInterface<T> {

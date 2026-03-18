@@ -102,20 +102,20 @@ namespace MDR {
             }
             std::vector<uint32_t> retrieve_sizes(num_levels, 0);
             double accumulated_error = 0;
-            // std::cout << "level indexes: " << std::endl;
+            std::cout << "level indexes: " << std::endl;
             for(int l=0; l<num_levels; l++){
                 uint8_t new_index = uint8_t(num_bitplanes - dropped[l]);  // drop 12, 32-12=20 0~19
                 for(int b=index[l]; b < new_index; b++){
                     retrieve_sizes[l] += level_sizes[l][b];
                 }
                 index[l] = (new_index > index[l]) ? new_index : index[l];
-                // std::cout << (int)index[l] << " ";
+                std::cout << (int)index[l] << " ";
                 if(index[l] < num_bitplanes)
                     accumulated_error += err[l][index[l]];
             }
-            // std::cout << std::endl;
+            std::cout << std::endl;
             _accumulated_error = accumulated_error;
-            // std::cout << "Tolerance = " << tolerance << ", accumulated_error = " << _accumulated_error << std::endl;
+            std::cout << "Tolerance = " << tolerance << ", accumulated_error = " << _accumulated_error << std::endl;
             return retrieve_sizes;
         }
         void print() const {
@@ -123,6 +123,15 @@ namespace MDR {
         }
         double get_current_eb(){
             return _accumulated_error;
+        }
+        void copy_in_cp_levels(std::vector<int> cp_levels){
+            error_estimator.cp_levels = cp_levels;
+        }
+        void reset(){
+            first_time = true;
+            _accumulated_error = 0;
+            err.clear();
+            SavedSize.clear();
         }
     private:
         ErrorEstimator error_estimator;

@@ -27,8 +27,10 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
+        // if(i == tolerance.size() - 1) reconstructor.print_path_and_error_perstep();
     }
 }
 
@@ -53,12 +55,15 @@ int main(int argc, char ** argv){
 
     int argv_id = 1;
     string filename = string(argv[argv_id ++]);
+    string data_type = string(argv[argv_id ++]);
     int num_tolerance = atoi(argv[argv_id ++]);
     vector<double> tolerance(num_tolerance, 0);
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);  
     }
     string refactored_path = string(argv[argv_id++]);
+    int encoder_option = 0;
+    encoder_option = atoi(argv[argv_id ++]);
     string metadata_file = refactored_path + "/refactored_data/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
@@ -77,30 +82,81 @@ int main(int argc, char ** argv){
         files.push_back(filename);
     }
 
-    // using T = float;
-    // using T_stream = uint32_t;
-    using T = double;
-    using T_stream = uint64_t;
-    // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-    auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
-    auto interleaver = MDR::DirectInterleaver_new<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
-    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    if(!strcmp(data_type.c_str(), "-f")){
+        using T = float;
+        using T_stream = uint32_t;
+        // using T = double;
+        // using T_stream = uint64_t;
+        // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+        auto interleaver = MDR::DirectInterleaver_new<T>();
+        // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
 
-    // auto compressor = MDR::DefaultLevelCompressor();
-    auto compressor = MDR::AdaptiveLevelCompressor(64);
-    // auto compressor = MDR::NullLevelCompressor();
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
 
-    auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    // auto estimator = MDR::MaxErrorEstimatorHB<T>();
-    auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
-    // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
-    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
-    // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
-    // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
-    test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+        // auto estimator = MDR::MaxErrorEstimatorHB<T>();
+        auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        if(encoder_option == 0){
+            auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        } else if (encoder_option == 1){
+            auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        } else{
+            auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        }
+    } else if(!strcmp(data_type.c_str(), "-d")){
+        // using T = float;
+        // using T_stream = uint32_t;
+        using T = double;
+        using T_stream = uint64_t;
+        // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
+        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+        auto interleaver = MDR::DirectInterleaver_new<T>();
+        // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+
+        // auto compressor = MDR::DefaultLevelCompressor();
+        auto compressor = MDR::AdaptiveLevelCompressor(64);
+        // auto compressor = MDR::NullLevelCompressor();
+
+        auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+        // auto estimator = MDR::MaxErrorEstimatorHB<T>();
+        auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        // auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        if(encoder_option == 0){
+            auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        } else if (encoder_option == 1){
+            auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        } else{
+            auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        }
+    } else {
+        std::cerr << "Only two float type supported: -f or -d" << std::endl;
+        exit(-1);
+    }
     return 0;
 }

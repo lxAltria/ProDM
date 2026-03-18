@@ -1,5 +1,5 @@
-#ifndef _MDR_NAIVE_SAMPLING_TUNER_HPP
-#define _MDR_NAIVE_SAMPLING_TUNER_HPP
+#ifndef _MDR_COEFFICIENT_PROFILING_SAMPLING_TUNER_HPP
+#define _MDR_COEFFICIENT_PROFILING_SAMPLING_TUNER_HPP
 
 #include "TunerInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
@@ -14,9 +14,9 @@
 
 namespace MDR{
     template<class T, class Decomposer, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator>
-    class NaiveSamplingTuner : public concepts::TunerInterface<T> {
+    class CoeffProfilingSamplingTuner : public concepts::TunerInterface<T> {
     public:
-        NaiveSamplingTuner(Decomposer decomposer, Encoder encoder, Compressor compressor, SizeInterpreter interpreter)
+        CoeffProfilingSamplingTuner(Decomposer decomposer, Encoder encoder, Compressor compressor, SizeInterpreter interpreter)
             : decomposer(decomposer), encoder(encoder), compressor(compressor), interpreter(interpreter) {}
         void tune(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, uint32_t stride=15, uint32_t block_size=5) {
             // std::cout << "Input: stride = " << (int) stride << ", block_size = " << (int) block_size << std::endl;
@@ -39,33 +39,66 @@ namespace MDR{
             }
             // Timer timer;
             // timer.start();
-            MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
+            std::vector<std::vector<size_t>> starts;
+            MGARD::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 1);
+            MGARD::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
+            // MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
-            std::vector<double> ebs = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5};
+            std::vector<double> ebs = {1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
+            // std::vector<double> ebs = {1e-3};
+            std::vector<std::vector<uint32_t>> retrieved_sizes(4);
             T value_range = compute_value_range(data_, num_elements);
             test_direct_BP_encoding(num_bitplanes, block_size);
             for(int i=0; i<ebs.size(); i++){
                 ebs[i] *= value_range;
             }
-            uint32_t total_retrieved_size = 0;
+            // uint32_t total_retrieved_size = 0;
             for(auto tolerance : ebs){
-                total_retrieved_size += test_reconstruct(tolerance, 0);
+                uint32_t retrieved_size = test_reconstruct(tolerance, 0);
+                // std::cout << "Tolerance: " << tolerance << ", retrieved_size = " << retrieved_size << std::endl;
+                // total_retrieved_size += retrieved_size;
+                retrieved_sizes[0].push_back(retrieved_size);
             }
-            std::cout << "total retrieved size = " << total_retrieved_size << std::endl;
-            uint32_t min_total_retrieved_size = total_retrieved_size;
+            // std::cout << "Direction -1, total retrieved size = " << total_retrieved_size << std::endl;
+            // uint32_t min_total_retrieved_size = total_retrieved_size;
             best_direction = -1;
             for(int direction = 0; direction < 3; direction++){
                 test_refactor(direction, target_level, num_bitplanes, block_size);
-                uint32_t total_retrieved_size = 0;
+                // uint32_t total_retrieved_size = 0;
                 for(auto tolerance : ebs){
-                    total_retrieved_size += test_reconstruct(tolerance, target_level);
+                    uint32_t retrieved_size = test_reconstruct(tolerance, target_level);
+                    // std::cout << "Tolerance: " << tolerance << ", retrieved_size = " << retrieved_size << std::endl;
+                    // total_retrieved_size += retrieved_size;
+                    retrieved_sizes[direction + 1].push_back(retrieved_size);
                 }
-                std::cout << "total retrieved size = " << total_retrieved_size << std::endl;
-                if(total_retrieved_size < min_total_retrieved_size){
-                    min_total_retrieved_size = total_retrieved_size;
-                    best_direction = direction;
-                }
+                // std::cout << "Direction " << direction << ", total retrieved size = " << total_retrieved_size << std::endl;
+                // if(total_retrieved_size < min_total_retrieved_size){
+                //     min_total_retrieved_size = total_retrieved_size;
+                //     best_direction = direction;
+                // }
             }
+            std::vector<int> votes(4, 0);
+            for(int eb = 0; eb < ebs.size(); eb++){
+                uint32_t best_size = retrieved_sizes[0][eb];
+                int best_direct = 0;
+                for(int d = 1; d < 4; d++){
+                    if(retrieved_sizes[d][eb] < best_size){
+                        best_size = retrieved_sizes[d][eb];
+                        best_direct = d;
+                    }
+                }
+                // std::cout << "best_direct = " << best_direct - 1 << std::endl;
+                votes[best_direct]++;
+            }
+            if (votes[1] + votes[2] + votes[3] > 0){
+                best_direction = (std::max_element(votes.begin() + 1, votes.end()) - votes.begin()) - 1;
+            } else{
+                best_direction = -1;
+            }
+            // for (int m = 0; m < 4; m++) {
+            //     std::cout << "direction " << m - 1 << " votes: " << votes[m] << std::endl;
+            // }
+            // std::cout << "best direction: " << best_direction << std::endl;
             // timer.end();
             // timer.print("Tuner");
         }
@@ -80,10 +113,10 @@ namespace MDR{
             level_0_sizes = level_0_sizes_;
         }
 
-        ~NaiveSamplingTuner(){}
+        ~CoeffProfilingSamplingTuner(){}
 
         void print() const {
-            std::cout << "Naive Sampling Tuner with the following components." << std::endl;
+            std::cout << "Profiling Sampling Tuner with the following components." << std::endl;
             std::cout << "Decomposer: "; decomposer.print();
             std::cout << "Encoder:"; encoder.print();
             std::cout << "Interperter:"; interpreter.print();

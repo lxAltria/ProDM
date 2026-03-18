@@ -21,6 +21,7 @@ namespace MDR {
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
             // Timer timer;
             // timer.start();
+            interp_order = decomposer.interp_order;
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -48,19 +49,24 @@ namespace MDR {
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
+                            + sizeof(uint8_t)   // interpolation type: 0 - per level, 1 - per layer
                             // + get_size(level_squared_errors) 
                             + get_size(level_sizes) // level information
-                            + get_size(stopping_indices) + get_size(level_num) + 1; // one byte for whether negabinary encoding is used 
+                            + get_size(level_elements)
+                            + get_size(stopping_indices) + get_size(level_num) + get_size(interp_order) + 1; // one byte for whether negabinary encoding is used 
             uint8_t * metadata = (uint8_t *) malloc(metadata_size);
             uint8_t * metadata_pos = metadata;
             *(metadata_pos ++) = (uint8_t) dimensions.size();
             serialize(dimensions, metadata_pos);
             *(metadata_pos ++) = (uint8_t) level_error_bounds.size();
             serialize(level_error_bounds, metadata_pos);
+            *(metadata_pos ++) = static_cast<uint8_t>(1);
             // serialize(level_squared_errors, metadata_pos);
             serialize(level_sizes, metadata_pos);
+            serialize(level_elements, metadata_pos);
             serialize(stopping_indices, metadata_pos);
             serialize(level_num, metadata_pos);
+            serialize(interp_order, metadata_pos);
             *(metadata_pos ++) = (uint8_t) negabinary;
             writer.write_metadata(metadata, metadata_size);
             free(metadata);
@@ -84,7 +90,7 @@ namespace MDR {
             // Timer timer;
             // decompose data hierarchically
             // timer.start();
-            decomposer.decompose(data.data(), dimensions, target_level);
+            auto level_buffers = decomposer.decompose_interleave(data.data(), dimensions, target_level);
             // MGARD::writefile("decomposed_coeff.dat", data.data(), data.size());
             // timer.end();
             // timer.print("Decompose");
@@ -94,19 +100,20 @@ namespace MDR {
             level_squared_errors.clear();
             level_components.clear();
             level_sizes.clear();
-            auto level_dims = compute_level_dims_new(dimensions, target_level);
-            auto level_elements = compute_level_elements(level_dims, target_level);
-            std::vector<uint32_t> dims_dummy(dimensions.size(), 0);
-            SquaredErrorCollector<T> s_collector = SquaredErrorCollector<T>();
-            for(int i=0; i<=target_level; i++){
+            // auto level_dims = compute_level_dims_new(dimensions, target_level);
+            // auto level_elements = compute_level_elements(level_dims, target_level);
+            // std::vector<uint32_t> dims_dummy(dimensions.size(), 0);
+            // SquaredErrorCollector<T> s_collector = SquaredErrorCollector<T>();
+            for(int i=0; i<level_buffers.size(); i++){
                 // timer.start();
-                const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
-                T * buffer = (T *) malloc(level_elements[i] * sizeof(T));
+                // const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
+                // T * buffer = (T *) malloc(level_elements[i] * sizeof(T));
                 // extract level i component
-                interleaver.interleave(data.data(), dimensions, level_dims[i], prev_dims, reinterpret_cast<T*>(buffer), i, target_level);
+                // interleaver.interleave(data.data(), dimensions, level_dims[i], prev_dims, reinterpret_cast<T*>(buffer), i, target_level);
 
                 // compute max coefficient as level error bound
-                T level_max_error = compute_max_abs_value(reinterpret_cast<T*>(buffer), level_elements[i]);
+                level_elements.push_back(level_buffers[i].size());
+                T level_max_error = compute_max_abs_value(level_buffers[i].data(), level_elements[i]);
                 // std::cout << "\nlevel " << i << " max error = " << level_max_error << std::endl;
                 // MGARD::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);
@@ -122,8 +129,8 @@ namespace MDR {
                 frexp(level_max_error, &level_exp);
                 std::vector<uint32_t> stream_sizes;
                 // std::vector<double> level_sq_err;
-                auto streams = encoder.encode(buffer, level_elements[i], level_exp, num_bitplanes, stream_sizes);
-                free(buffer);
+                auto streams = encoder.encode(level_buffers[i].data(), level_elements[i], level_exp, num_bitplanes, stream_sizes);
+                // free(buffer);
                 // level_squared_errors.push_back(level_sq_err);
                 // timer.end();
                 // timer.print("Encoding");
@@ -159,7 +166,9 @@ namespace MDR {
         std::vector<std::vector<uint8_t*>> level_components;
         std::vector<std::vector<uint32_t>> level_sizes;
         std::vector<uint32_t> level_num;
+        std::vector<uint32_t> level_elements;
         std::vector<std::vector<double>> level_squared_errors;
+        std::vector<uint32_t> interp_order;
     public:
         bool negabinary = false;
     };

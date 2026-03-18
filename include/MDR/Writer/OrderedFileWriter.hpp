@@ -24,6 +24,11 @@ namespace MDR {
 
         void write_metadata(uint8_t const * metadata, uint32_t size) const {
             FILE * file = fopen(metadata_file.c_str(), "wb");
+            if (!file) {
+                perror("fopen failed");
+                std::cerr << "metadata_file = " << metadata_file << std::endl;
+                exit(1);
+            }
             fwrite(metadata, 1, size, file);
             fclose(file);
         }
