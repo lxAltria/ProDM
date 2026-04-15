@@ -72,7 +72,7 @@ int main(int argc, char ** argv){
         // }
 
         // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_hybrid<T>();
         auto interleaver = MDR::DirectInterleaver_new<T>();
         // auto interleaver = MDR::SFCInterleaver<T>();
         // auto interleaver = MDR::BlockedInterleaver<T>();
@@ -96,12 +96,8 @@ int main(int argc, char ** argv){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else if(encoder_option == 2){
-            auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
-            negabinary = false;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         } else {
-            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+            auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         }
@@ -120,7 +116,7 @@ int main(int argc, char ** argv){
         }
 
         // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_hybrid<T>();
         auto interleaver = MDR::DirectInterleaver_new<T>();
         // auto interleaver = MDR::SFCInterleaver<T>();
         // auto interleaver = MDR::BlockedInterleaver<T>();
@@ -144,12 +140,8 @@ int main(int argc, char ** argv){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else if (encoder_option == 2) {
-            auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
-            negabinary = false;
-            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         } else {
-            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+            auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         }

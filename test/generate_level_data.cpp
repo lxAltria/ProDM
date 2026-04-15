@@ -36,6 +36,7 @@ void test_cubic_decompose(vector<T>& data, const vector<uint32_t>& dims, int tar
     int err = 0;
     err = clock_gettime(CLOCK_REALTIME, &start);
     MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T> decomposer;
+    decomposer.interp_order = {2, 1, 0};
     auto level_buffers = decomposer.decompose_interleave(data.data(), dims, target_level);
     auto level_dims = decomposer.get_level_buffer_dims();
     err = clock_gettime(CLOCK_REALTIME, &end);

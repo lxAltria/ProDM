@@ -170,6 +170,10 @@ namespace MDR {
             return current_level;
         }
 
+        size_t get_metadata_size(){
+            return retriever.get_metadata_size();
+        }
+
         size_t get_retrieved_size(){
             return retriever.get_retrieved_size();
         }

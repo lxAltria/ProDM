@@ -10,6 +10,7 @@
 #include "FuseComposedReconstructor_2D.hpp"
 #include "CPReconstructor.hpp"
 #include "OrderedCPReconstructor.hpp"
+#include "OrderedCPReconstructor_2.hpp"
 #include "OrderedReconstructor.hpp"
 #include "NewOrderedReconstructor.hpp"
 #include "NewCPReconstructor.hpp"

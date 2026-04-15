@@ -19,8 +19,8 @@ namespace MDR {
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -83,6 +83,7 @@ namespace MDR {
                 std::cerr << "Target level is higher than " << max_level << std::endl;
                 return false;
             }
+            // double encoding_time = 0;
             // Timer timer;
             // decompose data hierarchically
             // timer.start();
@@ -135,10 +136,12 @@ namespace MDR {
                 frexp(level_max_error, &level_exp);
                 std::vector<uint32_t> stream_sizes;
                 // std::vector<double> level_sq_err;
+                // timer.start();
                 auto streams = encoder.encode(level_buffers[i].data(), level_buffers[i].size(), level_exp, num_bitplanes, stream_sizes);
                 // free(buffer);
                 // level_squared_errors.push_back(level_sq_err);
                 // timer.end();
+                // encoding_time += timer.get();
                 // timer.print("Encoding");
                 // timer.start();
                 // lossless compression
@@ -151,11 +154,12 @@ namespace MDR {
                 // timer.print("Lossless time");
             }
             // print_vec("level sizes", level_sizes);
-            std::cout << "level_error_bounds: " << std::endl;
-            for(int i=0; i<level_error_bounds.size(); i++){
-                std::cout << level_error_bounds[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "level_error_bounds: " << std::endl;
+            // for(int i=0; i<level_error_bounds.size(); i++){
+            //     std::cout << level_error_bounds[i] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "Encoding time: " << encoding_time << std::endl;
             return true;
         }
 

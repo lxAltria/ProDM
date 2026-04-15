@@ -23,8 +23,8 @@ namespace MDR {
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -34,8 +34,8 @@ namespace MDR {
             double value_range = compute_value_range(data);
             // if refactor successfully
             if(refactor(target_level, num_bitplanes)){
-                timer.end();
-                timer.print("Refactor");
+                // timer.end();
+                // timer.print("Refactor");
                 // timer.start();
                 // level_num = writer.write_level_components(level_components, level_sizes);
                 // timer.end();
@@ -46,7 +46,7 @@ namespace MDR {
             std::vector<std::vector<double>> level_abs_errors;
             std::vector<std::vector<double>>& level_errors = level_squared_errors;
             {
-                std::cout << "Computing absolute error" << std::endl;
+                // std::cout << "Computing absolute error" << std::endl;
                 MaxErrorCollector<T> collector = MaxErrorCollector<T>();
                 for(int i=0; i<level_sizes.size(); i++){
                     auto collected_error = collector.collect_level_error(NULL, 0, level_sizes[i].size(), level_error_bounds[i]);
@@ -157,7 +157,7 @@ namespace MDR {
             }
 
             if(greedy_bfs){
-                std::cout << "Greedy + max + BFS" << std::endl;
+                // std::cout << "Greedy + max + BFS" << std::endl;
                 for(int i=0; i<coeff_interp_directions.size(); i++){
                     std::vector<double> tmp_error_perstep;
                     std::vector<uint8_t> tmp_order;
@@ -588,13 +588,13 @@ namespace MDR {
                     double tmp_error = accumulated_error;
                     accumulated_error -= coefficient_error_perstep[idx_coefficient];
                     accumulated_error += coefficient_error_perstep[idx_coefficient + 1];
-                    if(accumulated_error < coefficient_error_perstep[idx_coefficient + 1]){
-                        std::cout << "accumulated_error < coefficient_error_perstep" << std::endl;
-                        for(int k=0; k<coeff_combined_bps[idx_coefficient].size(); k++){
-                            std::cout << (int) coeff_combined_bps[idx_coefficient][k] << " ";
-                        }
-                        cout << endl;
-                    }
+                    // if(accumulated_error < coefficient_error_perstep[idx_coefficient + 1]){
+                    //     std::cout << "accumulated_error < coefficient_error_perstep" << std::endl;
+                    //     for(int k=0; k<coeff_combined_bps[idx_coefficient].size(); k++){
+                    //         std::cout << (int) coeff_combined_bps[idx_coefficient][k] << " ";
+                    //     }
+                    //     cout << endl;
+                    // }
                     // std::cout << "level " << i << ", " << accumulated_error << " = " << tmp_error << " - " << coefficient_error_perstep[idx_coefficient] << " + " << coefficient_error_perstep[idx_coefficient + 1] << std::endl;
                     idx_coefficient++;
                     if(idx_coefficient < coeff_sizes.size()){
@@ -767,7 +767,7 @@ namespace MDR {
 
             // Tune
             if(!coeff_interp_directions.size()){
-                std::cout << "Tuning" << std::endl;
+                // std::cout << "Tuning" << std::endl;
                 for(int i=target_level; i<decomposed_buffers.size(); i++){
                     auto tuner = MDR::CoeffProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
                                                      Encoder, Compressor, MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
@@ -777,11 +777,11 @@ namespace MDR {
                     // coeff_interp_directions.push_back(2);
                 }
             }
-            std::cout << "coeff_interp_directions = ";
-            for(int i=0; i<coeff_interp_directions.size(); i++){
-                std::cout << (int)coeff_interp_directions[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "coeff_interp_directions = ";
+            // for(int i=0; i<coeff_interp_directions.size(); i++){
+            //     std::cout << (int)coeff_interp_directions[i] << " ";
+            // }
+            // std::cout << std::endl;
 
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
@@ -793,7 +793,7 @@ namespace MDR {
                 else{
                     coeff_decomposer.direction = coeff_interp_directions[i-target_level];
                     // std::cout << "direction = " << (int)coeff_interp_directions[i - target_level] << std::endl;
-                    std::cout << decomposed_buffer_dims[i-target_level+1][0] << " " << decomposed_buffer_dims[i-target_level+1][1] << " " << decomposed_buffer_dims[i-target_level+1][2] << std::endl;
+                    // std::cout << decomposed_buffer_dims[i-target_level+1][0] << " " << decomposed_buffer_dims[i-target_level+1][1] << " " << decomposed_buffer_dims[i-target_level+1][2] << std::endl;
                     // std::cout << "decomposed_buffers[" << i << "].size() = " << decomposed_buffers[i].size() << std::endl;
                     auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level);
                     for(int j=0; j<coeff_target_level+1; j++){
@@ -875,11 +875,11 @@ namespace MDR {
             //     }
             //     std::cout << "\nTotal size = " << level_x_total_size << std::endl;
             // }
-            std::cout << "level_error_bounds: " << std::endl;
-            for(int i=0; i<level_error_bounds.size(); i++){
-                std::cout << level_error_bounds[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "level_error_bounds: " << std::endl;
+            // for(int i=0; i<level_error_bounds.size(); i++){
+            //     std::cout << level_error_bounds[i] << " ";
+            // }
+            // std::cout << std::endl;
             return true;
         }
 

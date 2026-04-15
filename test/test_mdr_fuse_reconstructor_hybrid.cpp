@@ -88,7 +88,7 @@ int main(int argc, char ** argv){
         // using T = double;
         // using T_stream = uint64_t;
         // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_hybrid<T>();
         auto interleaver = MDR::DirectInterleaver_new<T>();
         // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
         // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
@@ -114,11 +114,8 @@ int main(int argc, char ** argv){
         } else if (encoder_option == 1){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else if (encoder_option == 2){
+        } else{
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
-            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else {
-            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         }
     } else if(!strcmp(data_type.c_str(), "-d")){
@@ -127,7 +124,7 @@ int main(int argc, char ** argv){
         using T = double;
         using T_stream = uint64_t;
         // auto decomposer = MDR::MGARDHierarchicalDecomposer_Interleaver<T>();
-        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
+        auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_hybrid<T>();
         auto interleaver = MDR::DirectInterleaver_new<T>();
         // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
         // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
@@ -138,13 +135,13 @@ int main(int argc, char ** argv){
 
         auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
         // auto estimator = MDR::MaxErrorEstimatorHB<T>();
-        auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
+        auto estimator = MDR::MaxErrorEstimatorHBCubic_hybrid<T>(num_dims);
         // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
         // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
         // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
         // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
         // auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_hybrid<T>>(estimator);
         // auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
         // auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
         if(encoder_option == 0){
@@ -153,11 +150,8 @@ int main(int argc, char ** argv){
         } else if (encoder_option == 1){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else if (encoder_option == 2){
+        } else{
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
-            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else {
-            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         }
     } else {

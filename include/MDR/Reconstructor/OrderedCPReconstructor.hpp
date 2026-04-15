@@ -94,21 +94,21 @@ namespace MDR {
                     break;
                 }
             }
-            std::cout << "****Tolerance = " << tolerance << ", estimated_error = " << estimated_error << ", num_chunks = " << num_chunks - 1 << ", idx_coeff_combined_bps = " << idx_coeff_combined_bps << ", idx_coeff_bps = " << idx_coeff_bps <<  ", level_num_bitplanes" << std::endl;
-            for(size_t i=0; i<level_num_bitplanes.size(); i++){
-                std::cout << (int)level_num_bitplanes[i] << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "level_errors " << std::endl;
-            for(size_t i=0; i<level_num_bitplanes.size(); i++){
-                std::cout << level_errors[i][level_num_bitplanes[i]] << " ";
-            }
-            std::cout << std::endl;
-            std::cout << "<<<<level_retrieve_sizes:" << std::endl;
-            for(size_t i=0; i<level_retrieve_sizes.size(); i++){
-                std::cout << level_retrieve_sizes[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "****Tolerance = " << tolerance << ", estimated_error = " << estimated_error << ", num_chunks = " << num_chunks - 1 << ", idx_coeff_combined_bps = " << idx_coeff_combined_bps << ", idx_coeff_bps = " << idx_coeff_bps <<  ", level_num_bitplanes" << std::endl;
+            // for(size_t i=0; i<level_num_bitplanes.size(); i++){
+            //     std::cout << (int)level_num_bitplanes[i] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "level_errors " << std::endl;
+            // for(size_t i=0; i<level_num_bitplanes.size(); i++){
+            //     std::cout << level_errors[i][level_num_bitplanes[i]] << " ";
+            // }
+            // std::cout << std::endl;
+            // std::cout << "<<<<level_retrieve_sizes:" << std::endl;
+            // for(size_t i=0; i<level_retrieve_sizes.size(); i++){
+            //     std::cout << level_retrieve_sizes[i] << " ";
+            // }
+            // std::cout << std::endl;
             // std::cout << "<<<<chunk_sizes:" << std::endl;
             // for(size_t i=0; i<chunk_sizes.size(); i++){
             //     std::cout << chunk_sizes[i] << " ";
@@ -288,12 +288,18 @@ namespace MDR {
             return current_level;
         }
 
+        size_t get_metadata_size(){
+            return retriever.get_metadata_size();
+        }
+
         size_t get_retrieved_size(){
             return retriever.get_retrieved_size();
         }
 
         std::vector<uint32_t> get_offsets(){
-            return retriever.get_offsets();
+            std::vector<uint32_t> offsets;
+            offsets.push_back(retriever.get_offsets());
+            return offsets;
         }
 
         ~OrderedCPReconstructor(){}

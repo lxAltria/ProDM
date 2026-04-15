@@ -136,12 +136,12 @@ namespace MDR {
                 // std::cout << i;
             }
             // std::cout << std::endl;
-            std::cout << "Requested tolerance = " << tolerance << ", estimated error = " << accumulated_error << std::endl;
-            std::cout << "level indexes: " << std::endl;
-            for(int i=0; i<num_levels; i++){
-                std::cout << (int)index[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "Requested tolerance = " << tolerance << ", estimated error = " << accumulated_error << std::endl;
+            // std::cout << "level indexes: " << std::endl;
+            // for(int i=0; i<num_levels; i++){
+            //     std::cout << (int)index[i] << " ";
+            // }
+            // std::cout << std::endl;
             _accumulated_error = accumulated_error;
             return retrieve_sizes;
         }
