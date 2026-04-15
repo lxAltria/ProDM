@@ -137,11 +137,11 @@ namespace MDR {
                 // timer.print("Lossless time");
             }
             // print_vec("level sizes", level_sizes);
-            std::cout << "level_error_bounds: " << std::endl;
-            for(int i=0; i<level_error_bounds.size(); i++){
-                std::cout << level_error_bounds[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "level_error_bounds: " << std::endl;
+            // for(int i=0; i<level_error_bounds.size(); i++){
+            //     std::cout << level_error_bounds[i] << " ";
+            // }
+            // std::cout << std::endl;
             return true;
         }
 

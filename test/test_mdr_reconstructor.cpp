@@ -11,6 +11,8 @@
 
 using namespace std;
 
+string output_path;
+
 template <class T, class Reconstructor>
 void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor reconstructor){
     struct timespec start, end;
@@ -28,6 +30,7 @@ void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor re
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
+        MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -60,7 +63,7 @@ int main(int argc, char ** argv){
         tolerance[i] = atof(argv[argv_id ++]);  
     }
     string refactored_path = string(argv[argv_id++]);
-    string metadata_file = refactored_path + "/refactored_data/metadata.bin";
+    string metadata_file = refactored_path + "/metadata.bin";
     int num_levels = 0;
     int num_dims = 0;
     {
@@ -75,9 +78,11 @@ int main(int argc, char ** argv){
     }
     vector<string> files;
     for(int i=0; i<num_levels; i++){
-        string filename = refactored_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        string filename = refactored_path + "/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }
+    int encoder_option = atoi(argv[argv_id ++]);
+    output_path = string(argv[argv_id ++]);
 
     // using T = float;
     // using T_stream = uint32_t;
@@ -85,7 +90,6 @@ int main(int argc, char ** argv){
     using T_stream = uint64_t;
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
 
@@ -97,6 +101,12 @@ int main(int argc, char ** argv){
     auto estimator = MDR::MaxErrorEstimatorHB<T>();
     auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
     // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+    if(encoder_option == 0){
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+    } else {
+        auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+        test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+    }
     return 0;
 }

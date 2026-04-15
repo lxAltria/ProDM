@@ -134,8 +134,11 @@ int main(int argc, char ** argv){
         } else if (encoder_option == 1) {
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else {
+        } else if (encoder_option == 2){
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        } else {
+            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         }
     } else if (!strcmp(data_type.c_str(), "-d")){
@@ -166,8 +169,11 @@ int main(int argc, char ** argv){
         } else if (encoder_option == 1) {
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
-        } else {
+        } else if (encoder_option == 2) {
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+            test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
+        } else {
+            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
             test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
         }
     } else {

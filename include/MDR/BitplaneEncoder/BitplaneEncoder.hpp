@@ -7,5 +7,6 @@
 #include "WeightedNegaBinaryBPEncoder.hpp"
 #include "WeightedPerBitBPEncoder.hpp"
 #include "XORNegaBinaryBPEncoder.hpp"
+#include "PerBitBPEncoder_old.hpp"
 
 #endif

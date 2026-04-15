@@ -46,11 +46,11 @@ namespace MDR{
             block_size --;
             uint32_t min_dim = *std::min_element(dims.begin(), dims.end());
             if(block_size > min_dim) block_size = min_dim - 1;
-            std::cout << "block_size = " << block_size << std::endl;
+            // std::cout << "block_size = " << block_size << std::endl;
             std::vector<std::vector<size_t>> starts;
             MGARD::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 1);
             MGARD::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
-            std::cout << "one sampled_block size = " << sampled_blocks[0].size() << std::endl;
+            // std::cout << "one sampled_block size = " << sampled_blocks[0].size() << std::endl;
             // MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
             std::vector<double> ebs = {1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5};

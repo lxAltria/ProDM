@@ -11,6 +11,7 @@
 #include "FuseComposedRefactor_2D.hpp"
 #include "CPRefactor.hpp"
 #include "OrderedCPRefactor.hpp"
+#include "OrderedCPRefactor_2.hpp"
 #include "OrderedRefactor.hpp"
 #include "NewOrderedRefactor.hpp"
 #include "NewCPRefactor.hpp"

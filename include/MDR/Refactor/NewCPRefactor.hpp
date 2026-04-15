@@ -20,8 +20,8 @@ namespace MDR {
             : decomposer(decomposer), interleaver(interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
 
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
-            Timer timer;
-            timer.start();
+            // Timer timer;
+            // timer.start();
             interp_order = decomposer.interp_order;
             dimensions = dims;
             uint32_t num_elements = 1;
@@ -166,11 +166,11 @@ namespace MDR {
                     // coeff_interp_directions.push_back(2);
                 }
             }
-            std::cout << "coeff_interp_directions = ";
-            for(int i=0; i<coeff_interp_directions.size(); i++){
-                std::cout << (int)coeff_interp_directions[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "coeff_interp_directions = ";
+            // for(int i=0; i<coeff_interp_directions.size(); i++){
+            //     std::cout << (int)coeff_interp_directions[i] << " ";
+            // }
+            // std::cout << std::endl;
 
             // Coefficient Decomposition
             // std::cout << "Coefficient Decomposition" << std::endl;
@@ -180,8 +180,8 @@ namespace MDR {
                 }
                 else{
                     coeff_decomposer.direction = coeff_interp_directions[i - un_cp_levels];
-                    std::cout << "direction = " << (int)coeff_interp_directions[i - un_cp_levels] << std::endl;
-                    std::cout << decomposed_buffer_dims[i - un_cp_levels + 1][0] << " " << decomposed_buffer_dims[i - un_cp_levels + 1][1] << " " << decomposed_buffer_dims[i - un_cp_levels + 1][2] << std::endl;
+                    // std::cout << "direction = " << (int)coeff_interp_directions[i - un_cp_levels] << std::endl;
+                    // std::cout << decomposed_buffer_dims[i - un_cp_levels + 1][0] << " " << decomposed_buffer_dims[i - un_cp_levels + 1][1] << " " << decomposed_buffer_dims[i - un_cp_levels + 1][2] << std::endl;
                     // std::cout << "decomposed_buffers[" << i << "].size() = " << decomposed_buffers[i].size() << std::endl;
                     auto decomposed_coeff_buffers = coeff_decomposer.decompose_interleave_combine_levels(decomposed_buffers[i].data(), decomposed_buffer_dims[i - un_cp_levels + 1], coeff_target_level);
                     for(int j=0; j<coeff_target_level+1; j++){
@@ -257,11 +257,11 @@ namespace MDR {
                 // timer.print("Lossless time");
             }
             // print_vec("level sizes", level_sizes);
-            std::cout << "level_error_bounds: " << std::endl;
-            for(int i=0; i<level_error_bounds.size(); i++){
-                std::cout << level_error_bounds[i] << " ";
-            }
-            std::cout << std::endl;
+            // std::cout << "level_error_bounds: " << std::endl;
+            // for(int i=0; i<level_error_bounds.size(); i++){
+            //     std::cout << level_error_bounds[i] << " ";
+            // }
+            // std::cout << std::endl;
             return true;
         }
 

@@ -44,7 +44,8 @@ namespace MDR{
             MGARD::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
             // MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
-            std::vector<double> ebs = {1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
+            // std::vector<double> ebs = {1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
+            std::vector<double> ebs = {1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7};
             // std::vector<double> ebs = {1e-3};
             std::vector<std::vector<uint32_t>> retrieved_sizes(4);
             T value_range = compute_value_range(data_, num_elements);
@@ -90,15 +91,15 @@ namespace MDR{
                 // std::cout << "best_direct = " << best_direct - 1 << std::endl;
                 votes[best_direct]++;
             }
-            if (votes[1] + votes[2] + votes[3] > 0){
-                best_direction = (std::max_element(votes.begin() + 1, votes.end()) - votes.begin()) - 1;
-            } else{
-                best_direction = -1;
-            }
+            // if (votes[1] + votes[2] + votes[3] > 0){
+            best_direction = (std::max_element(votes.begin(), votes.end()) - votes.begin()) - 1;
+            // } else{
+            //     best_direction = -1;
+            // }
             // for (int m = 0; m < 4; m++) {
             //     std::cout << "direction " << m - 1 << " votes: " << votes[m] << std::endl;
             // }
-            // std::cout << "best direction: " << best_direction << std::endl;
+            std::cout << "best direction: " << best_direction << std::endl;
             // timer.end();
             // timer.print("Tuner");
         }

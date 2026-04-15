@@ -13,6 +13,7 @@ bool negabinary = true;
 bool greedy = false;
 bool bfs = false;
 bool greedy_bfs = false;
+// int coeff_interp_levels = 1;
 std::vector<int> coeff_interp_directions;
 
 template <class T, class Refactor>
@@ -34,6 +35,7 @@ void test(string filename, const vector<uint32_t>& dims, int target_level, int n
     refactor.greedy = greedy;
     refactor.bfs = bfs;
     refactor.greedy_bfs = greedy_bfs;
+    // refactor.coeff_interp_levels = coeff_interp_levels;
     size_t num_elements = 0;
     auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
     evaluate(data, dims, target_level, num_bitplanes, refactor);
@@ -67,6 +69,7 @@ int main(int argc, char ** argv){
     }
     int encoder_option = 0;
     encoder_option = atoi(argv[argv_id ++]);
+    // coeff_interp_levels = atoi(argv[argv_id++]);
     if(argv_id < argc){
         coeff_interp_directions.resize(num_dims);
         for(int i=0; i<num_dims; i++){
@@ -110,8 +113,12 @@ int main(int argc, char ** argv){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else {
+        } else if(encoder_option == 2){
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+            negabinary = false;
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+        } else {
+            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         }
@@ -148,8 +155,12 @@ int main(int argc, char ** argv){
             auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
             negabinary = true;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else {
+        } else if (encoder_option == 2){
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+            negabinary = false;
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+        } else {
+            auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         }
