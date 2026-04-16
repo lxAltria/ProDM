@@ -1,10 +1,7 @@
 # QPro: An Efficient Framework for Quantity-of-Interest Based Progressive Retrieval with Guaranteed Error Control
 
 This is the code repo for the paper "QPro: An Efficient Framework for Quantity-of-Interest Based Progressive Retrieval with Guaranteed Error Control".
-
-Major authors: Dr. Xin Liang (UK), Dr. Qing Liu (NJIT), Dr. Xubin He (Temple)<br />
-Other contributors: Xuan Wu (UK), Qirui Tian (NJIT), Wenbo Li (UK)<br />
-Collaborators: Dr. Scott Klasky (ORNL), Dr. Qian Gong (ORNL), Dr. Jill Zhang (LLNL), Dr. Seung-Hoe Ku (PPPL), Dr. Xiaohua Zhang (LLNL), Dr. Jieyang Chen (UAB) etc.<br />
+<br />
 
 # Installation
 
