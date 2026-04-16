@@ -53,6 +53,3 @@ Retrieval: ./test/qoi_Vtot_d64 4 1 1 $eb ../Hurricane
 # Artifacts
 Please check Appendix.pdf for detailed description.<br />
 
-# Q&A
-
-Please address your questions to xliang@uky.edu with subject title ProDM<br />
