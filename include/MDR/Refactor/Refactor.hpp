@@ -15,5 +15,6 @@
 #include "OrderedRefactor.hpp"
 #include "NewOrderedRefactor.hpp"
 #include "NewCPRefactor.hpp"
+#include "PartialOrderedCPRefactor.hpp"
 
 #endif

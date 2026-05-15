@@ -118,6 +118,184 @@ namespace MDR {
             // std::cout << "Tolerance = " << tolerance << ", accumulated_error = " << _accumulated_error << std::endl;
             return retrieve_sizes;
         }
+
+        std::vector<uint32_t> interpret_retrieve_size_cp_ordered(const std::vector<std::vector<uint32_t>>& level_sizes, const std::vector<std::vector<double>>& level_errors, const std::vector<uint32_t>& coeff_sizes, const std::vector<double>& combined_coeff_error_perstep, const std::vector<std::vector<uint8_t>> coeff_combined_bps, const uint8_t coeff_start_level, double tolerance, std::vector<uint8_t>& index, uint16_t& coeff_index) const {
+            int num_levels = coeff_start_level + 1;
+            int num_bitplanes = level_sizes[0].size();
+            if(first_time){
+                // std::vector<std::vector<double>> err(num_levels, std::vector<double>(num_bitplanes, 0));
+                // err = std::vector<std::vector<double>>(num_levels, std::vector<double>(num_bitplanes, 0));
+                err.resize(num_levels);
+                for(int l=0; l<num_levels; l++){
+                    if(l < coeff_start_level){
+                        err[l].assign(level_errors[l].size(), 0);
+                        for(int b=0; b<level_errors[l].size(); b++){
+                            err[l][b] = error_estimator.estimate_error(level_errors[l][b], l, num_levels);
+                        }
+                    } else {
+                        err[l] = combined_coeff_error_perstep;
+                    }
+                }
+                // std::vector<std::vector<uint32_t>> SavedSize(num_levels, std::vector<uint32_t>(num_bitplanes + 1, 0));
+                // SavedSize = std::vector<std::vector<uint32_t>>(num_levels, std::vector<uint32_t>(num_bitplanes + 1, 0));
+                SavedSize.resize(num_levels);
+                for(int l=0; l<num_levels; l++){ 
+                    // SavedSize[l][0] = 0;
+                    if(l < coeff_start_level){
+                        SavedSize[l].assign(level_sizes[l].size()+1, 0);
+                        for(int b=1; b<level_sizes[l].size()+1; b++){
+                            int bp = level_sizes[l].size() - b;
+                            SavedSize[l][b] = SavedSize[l][b-1] + level_sizes[l][bp];
+                        }
+                    } else {
+                        SavedSize[l].assign(coeff_sizes.size()+1, 0);
+                        for(int b=1; b<coeff_sizes.size()+1; b++){
+                            int bp = coeff_sizes.size() - b;
+                            SavedSize[l][b] = SavedSize[l][b-1] + coeff_sizes[bp];
+                        }
+                    }
+                }
+                first_time = false;
+            }
+            // std::cout << "Initialization done" << std::endl;
+            // int ERR_MIN = 0;
+            int ERR_MAX = 1e3;
+            // int ERR_RANGE = ERR_MAX - ERR_MIN;
+            std::vector<std::vector<int>> cost(num_levels);
+            for(int l=0; l<num_levels; l++){
+                if(l < coeff_start_level){
+                    cost[l].assign(level_sizes[l].size() + 1, 0);
+                } else {
+                    cost[l].assign(coeff_sizes.size() + 1, 0);
+                }
+            }
+            // std::cout << "num_levels = " << num_levels << std::endl;
+            for(int l=0; l<num_levels; l++){
+                cost[l][0] = 0;
+                // std::cout << "level " << l << " costs: " << std::endl;
+                if(l < coeff_start_level){
+                    // std::cout << "level_sizes[" << l << "].size() = " << level_sizes[l].size() << "\n";
+                    for (int b = 1; b < level_sizes[l].size() + 1; ++b) {
+                        int bp = level_sizes[l].size() - b;
+                        double ratio = std::max(0.0, err[l][bp] / (tolerance / ERR_MAX)); // err[l][bp]/1e-6
+                        // double scaled = ratio * ERR_MAX;
+                        ratio = std::min(ratio, double(ERR_MAX));
+                        int c = (int)std::ceil(ratio);
+                        // if (c < ERR_MIN) c = ERR_MIN;
+                        // if (c > ERR_MAX) c = ERR_MAX;
+                        cost[l][b] = c;
+                        // cost[l][b] = err[l][bp];
+                        // std::cout << "cost[" << l << "][" << b << "] = " << cost[l][b] << std::endl;
+                        // std::cout << cost[l][b] << " ";
+                    }
+                } else {
+                    for (int b = 1; b < coeff_sizes.size() + 1; ++b) {
+                        int bp = coeff_sizes.size() - b;
+                        double ratio = std::max(0.0, combined_coeff_error_perstep[bp] / (tolerance / ERR_MAX)); // err[l][bp]/1e-6
+                        // double scaled = ratio * ERR_MAX;
+                        ratio = std::min(ratio, double(ERR_MAX));
+                        int c = (int)std::ceil(ratio);
+                        // if (c < ERR_MIN) c = ERR_MIN;
+                        // if (c > ERR_MAX) c = ERR_MAX;
+                        cost[l][b] = c;
+                        // cost[l][b] = err[l][bp];
+                        // std::cout << "cost[" << l << "][" << b << "] = " << cost[l][b] << std::endl;
+                        // std::cout << cost[l][b] << " ";
+                    }
+                }
+                // std::cout << std::endl;
+            }
+            // std::cout << "cost init" << std::endl;
+
+            // const int NEG_INF = -1000000000;
+            std::vector<std::vector<int>> DP(num_levels + 1, std::vector<int>(ERR_MAX + 1, 0));
+            DP[0][0] = 0;
+            std::vector<std::vector<int>> choose(num_levels, std::vector<int>(ERR_MAX + 1, -1));
+
+            for(int l=1; l<num_levels+1; l++){
+                for(int e=0; e<ERR_MAX+1; e++){
+                    int best_b = 0;
+                    int best_val = DP[l-1][e];
+                    if((l - 1) < coeff_start_level){
+                        for(int b=1; b<level_sizes[l-1].size()+1; b++){
+                            int w = cost[l-1][b];
+                            int v = SavedSize[l-1][b];
+                            if(e >= w){// && DP[l-1][e-w] != NEG_INF){
+                                // if((e-w <= 0) || (e-w >= ERR_MAX + 1)) std::cout << "l-1 = " << l-1 << ", e-w = " << e - w << std::endl;
+                                int cand = DP[l-1][e-w] + v;
+                                if(cand > best_val){
+                                    best_val = cand;
+                                    best_b = b;
+                                }
+                            }
+                        }
+                    } else {
+                        for(int b=1; b<coeff_sizes.size()+1; b++){
+                            int w = cost[l-1][b];
+                            int v = SavedSize[l-1][b];
+                            if(e >= w){// && DP[l-1][e-w] != NEG_INF){
+                                // if((e-w <= 0) || (e-w >= ERR_MAX + 1)) std::cout << "l-1 = " << l-1 << ", e-w = " << e - w << std::endl;
+                                int cand = DP[l-1][e-w] + v;
+                                if(cand > best_val){
+                                    best_val = cand;
+                                    best_b = b;
+                                }
+                            }
+                        }
+                    }
+                    DP[l][e] = best_val;
+                    choose[l-1][e] = best_b;
+                }
+            }
+
+            int best_e = 0;
+            for(int e=0; e<ERR_MAX; e++){
+                if(DP[num_levels][e] > DP[num_levels][best_e]) best_e = e;
+            }
+            // std::cout << "best_e = " << best_e << std::endl;
+            // uint32_t best_saved = DP[num_levels][best_e];
+
+            // std::cout << "coeff_sizes.size() = " << coeff_sizes.size() << std::endl;
+            std::vector<int> dropped(num_levels, 0);
+            int e = best_e;
+            for(int l=num_levels - 1; l>=0; l--){
+                dropped[l] = choose[l][e];
+                // std::cout << "dropped[" << l << "] = " << dropped[l] << std::endl;
+                e -= cost[l][dropped[l]];
+            }
+            std::vector<uint32_t> retrieve_sizes(level_sizes.size(), 0);
+            double accumulated_error = 0;
+            // std::cout << "level indexes: " << std::endl;
+            for(int l=0; l<num_levels; l++){
+                if(l < coeff_start_level){
+                    uint8_t new_index = uint8_t(level_sizes[l].size() - dropped[l]);  // drop 12, 32-12=20 0~19
+                    for(int b=index[l]; b < new_index; b++){
+                        retrieve_sizes[l] += level_sizes[l][b];
+                    }
+                    index[l] = (new_index > index[l]) ? new_index : index[l];
+                    // std::cout << (int)index[l] << " ";
+                    if(index[l] < level_sizes[l].size())
+                        accumulated_error += err[l][index[l]];
+                } else {
+                    uint8_t new_coeff_index = uint8_t(coeff_sizes.size() - dropped[l]);  // drop 12, 32-12=20 0~19
+                    for(int i=coeff_index; i < new_coeff_index; i++){
+                        for(auto lev : coeff_combined_bps[i]){
+                            retrieve_sizes[lev] += level_sizes[lev][index[lev]++];
+                        }
+                    }
+                    coeff_index = (new_coeff_index > coeff_index) ? new_coeff_index : coeff_index;
+                    // for(int i=coeff_start_level; i<level_sizes.size(); i++){
+                    //     std::cout << (int)index[i] << " ";
+                    // }
+                    if(coeff_index < coeff_sizes.size())
+                        accumulated_error += err[l][coeff_index];
+                }
+            }
+            // std::cout << std::endl;
+            _accumulated_error = accumulated_error;
+            std::cout << "Tolerance = " << tolerance << ", accumulated_error = " << _accumulated_error << std::endl;
+            return retrieve_sizes;
+        }
         void print() const {
             std::cout << "DP based size interpreter." << std::endl;
         }
