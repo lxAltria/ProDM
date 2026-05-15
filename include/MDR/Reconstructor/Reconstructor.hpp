@@ -14,5 +14,6 @@
 #include "OrderedReconstructor.hpp"
 #include "NewOrderedReconstructor.hpp"
 #include "NewCPReconstructor.hpp"
+#include "PartialOrderedCPReconstructor.hpp"
 
 #endif
