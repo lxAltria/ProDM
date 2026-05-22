@@ -11,7 +11,7 @@
 
 using namespace std;
 
-string output_path;
+// string output_path;
 
 template <class T, class Reconstructor>
 void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor reconstructor){
@@ -30,7 +30,7 @@ void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor re
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
-        MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
+        // MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -82,7 +82,7 @@ int main(int argc, char ** argv){
         files.push_back(filename);
     }
     int encoder_option = atoi(argv[argv_id ++]);
-    output_path = string(argv[argv_id ++]);
+    // output_path = string(argv[argv_id ++]);
 
     // using T = float;
     // using T_stream = uint32_t;

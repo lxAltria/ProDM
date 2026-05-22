@@ -122,8 +122,12 @@ int main(int argc, char ** argv){
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else {
+        } else if(encoder_option == 3) {
             auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+            negabinary = false;
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+        } else if(encoder_option == 4) {
+            auto encoder = MDR::SignAbsoluteBPEncoder<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         }
@@ -164,8 +168,12 @@ int main(int argc, char ** argv){
             auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
-        } else {
+        } else if (encoder_option == 3){
             auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+            negabinary = false;
+            test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+        } else if(encoder_option == 4) {
+            auto encoder = MDR::SignAbsoluteBPEncoder<T, T_stream>();
             negabinary = false;
             test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
         }

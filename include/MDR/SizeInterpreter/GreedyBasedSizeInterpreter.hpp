@@ -157,6 +157,11 @@ namespace MDR {
         void reset(){
             _accumulated_error = 0;
         }
+
+        std::vector<uint32_t> interpret_retrieve_size_cp_ordered(const std::vector<std::vector<uint32_t>>& level_sizes, const std::vector<std::vector<double>>& level_errors, const std::vector<uint32_t>& coeff_sizes, const std::vector<double>& combined_coeff_error_perstep, const std::vector<std::vector<uint8_t>> coeff_combined_bps, const uint8_t coeff_start_level, double tolerance, std::vector<uint8_t>& index, uint16_t& coeff_index) const {
+            std::vector<uint32_t> retrieve_sizes;
+            return retrieve_sizes;
+        }
     private:
         ErrorEstimator error_estimator;
         mutable double _accumulated_error = 0;
@@ -354,6 +359,7 @@ namespace MDR {
             std::cout << "Requested tolerance = " << tolerance << ", estimated error = " << accumulated_error << std::endl;
             return retrieve_sizes;
         }
+
         void print() const {
             std::cout << "Greedy based size interpreter for negabinary encoding." << std::endl;
         }
