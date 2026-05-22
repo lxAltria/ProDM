@@ -10,7 +10,7 @@
 
 using namespace std;
 
-string output_path;
+// string output_path;
 
 template<class T>
 void SZ3_decompress(char * cmpData, size_t compressed_size, T * dec_data){
@@ -83,7 +83,7 @@ void evaluate(string refactor_dict, const vector<T>& data, const std::vector<dou
         MGARD::print_statistics(data.data(), reconstructed_data.data(), data.size());
         cout << "Bitrate = " << (retrieved_size * 8.0) / data.size() << std::endl;
         cout << endl;
-        MGARD::writefile(output_path.c_str(), reconstructed_data.data(), data.size());
+        // MGARD::writefile(output_path.c_str(), reconstructed_data.data(), data.size());
     }
 }
 
@@ -129,7 +129,7 @@ int main(int argc, char ** argv){
         tolerance[i] = atof(argv[argv_id ++]);  
     }
     string dtype = string(argv[argv_id++]);
-    output_path = string(argv[argv_id++]);
+    // output_path = string(argv[argv_id++]);
     
     if (strcmp(dtype.c_str(), "-f") == 0){
         using T = float;

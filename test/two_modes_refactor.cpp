@@ -75,7 +75,7 @@ std::vector<uint32_t> tune_interp_order_initiator(const vector<T>& data, const v
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
 void init_fuse_composed_refactor(std::vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
     auto refactor = MDR::FuseComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
-    refactor.print();
+    // refactor.print();
     refactor.negabinary = negabinary;
     evaluate(data, dims, target_level, num_bitplanes, refactor);
 }
@@ -84,21 +84,34 @@ void init_fuse_composed_refactor(std::vector<T>& data, const vector<uint32_t>& d
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
 void init_composed_refactor_new(std::vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
     auto refactor = MDR::ComposedRefactor_new<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
-    refactor.print();
+    // refactor.print();
     refactor.negabinary = negabinary;
     evaluate(data, dims, target_level, num_bitplanes, refactor);
 }
 
+// // Per level + CP
+// template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
+// void init_ordered_cp_refactor(std::vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
+//     auto refactor = MDR::OrderedCPRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
+//     refactor.print();
+//     refactor.negabinary = negabinary;
+//     refactor.coeff_interp_directions = coeff_interp_directions;
+//     // refactor.greedy = greedy;
+//     // refactor.bfs = bfs;
+//     refactor.greedy_bfs = true;
+//     evaluate(data, dims, target_level, num_bitplanes, refactor);
+// }
+
 // Per level + CP
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
 void init_ordered_cp_refactor(std::vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
-    auto refactor = MDR::OrderedCPRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
-    refactor.print();
+    auto refactor = MDR::PartialOrderedCPRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
+    // refactor.print();
     refactor.negabinary = negabinary;
     refactor.coeff_interp_directions = coeff_interp_directions;
     // refactor.greedy = greedy;
     // refactor.bfs = bfs;
-    refactor.greedy_bfs = true;
+    // refactor.greedy_bfs = true;
     evaluate(data, dims, target_level, num_bitplanes, refactor);
 }
 
@@ -106,7 +119,7 @@ void init_ordered_cp_refactor(std::vector<T>& data, const vector<uint32_t>& dims
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
 void init_cp_refactor_new(std::vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
     auto refactor = MDR::CPRefactor_new<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
-    refactor.print();
+    // refactor.print();
     refactor.negabinary = negabinary;
     refactor.coeff_interp_directions = coeff_interp_directions;
     evaluate(data, dims, target_level, num_bitplanes, refactor);
@@ -136,7 +149,7 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
             auto compressor = MDR::AdaptiveLevelCompressor(64);
             auto collector = MDR::SquaredErrorCollector<T>();
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto writer = MDR::OrderedFileWriter(metadata_file, data_file);
+                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
                     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
@@ -220,7 +233,7 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
             auto compressor = MDR::AdaptiveLevelCompressor(64);
             auto collector = MDR::SquaredErrorCollector<T>();
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto writer = MDR::OrderedFileWriter(metadata_file, data_file);
+                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
                     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;

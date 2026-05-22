@@ -573,6 +573,11 @@ namespace MDR {
             return retrieve_sizes;
         }
 
+        std::vector<uint32_t> interpret_retrieve_size_cp_ordered(const std::vector<std::vector<uint32_t>>& level_sizes, const std::vector<std::vector<double>>& level_errors, const std::vector<uint32_t>& coeff_sizes, const std::vector<double>& combined_coeff_error_perstep, const std::vector<std::vector<uint8_t>> coeff_combined_bps, const uint8_t coeff_start_level, double tolerance, std::vector<uint8_t>& index, uint16_t& coeff_index) const {
+            std::vector<uint32_t> retrieve_sizes;
+            return retrieve_sizes;
+        }
+
         void print() const {
             std::cout << "BFS based size interpreter." << std::endl;
         }
