@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
-project(CQOI VERSION 0.0.0.1 LANGUAGES C CXX)
+# project(CQOI VERSION 0.0.0.1 LANGUAGES C CXX)
+project(PROAID VERSION 0.0.0.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,10 +15,10 @@ find_library(SZ2_LIBRARY NAMES SZ
   PATH_SUFFIXES lib lib64
 )
 
-find_package(ADIOS2 REQUIRED CONFIG
-  HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/ADIOS2/adios2-install"
-  PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR}/cmake/adios2
-)
+# find_package(ADIOS2 REQUIRED CONFIG
+#   HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/ADIOS2/adios2-install"
+#   PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR}/cmake/adios2
+# )
 
 find_path(ZSTD_INCLUDE_DIR NAMES zstd.h
   HINTS
@@ -45,14 +46,14 @@ find_library(SZ3_LIBRARY NAMES SZ3c sz3c
   PATH_SUFFIXES lib lib64 src ${CMAKE_INSTALL_LIBDIR}
 )
 
-find_library(MGARD_LIBRARY NAMES mgard
-  HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial"
-  PATH_SUFFIXES lib lib64 ${CMAKE_INSTALL_LIBDIR}
-)
+# find_library(MGARD_LIBRARY NAMES mgard
+#   HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial"
+#   PATH_SUFFIXES lib lib64 ${CMAKE_INSTALL_LIBDIR}
+# )
 
-if(NOT MGARD_LIBRARY)
-  message(FATAL_ERROR "Could not find MGARD library")
-endif()
+# if(NOT MGARD_LIBRARY)
+#   message(FATAL_ERROR "Could not find MGARD library")
+# endif()
 
 set(SZ3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ3/install/include")
 
@@ -71,13 +72,13 @@ endif()
 #   HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install" 
 # )
 
-set(QoZ_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install/include")
+# set(QoZ_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install/include")
 
 set(SZ2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ2/install/include")
 
-set(MGARD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial/include")
+# set(MGARD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial/include")
 
-message(STATUS "QoZ_INCLUDE_DIR = ${QoZ_INCLUDE_DIR}")
+# message(STATUS "QoZ_INCLUDE_DIR = ${QoZ_INCLUDE_DIR}")
 
 set(MGARDx_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARDx/install/include")
 
@@ -87,16 +88,16 @@ target_include_directories(${PROJECT_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${SZ3_INCLUDE_DIR}"
   "${ZSTD_INCLUDE_DIR}"
-  "${QoZ_INCLUDE_DIR}"
+  # "${QoZ_INCLUDE_DIR}"
   "${SZ2_INCLUDE_DIR}"
-  "${MGARD_INCLUDE_DIR}"
+  # "${MGARD_INCLUDE_DIR}"
 )
 
 target_link_libraries(${PROJECT_NAME} INTERFACE
   "${ZSTD_LIBRARY}"
   "${SZ3_LIBRARY}"
   "${SZ2_LIBRARY}"
-  "${MGARD_LIBRARY}"
+  # "${MGARD_LIBRARY}"
 )
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)

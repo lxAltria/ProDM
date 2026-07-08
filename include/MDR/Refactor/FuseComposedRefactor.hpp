@@ -83,8 +83,8 @@ namespace MDR {
                 std::cerr << "Target level is higher than " << max_level << std::endl;
                 return false;
             }
-            // double encoding_time = 0;
-            // Timer timer;
+            double encoding_time = 0;
+            Timer timer;
             // decompose data hierarchically
             // timer.start();
             auto level_buffers = decomposer.decompose_interleave_combine_levels(data.data(), dimensions, target_level);
@@ -136,12 +136,12 @@ namespace MDR {
                 frexp(level_max_error, &level_exp);
                 std::vector<uint32_t> stream_sizes;
                 // std::vector<double> level_sq_err;
-                // timer.start();
+                timer.start();
                 auto streams = encoder.encode(level_buffers[i].data(), level_buffers[i].size(), level_exp, num_bitplanes, stream_sizes);
                 // free(buffer);
                 // level_squared_errors.push_back(level_sq_err);
-                // timer.end();
-                // encoding_time += timer.get();
+                timer.end();
+                encoding_time += timer.get();
                 // timer.print("Encoding");
                 // timer.start();
                 // lossless compression
@@ -159,7 +159,7 @@ namespace MDR {
             //     std::cout << level_error_bounds[i] << " ";
             // }
             // std::cout << std::endl;
-            // std::cout << "Encoding time: " << encoding_time << std::endl;
+            std::cout << "Encoding time: " << encoding_time << std::endl;
             return true;
         }
 

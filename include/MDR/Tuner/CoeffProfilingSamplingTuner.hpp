@@ -99,7 +99,7 @@ namespace MDR{
             // for (int m = 0; m < 4; m++) {
             //     std::cout << "direction " << m - 1 << " votes: " << votes[m] << std::endl;
             // }
-            std::cout << "best direction: " << best_direction << std::endl;
+            // std::cout << "best direction: " << best_direction << std::endl;
             // timer.end();
             // timer.print("Tuner");
         }

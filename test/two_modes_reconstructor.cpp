@@ -15,7 +15,8 @@ bool greedy = false;
 bool bfs = false;
 bool greedy_bfs = false;
 std::vector<int> coeff_interp_directions;
-// std::string output_path;
+bool write_output = false;
+std::string output_path;
 
 template <class T, class Reconstructor>
 void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstructor reconstructor){
@@ -34,7 +35,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
         MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
-        // MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
+        if(write_output) MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -66,24 +67,11 @@ void init_composed_reconstructor_new(std::vector<T>& data, vector<double>& toler
     evaluate(data, tolerance, reconstructor);
 }
 
-// // Per level + CP
-// template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
-// void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
-//     auto reconstructor = MDR::OrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
-//     reconstructor.print();
-//     reconstructor.load_metadata();
-//     T value_range = MDR::compute_value_range(data);
-//     for(int i=0; i<tolerance.size(); i++){
-//         tolerance[i] *= value_range;
-//     }
-//     evaluate(data, tolerance, reconstructor);
-// }
-
 // Per level + CP
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
 void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
-    auto reconstructor = MDR::PartialOrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
-    // reconstructor.print();
+    auto reconstructor = MDR::OrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+    reconstructor.print();
     reconstructor.load_metadata();
     T value_range = MDR::compute_value_range(data);
     for(int i=0; i<tolerance.size(); i++){
@@ -91,6 +79,19 @@ void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& toleran
     }
     evaluate(data, tolerance, reconstructor);
 }
+
+// // Per level + CP
+// template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
+// void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
+//     auto reconstructor = MDR::PartialOrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
+//     // reconstructor.print();
+//     reconstructor.load_metadata();
+//     T value_range = MDR::compute_value_range(data);
+//     for(int i=0; i<tolerance.size(); i++){
+//         tolerance[i] *= value_range;
+//     }
+//     evaluate(data, tolerance, reconstructor);
+// }
 
 // Per Layer + CP
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
@@ -145,7 +146,8 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
             auto compressor = MDR::AdaptiveLevelCompressor(64);
             auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = MDR::OrderedFileRetriever(metadata_file, data_file);
+                // auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
                     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
@@ -319,7 +321,8 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
             auto compressor = MDR::AdaptiveLevelCompressor(64);
             auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = MDR::OrderedFileRetriever(metadata_file, data_file);
+                // auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
                     auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
@@ -490,10 +493,10 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
 
 void usage(char* cmd) {
     std::cout << "two_modes_reconstructor usage: " << cmd <<
-                  " data_file -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln refactored_path -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP]"
+                  " data_file -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln refactored_path -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] [Optional: Reconstructed data path]"
                   << std::endl
                   << "example: " << cmd <<
-                  " density.d64 -d 5 1e-1 1e-2 1e-3 1e-4 1e-5 /refactored/path -PerBit -eb -CP" << std::endl;
+                  " density.d64 -d 5 1e-1 1e-2 1e-3 1e-4 1e-5 /refactored/path -PerBit -BFS -CP" << std::endl;
 }
 
 int main(int argc, char ** argv){
@@ -513,7 +516,10 @@ int main(int argc, char ** argv){
     string encoder_option = string(argv[argv_id++]);
     string interpreter_option = string(argv[argv_id++]);
     string cp = string(argv[argv_id++]);
-    // output_path = string(argv[argv_id++]);
+    if (argv_id < argc){
+        output_path = string(argv[argv_id++]);
+        write_output = true;
+    }
     
     // std::cout << "argv_id = " << argv_id << ", argc = " << argc << std::endl;
 
