@@ -10,7 +10,8 @@
 
 using namespace std;
 
-// string output_path;
+bool write_output = false;
+string output_path;
 
 template<class T>
 void SZ3_decompress(char * cmpData, size_t compressed_size, T * dec_data){
@@ -83,7 +84,7 @@ void evaluate(string refactor_dict, const vector<T>& data, const std::vector<dou
         MGARD::print_statistics(data.data(), reconstructed_data.data(), data.size());
         cout << "Bitrate = " << (retrieved_size * 8.0) / data.size() << std::endl;
         cout << endl;
-        // MGARD::writefile(output_path.c_str(), reconstructed_data.data(), data.size());
+        if(write_output) MGARD::writefile(output_path.c_str(), reconstructed_data.data(), data.size());
     }
 }
 
@@ -109,7 +110,7 @@ void test(string filename, string refactor_dict, const vector<double>& tolerance
 
 void usage(char* cmd) {
     std::cout << "PSZ3-delta usage: " << cmd <<
-                  " data_file refactor_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d]"
+                  " data_file refactor_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Optional: Reconstructed data path]"
                   << std::endl
                   << "example: " << cmd <<
                   " density.d64 refactor/Density_refactored 3 1e-1 1e-2 1e-3 -d" << std::endl;
@@ -129,7 +130,10 @@ int main(int argc, char ** argv){
         tolerance[i] = atof(argv[argv_id ++]);  
     }
     string dtype = string(argv[argv_id++]);
-    // output_path = string(argv[argv_id++]);
+    if(argv_id < argc){
+        output_path = string(argv[argv_id++]);
+        write_output = true;
+    }
     
     if (strcmp(dtype.c_str(), "-f") == 0){
         using T = float;

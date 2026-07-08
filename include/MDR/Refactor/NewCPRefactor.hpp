@@ -154,6 +154,8 @@ namespace MDR {
 
             // Tune
             // std::cout << "Tuning" << std::endl;
+            // MDR::Timer tuner_timer;
+            // tuner_timer.start();
             uint8_t tmp_num_level = un_cp_levels;
             if(!coeff_interp_directions.size()){
                 for(int i=un_cp_levels; i<decomposed_buffers.size(); i++){
@@ -166,6 +168,8 @@ namespace MDR {
                     // coeff_interp_directions.push_back(2);
                 }
             }
+            // tuner_timer.end();
+            // tuner_timer.print("CoeffDecomp Tuner");
             // std::cout << "coeff_interp_directions = ";
             // for(int i=0; i<coeff_interp_directions.size(); i++){
             //     std::cout << (int)coeff_interp_directions[i] << " ";
