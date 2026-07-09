@@ -13,7 +13,7 @@
 
 data_dict_path=$1
 
-output_file="./ae_results/JHTDB_Results/results_weak_scale_5_times.txt"
+output_file="./ae_results/JHTDB_Results/results_weak_scale.txt"
 tmp_file="./ae_results/JHTDB_Results/results_tmp.txt"
 
 > $output_file
@@ -24,7 +24,7 @@ refactor_file="${data_dict_path}/"
 
 error_bound=1e-4
 core_counts=(128 256 512 1024)
-NUM_RUNS=5
+NUM_RUNS=1
 
 # Helper function: extract elapsed_time value from a line like "elapsed_time: 1.234"
 extract_time() {
@@ -97,11 +97,11 @@ for np in "${core_counts[@]}"; do
     refactor_times=()
     recon_times=()
     for run in $(seq 1 $NUM_RUNS); do
-        mpirun -n $np ./external/IPComp/prl_src/para_IPComp_refactor $data_file "-d" "-3" 256 512 512 $refactor_file > $tmp_file
+        mpirun -n $np ./external/IPComp/build/prl_src/para_IPComp_refactor $data_file "-d" "-3" 256 512 512 $refactor_file > $tmp_file
         t=$(extract_time $tmp_file)
         refactor_times+=("$t")
 
-        mpirun -n $np ./external/IPComp/prl_src/para_IPComp_reconstructor $data_file "-d" "-3" 256 512 512 "-1" $error_bound $refactor_file $write_file > $tmp_file
+        mpirun -n $np ./external/IPComp/build/prl_src/para_IPComp_reconstructor $data_file "-d" "-3" 256 512 512 "-1" $error_bound $refactor_file $write_file > $tmp_file
         t=$(extract_time $tmp_file)
         recon_times+=("$t")
 
