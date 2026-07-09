@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --time=03:00:00               # Time limit for the job (adjust as needed)
 #SBATCH --job-name=weak_scale_JHTDB  # Job name
-#SBATCH --ntasks=512
+#SBATCH --ntasks=1024
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=12G
 #SBATCH --partition=                  # Partition/queue to run the job in
@@ -13,8 +13,8 @@
 
 data_dict_path=$1
 
-output_file="./ae_results/JHTDB_results/results_weak_scale_5_times.txt"
-tmp_file="./ae_results/JHTDB_results/results_tmp.txt"
+output_file="./ae_results/JHTDB_Results/results_weak_scale_5_times.txt"
+tmp_file="./ae_results/JHTDB_Results/results_tmp.txt"
 
 > $output_file
 > $tmp_file
@@ -23,7 +23,7 @@ data_file="${data_dict_path}/data/Temperature_"
 refactor_file="${data_dict_path}/"
 
 error_bound=1e-4
-core_counts=(128 256 512)
+core_counts=(128 256 512 1024)
 NUM_RUNS=5
 
 # Helper function: extract elapsed_time value from a line like "elapsed_time: 1.234"
