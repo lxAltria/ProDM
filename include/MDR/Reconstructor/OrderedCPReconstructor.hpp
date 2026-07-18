@@ -318,17 +318,13 @@ namespace MDR {
             auto level_dims = compute_level_dims_new(dimensions, 1);
             auto reconstruct_dimensions = level_dims[1];
             // std::cout << "target_level = " << +target_level << ", dims = " << reconstruct_dimensions[0] << " " << reconstruct_dimensions[1] << " " << reconstruct_dimensions[2] << std::endl;
-            // update with stride
-            std::vector<T> cur_data(data);
-            memset(data.data(), 0, data.size() * sizeof(T));
-
-            level_buffers.clear();
+            // reuse level_buffers / decomposed_buffers across calls to avoid per-call reallocation;
+            // every used entry is fully overwritten below (decode or memset), so no stale data leaks
             level_buffers.resize(num_levels);
             for(int i=0; i<num_levels; i++){
                 level_buffers[i].resize(level_elements[i]);
                 // std::cout << "level_buffers[" << i << "].size() = " << level_buffers[i].size() << std::endl;
             }
-            decomposed_buffers.clear();
             decomposed_buffers.resize(decomposed_buffer_dims.size());
 
             for(int i=0; i<=current_level; i++){
@@ -371,35 +367,39 @@ namespace MDR {
                             decomposed_buffers[i] = coeff_decomposer.reposition_recompose_split_levels(decomposed_coeff_buffers, decomposed_buffer_dims[i], coeff_target_level);
                         }
                     }
-                    data = decomposer.reposition_recompose(decomposed_buffers, current_dimensions, 1, this->strides);
-                }
-                // std::cout << "update data\n";
-                // update data with strides
-                if(current_dimensions.size() == 1){
-                    for(int i=0; i<current_dimensions[0]; i++){
-                        data[i] += cur_data[i];
-                    }
-                }
-                else if(current_dimensions.size() == 2){
-                    for(int i=0; i<current_dimensions[0]; i++){
-                        for(int j=0; j<current_dimensions[1]; j++){
-                            data[i*this->strides[0] + j] += cur_data[i*this->strides[0] + j];
+                    // recompose only the newly-decoded increment, then accumulate into the
+                    // previously reconstructed data in place (avoids a full copy + memset of data)
+                    auto delta = decomposer.reposition_recompose(decomposed_buffers, current_dimensions, 1, this->strides);
+                    // std::cout << "update data\n";
+                    // update data with strides
+                    if(current_dimensions.size() == 1){
+                        for(int i=0; i<current_dimensions[0]; i++){
+                            data[i] += delta[i];
                         }
-                    }                    
-                }
-                else if(current_dimensions.size() == 3){
-                    for(int i=0; i<current_dimensions[0]; i++){
-                        for(int j=0; j<current_dimensions[1]; j++){
-                            for(int k=0; k<current_dimensions[2]; k++){
-                                data[i*this->strides[0] + j*this->strides[1] + k] += cur_data[i*this->strides[0] + j*this->strides[1] + k];
+                    }
+                    else if(current_dimensions.size() == 2){
+                        for(int i=0; i<current_dimensions[0]; i++){
+                            for(int j=0; j<current_dimensions[1]; j++){
+                                data[i*this->strides[0] + j] += delta[i*this->strides[0] + j];
                             }
                         }
-                    }                    
+                    }
+                    else if(current_dimensions.size() == 3){
+                        for(int i=0; i<current_dimensions[0]; i++){
+                            for(int j=0; j<current_dimensions[1]; j++){
+                                for(int k=0; k<current_dimensions[2]; k++){
+                                    data[i*this->strides[0] + j*this->strides[1] + k] += delta[i*this->strides[0] + j*this->strides[1] + k];
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        std::cout << "dimension higher than 4 is not supported in update data\n";
+                        exit(-1);
+                    }
                 }
-                else{
-                    std::cout << "dimension higher than 4 is not supported in update data\n";
-                    exit(-1);
-                }
+                // when current_level == 0 there is no coarser increment to add:
+                // data already holds the accumulated reconstruction, leave it unchanged
             }
             // std::cout << "decompose to target_level\n";
             // decompose data to target level
