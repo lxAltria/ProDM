@@ -359,10 +359,14 @@ namespace MDR {
         }
 
         T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
+            T_data * data = (T_data *) malloc(n * sizeof(T_data));
+            return progressive_decode_into(data, streams, n, exp, starting_bitplane, num_bitplanes, level);
+        }
+        // decode directly into a caller-provided buffer of size n (avoids an internal malloc + external copy)
+        T_data * progressive_decode_into(T_data * data, const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
             const int32_t block_size = PER_BIT_BLOCK_SIZE;
             // define fixed point type
             using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
-            T_data * data = (T_data *) malloc(n * sizeof(T_data));
             if(num_bitplanes == 0){
                 if(level_signs.size() == level){
                     level_signs.push_back(std::vector<bool>(n, false));

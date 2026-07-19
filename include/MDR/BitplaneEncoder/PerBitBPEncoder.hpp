@@ -309,8 +309,13 @@ namespace MDR {
         // =====================================================================
         T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp,
                                      uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
-            using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
             T_data * data = (T_data *) malloc(n * sizeof(T_data));
+            return progressive_decode_into(data, streams, n, exp, starting_bitplane, num_bitplanes, level);
+        }
+        // decode directly into a caller-provided buffer of size n (avoids an internal malloc + external copy)
+        T_data * progressive_decode_into(T_data * data, const std::vector<uint8_t const *>& streams, int32_t n, int exp,
+                                     uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
+            using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
 
             // Ensure sign/flag vectors exist for this level (uint8_t, not bool)
             if((int)level_signs.size() <= level){
