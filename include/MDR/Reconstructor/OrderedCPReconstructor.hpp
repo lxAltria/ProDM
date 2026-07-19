@@ -114,6 +114,11 @@ namespace MDR {
             //     std::cout << chunk_sizes[i] << " ";
             // }
             // std::cout << std::endl;
+            if (retrieve_size == 0) {
+                // all available chunks already consumed: nothing new to decode, so the current
+                // reconstruction already reflects everything. Skip the full re-recompose.
+                return data.data();
+            }
             if (retrieve_size > 0 && num_chunks == prev_num_chunks) {
                 num_chunks = level_chunk_order.size();
             }
@@ -333,10 +338,9 @@ namespace MDR {
                     int level_exp = 0;
                     if(negabinary) frexp(level_error_bounds[i] / 4, &level_exp);
                     else frexp(level_error_bounds[i], &level_exp);
-                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
-                    memcpy(level_buffers[i].data(), level_decoded_data, level_elements[i] * sizeof(T));
+                    // decode straight into level_buffers[i] to avoid an internal malloc + copy + free
+                    encoder.progressive_decode_into(level_buffers[i].data(), level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
                     compressor.decompress_release();
-                    free(level_decoded_data);                    
                 }
                 else{
                     memset(level_buffers[i].data(), 0, level_elements[i] * sizeof(T));
@@ -410,11 +414,10 @@ namespace MDR {
                     if(negabinary) frexp(level_error_bounds[i] / 4, &level_exp);
                     else frexp(level_error_bounds[i], &level_exp);
                     // std::cout << "level " << i << ", decoding starts" << std::endl;
-                    auto level_decoded_data = encoder.progressive_decode(level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
+                    // decode straight into level_buffers[i] to avoid an internal malloc + copy + free
+                    encoder.progressive_decode_into(level_buffers[i].data(), level_components[i], level_elements[i], level_exp, prev_level_num_bitplanes[i], level_num_bitplanes[i] - prev_level_num_bitplanes[i], i);
                     // std::cout << "level " << i << ", decoding done" << std::endl;
-                    memcpy(level_buffers[i].data(), level_decoded_data, level_elements[i] * sizeof(T));
                     compressor.decompress_release();
-                    free(level_decoded_data);     
                 // }
                 // else{
                 //     memset(level_buffers[i].data(), 0, level_elements[i] * sizeof(T));

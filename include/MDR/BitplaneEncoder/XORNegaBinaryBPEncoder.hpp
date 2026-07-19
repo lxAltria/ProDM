@@ -155,13 +155,18 @@ namespace MDR {
         // =====================================================================
         T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp,
                                      uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
+            T_data * data = (T_data *) malloc(n * sizeof(T_data));
+            return progressive_decode_into(data, streams, n, exp, starting_bitplane, num_bitplanes, level);
+        }
+        // decode directly into a caller-provided buffer of size n (avoids an internal malloc + external copy)
+        T_data * progressive_decode_into(T_data * data, const std::vector<uint8_t const *>& streams, int32_t n, int exp,
+                                     uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
             const uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
             const int32_t num_blocks = (n + block_size - 1) / block_size;
 
             using T_fps = typename std::conditional<std::is_same<T_data, double>::value, int64_t, int32_t>::type;
             using T_fp  = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
 
-            T_data * data = (T_data *) malloc(n * sizeof(T_data));
             if(num_bitplanes == 0){
                 memset(data, 0, n * sizeof(T_data));
                 ensure_level_history(level, num_blocks);
