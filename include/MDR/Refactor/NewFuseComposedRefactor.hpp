@@ -1,5 +1,5 @@
 #ifndef _MDR_FUSE_COMPOSED_REFACTOR_NEW_HPP
-#define _MDR_FUSE_COMPOSED_REFACTOR_NEw_HPP
+#define _MDR_FUSE_COMPOSED_REFACTOR_NEW_HPP
 
 #include "RefactorInterface.hpp"
 #include "MDR/Decomposer/Decomposer.hpp"
