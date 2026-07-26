@@ -47,18 +47,18 @@ make install
 # make -j 8
 # make install
 
-# # copy QoZ
-# cd ${external_dir}
-# git clone https://github.com/Linus-Li-1037/QoZ.git
-# cd QoZ
-# mkdir -p install/include/
-# rsync -av --exclude 'ska_hash' include/ ${external_dir}/QoZ/install/include/
+# copy QoZ
+cd ${external_dir}
+git clone https://github.com/Linus-Li-1037/QoZ.git
+cd QoZ
+mkdir -p install/include/
+rsync -av --exclude 'ska_hash' include/ ${external_dir}/QoZ/install/include/
 
-# # copy MGARD
-# cd ${external_dir}
-# git clone https://github.com/CODARcode/MGARD.git
-# cd MGARD
-# sh build_scripts/build_mgard_serial.sh 8
+# copy MGARD
+cd ${external_dir}
+git clone https://github.com/CODARcode/MGARD.git
+cd MGARD
+sh build_scripts/build_mgard_serial.sh 8
 
 # build IPComp (for baseline)
 cd ${external_dir}

@@ -176,7 +176,7 @@ int main(int argc, char** argv){
                 refactor_velocities_3D_HPEZ_BP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
-                refactor_S3D_xixj_BP<T>(data, 1200, 334, 200, data_file_prefix, rdata_file_prefix, approximator_eb);
+                refactor_velocities_3D_HPEZ_BP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb);
             }
             else if (std::strcmp(data.c_str(), "Nek5000") == 0){
                 refactor_velocities_3D_HPEZ_BP<T>(data, 510, 510, 510, data_file_prefix, rdata_file_prefix, approximator_eb);
@@ -202,7 +202,7 @@ int main(int argc, char** argv){
                 refactor_velocities_3D_HPEZ_WBP<T>(data, 256, 384, 384, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "S3D") == 0){
-                refactor_S3D_xixj_WBP<T>(data, 1200, 334, 200, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
+                refactor_velocities_3D_HPEZ_WBP<T>(data, 500, 500, 500, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
             }
             else if (std::strcmp(data.c_str(), "Nek5000") == 0){
                 refactor_velocities_3D_HPEZ_WBP<T>(data, 510, 510, 510, data_file_prefix, rdata_file_prefix, approximator_eb, max_weight_for_vtot, block_size);
