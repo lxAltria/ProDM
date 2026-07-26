@@ -46,14 +46,14 @@ find_library(SZ3_LIBRARY NAMES SZ3c sz3c
   PATH_SUFFIXES lib lib64 src ${CMAKE_INSTALL_LIBDIR}
 )
 
-# find_library(MGARD_LIBRARY NAMES mgard
-#   HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial"
-#   PATH_SUFFIXES lib lib64 ${CMAKE_INSTALL_LIBDIR}
-# )
+find_library(MGARD_LIBRARY NAMES mgard
+  HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial"
+  PATH_SUFFIXES lib lib64 ${CMAKE_INSTALL_LIBDIR}
+)
 
-# if(NOT MGARD_LIBRARY)
-#   message(FATAL_ERROR "Could not find MGARD library")
-# endif()
+if(NOT MGARD_LIBRARY)
+  message(FATAL_ERROR "Could not find MGARD library")
+endif()
 
 set(SZ3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ3/install/include")
 
@@ -72,11 +72,11 @@ endif()
 #   HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install" 
 # )
 
-# set(QoZ_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install/include")
+set(QoZ_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install/include")
 
 set(SZ2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ2/install/include")
 
-# set(MGARD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial/include")
+set(MGARD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial/include")
 
 # message(STATUS "QoZ_INCLUDE_DIR = ${QoZ_INCLUDE_DIR}")
 
@@ -88,16 +88,16 @@ target_include_directories(${PROJECT_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${SZ3_INCLUDE_DIR}"
   "${ZSTD_INCLUDE_DIR}"
-  # "${QoZ_INCLUDE_DIR}"
+  "${QoZ_INCLUDE_DIR}"
   "${SZ2_INCLUDE_DIR}"
-  # "${MGARD_INCLUDE_DIR}"
+  "${MGARD_INCLUDE_DIR}"
 )
 
 target_link_libraries(${PROJECT_NAME} INTERFACE
   "${ZSTD_LIBRARY}"
   "${SZ3_LIBRARY}"
   "${SZ2_LIBRARY}"
-  # "${MGARD_LIBRARY}"
+  "${MGARD_LIBRARY}"
 )
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
