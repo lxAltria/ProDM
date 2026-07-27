@@ -19,9 +19,14 @@ namespace PDR {
         ApproximationBasedRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer)
             : approximator(approximator), encoder(encoder), compressor(compressor), writer(writer) {}
 
-        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
-            Timer timer;
-            timer.start();
+        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes)
+        {
+
+        }
+
+        void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes, T user_defined_approximator_eb){
+            // Timer timer;
+            // timer.start();
             dimensions = dims;
             uint32_t num_elements = 1;
             for(const auto& dim:dimensions){
@@ -29,13 +34,13 @@ namespace PDR {
             }
             data = std::vector<T>(data_, data_ + num_elements);
             // if refactor successfully
-            if(refactor(num_bitplanes)){
-                timer.end();
-                timer.print("Refactor");
-                timer.start();
+            if(refactor(num_bitplanes, user_defined_approximator_eb)){
+                // timer.end();
+                // timer.print("Refactor");
+                // timer.start();
                 level_num = writer.write_level_components(level_components, level_sizes);
-                timer.end();
-                timer.print("Write");                
+                // timer.end();
+                // timer.print("Write");                
             }
 
             write_metadata();
@@ -48,6 +53,7 @@ namespace PDR {
 
         void write_metadata() const {
             uint32_t metadata_size = sizeof(uint8_t) + get_size(dimensions) // dimensions
+                            + sizeof(size_t)
                             + sizeof(uint8_t) + get_size(level_error_bounds) 
                             + get_size(level_sizes) // level information
                             + get_size(stopping_indices) + get_size(level_num) + 1 + sizeof(T); // one byte for whether negabinary encoding is used 
@@ -55,6 +61,8 @@ namespace PDR {
             uint8_t * metadata_pos = metadata;
             *(metadata_pos ++) = (uint8_t) dimensions.size();
             serialize(dimensions, metadata_pos);
+            *reinterpret_cast<size_t*>(metadata_pos) = approximator_size;
+            metadata_pos += sizeof(size_t);
             *(metadata_pos ++) = (uint8_t) 1; // level = 1
             serialize(level_error_bounds, metadata_pos);
             serialize(level_sizes, metadata_pos);
@@ -74,7 +82,7 @@ namespace PDR {
             std::cout << "Encoder: "; encoder.print();
         }
     private:
-        bool refactor(uint8_t num_bitplanes){
+        bool refactor(uint8_t num_bitplanes, T user_defined_approximator_eb){
 
             auto num_elements = data.size();
             T max_val = data[0];
@@ -83,29 +91,60 @@ namespace PDR {
                 if(data[i] > max_val) max_val = data[i];
                 if(data[i] < min_val) min_val = data[i];
             }
-            approximator_eb *= (max_val - min_val);
-            approximator.refactor_approximate(data.data(), dimensions, approximator_eb);
+            approximator_eb = user_defined_approximator_eb * (max_val - min_val);
+            // std::cout << "approximator_eb = " << approximator_eb << std::endl;
+            std::string approximator_path = writer.get_directory() + "approximator.dat";
+            // std::cout << "approximator_path: " << approximator_path << std::endl;
+            approximator_size = approximator.refactor_approximate(data.data(), dimensions, approximator_eb, approximator_path);
 
             level_error_bounds.clear();
             level_components.clear();
             level_sizes.clear();
             
-            T level_max_error = compute_max_abs_value(data.data(), num_elements);
-            std::cout << "level_max_error = " << level_max_error << std::endl;
+            if (mask.empty()){
+                T level_max_error = compute_max_abs_value(data.data(), num_elements);
+                // std::cout << "level_max_error = " << level_max_error << std::endl;
 
-            // encoding
-            if(negabinary) level_error_bounds.push_back(level_max_error * 4);
-            else level_error_bounds.push_back(level_max_error);
-            int level_exp = 0;
-            frexp(level_max_error, &level_exp);
-            std::vector<uint32_t> stream_sizes;
-            auto streams = encoder.encode(data.data(), num_elements, level_exp, num_bitplanes, stream_sizes);
+                // encoding
+                if(negabinary) level_error_bounds.push_back(level_max_error * 4);
+                else level_error_bounds.push_back(level_max_error);
+                int level_exp = 0;
+                frexp(level_max_error, &level_exp);
+                std::vector<uint32_t> stream_sizes;
+                auto streams = encoder.encode(data.data(), num_elements, level_exp, num_bitplanes, stream_sizes);
 
-            // lossless
-            uint8_t stopping_index = compressor.compress_level(streams, stream_sizes);
-            stopping_indices.push_back(stopping_index);
-            level_components.push_back(streams);
-            level_sizes.push_back(stream_sizes);
+                // lossless
+                uint8_t stopping_index = compressor.compress_level(streams, stream_sizes);
+                stopping_indices.push_back(stopping_index);
+                level_components.push_back(streams);
+                level_sizes.push_back(stream_sizes);
+            }
+            else{
+                int num_valid_data = std::accumulate(mask.begin(), mask.end(), 0);
+                std::vector<T> filtered_data(num_valid_data);
+                int filtered_index = 0;
+                for(int i=0; i<mask.size(); i++){
+                    if(mask[i]){
+                        filtered_data[filtered_index++]=data[i];
+                    }
+                }
+                T level_max_error = compute_max_abs_value(filtered_data.data(), num_valid_data);
+                // std::cout << "level_max_error = " << level_max_error << std::endl;
+
+                // encoding
+                if(negabinary) level_error_bounds.push_back(level_max_error * 4);
+                else level_error_bounds.push_back(level_max_error);
+                int level_exp = 0;
+                frexp(level_max_error, &level_exp);
+                std::vector<uint32_t> stream_sizes;
+                auto streams = encoder.encode(filtered_data.data(), num_valid_data, level_exp, num_bitplanes, stream_sizes);
+
+                // lossless
+                uint8_t stopping_index = compressor.compress_level(streams, stream_sizes);
+                stopping_indices.push_back(stopping_index);
+                level_components.push_back(streams);
+                level_sizes.push_back(stream_sizes);
+            }
 
             return true;
         }
@@ -117,6 +156,7 @@ namespace PDR {
         std::vector<T> data;
         std::vector<uint32_t> dimensions;
         T approximator_eb = 0.001;
+        size_t approximator_size = 0;
         std::vector<T> level_error_bounds;
         std::vector<uint8_t> stopping_indices;
         std::vector<std::vector<uint8_t*>> level_components;
@@ -124,6 +164,7 @@ namespace PDR {
         std::vector<std::vector<uint32_t>> level_sizes;
     public:
         bool negabinary = false;
+        std::vector<unsigned char> mask;
     };
 }
 #endif

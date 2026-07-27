@@ -3,7 +3,12 @@
 
 #include "BitplaneEncoderInterface.hpp"
 #include <bitset>
+#include <cstring>
+#include <cmath>
+#include <algorithm>
+
 namespace MDR {
+
     class BitEncoder{
     public:
         BitEncoder(uint64_t * stream_begin_pos){
@@ -12,13 +17,22 @@ namespace MDR {
             buffer = 0;
             position = 0;
         }
-        void encode(uint64_t b){
+        inline void encode(uint64_t b){
             buffer += b << position;
             position ++;
             if(position == 64){
                 *(stream_pos ++) = buffer;
                 buffer = 0;
                 position = 0;
+            }
+        }
+        inline void write_aligned_64(uint64_t word){
+            if(position == 0){
+                *(stream_pos++) = word;
+            } else {
+                buffer |= (word << position);
+                *(stream_pos++) = buffer;
+                buffer = word >> (64 - position);
             }
         }
         void flush(){
@@ -46,7 +60,7 @@ namespace MDR {
             buffer = 0;
             position = 0;
         }
-        uint8_t decode(){
+        inline uint8_t decode(){
             if(position == 0){
                 buffer = *(stream_pos ++);
                 position = 64;
@@ -55,6 +69,17 @@ namespace MDR {
             buffer >>= 1;
             position --;
             return b;
+        }
+        inline uint64_t read_aligned_64(){
+            if(position == 0){
+                return *(stream_pos++);
+            } else {
+                uint64_t result = buffer;
+                uint64_t next = *(stream_pos++);
+                result |= (next << position);
+                buffer = next >> (64 - position);
+                return result;
+            }
         }
         uint32_t size(){
             return (stream_pos - stream_begin);
@@ -67,7 +92,7 @@ namespace MDR {
     };
 
     #define PER_BIT_BLOCK_SIZE 1
-    // per bit bitplane encoder that encodes data by bit using T_stream type buffer
+
     template<class T_data, class T_stream>
     class PerBitBPEncoder : public concepts::BitplaneEncoderInterface<T_data> {
     public:
@@ -78,64 +103,71 @@ namespace MDR {
             static_assert(std::is_integral<T_stream>::value, "PerBitBPEncoder: streams must be unsigned integers.");
         }
 
+        // =====================================================================
+        // encode (without level errors)
+        // =====================================================================
         std::vector<uint8_t *> encode(T_data const * data, int32_t n, int32_t exp, uint8_t num_bitplanes, std::vector<uint32_t>& stream_sizes) const {
             assert(num_bitplanes > 0);
-            // determine block size based on bitplane integer type
-            const int32_t block_size = PER_BIT_BLOCK_SIZE;
             stream_sizes = std::vector<uint32_t>(num_bitplanes, 0);
-            // define fixed point type
             using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
             std::vector<uint8_t *> streams;
             for(int i=0; i<num_bitplanes; i++){
                 streams.push_back((uint8_t *) malloc(2 * n / UINT8_BITS + sizeof(uint64_t)));
             }
             std::vector<BitEncoder> encoders;
-            for(int i=0; i<streams.size(); i++){
+            for(int i=0; i<(int)streams.size(); i++){
                 encoders.push_back(BitEncoder(reinterpret_cast<uint64_t*>(streams[i])));
             }
-            T_data const * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
-                T_stream sign_bitplane = 0;
-                for(int j=0; j<block_size; j++){
-                    T_data cur_data = *(data_pos++);
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
-                    bool sign = cur_data < 0;
-                    int64_t fix_point = (int64_t) shifted_data;
-                    T_fp fp_data = sign ? -fix_point : +fix_point;
-                    // compute level errors
-                    bool first_bit = true;
-                    for(int k=num_bitplanes - 1; k>=0; k--){
-                        uint8_t index = num_bitplanes - 1 - k;
-                        uint8_t bit = (fp_data >> k) & 1u;
-                        encoders[index].encode(bit);
-                        if(bit && first_bit){
-                            encoders[index].encode(sign);
-                            first_bit = false;
-                        }
-                    }                    
+            constexpr int32_t TILE = 4096;
+            std::vector<T_fp> fp_buf(TILE);
+            std::vector<uint8_t> sign_buf(TILE);
+            std::vector<uint8_t> lead_bp(TILE);
+            for(int32_t t = 0; t < n; t += TILE){
+                int32_t tlen = std::min(TILE, n - t);
+                for(int32_t i = 0; i < tlen; i++){
+                    T_data cur = data[t + i];
+                    T_data shifted = ldexp(cur, num_bitplanes - exp);
+                    bool s = cur < 0;
+                    int64_t fix = (int64_t) shifted;
+                    T_fp fp = s ? (T_fp)(-fix) : (T_fp)(fix);
+                    fp_buf[i] = fp;
+                    sign_buf[i] = s ? 1 : 0;
+                    if(fp != 0){
+                        int hi = (sizeof(T_fp) == 8) ? 63 - __builtin_clzll((uint64_t)fp)
+                                                     : 31 - __builtin_clz((uint32_t)fp);
+                        lead_bp[i] = (hi < num_bitplanes) ? (uint8_t)(num_bitplanes - 1 - hi) : num_bitplanes;
+                    } else {
+                        lead_bp[i] = num_bitplanes;
+                    }
                 }
-            }
-            // leftover
-            {
-                int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
-                for(int j=0; j<rest_size; j++){
-                    T_data cur_data = *(data_pos++);
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
-                    bool sign = cur_data < 0;
-                    int64_t fix_point = (int64_t) shifted_data;
-                    T_fp fp_data = sign ? -fix_point : +fix_point;
-                    // compute level errors
-                    bool first_bit = true;
-                    for(int k=num_bitplanes - 1; k>=0; k--){
-                        uint8_t index = num_bitplanes - 1 - k;
-                        uint8_t bit = (fp_data >> k) & 1u;
-                        encoders[index].encode(bit);
-                        if(bit && first_bit){
-                            encoders[index].encode(sign);
-                            first_bit = false;
+                for(uint8_t bp = 0; bp < num_bitplanes; bp++){
+                    int k = num_bitplanes - 1 - bp;
+                    int32_t i = 0;
+                    while(i + 64 <= tlen){
+                        bool has_sign = false;
+                        for(int32_t j = i; j < i + 64; j++){
+                            if(lead_bp[j] == bp){ has_sign = true; break; }
                         }
-                    }                    
+                        if(!has_sign){
+                            uint64_t word = 0;
+                            for(int32_t j = 0; j < 64; j++){
+                                word |= ((uint64_t)((fp_buf[i+j] >> k) & 1u)) << j;
+                            }
+                            encoders[bp].write_aligned_64(word);
+                        } else {
+                            for(int32_t j = i; j < i + 64; j++){
+                                uint8_t bit = (fp_buf[j] >> k) & 1u;
+                                encoders[bp].encode(bit);
+                                if(lead_bp[j] == bp) encoders[bp].encode(sign_buf[j]);
+                            }
+                        }
+                        i += 64;
+                    }
+                    for(; i < tlen; i++){
+                        uint8_t bit = (fp_buf[i] >> k) & 1u;
+                        encoders[bp].encode(bit);
+                        if(lead_bp[i] == bp) encoders[bp].encode(sign_buf[i]);
+                    }
                 }
             }
             for(int i=0; i<num_bitplanes; i++){
@@ -145,89 +177,90 @@ namespace MDR {
             return streams;
         }
 
-        // only differs in error collection
+        // =====================================================================
+        // encode (with level error collection)
+        // =====================================================================
         std::vector<uint8_t *> encode(T_data const * data, int32_t n, int32_t exp, uint8_t num_bitplanes, std::vector<uint32_t>& stream_sizes, std::vector<double>& level_errors) const {
             assert(num_bitplanes > 0);
-            // determine block size based on bitplane integer type
-            const int32_t block_size = PER_BIT_BLOCK_SIZE;
             stream_sizes = std::vector<uint32_t>(num_bitplanes, 0);
-            // define fixed point type
             using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
             std::vector<uint8_t *> streams;
             for(int i=0; i<num_bitplanes; i++){
                 streams.push_back((uint8_t *) malloc(2 * n / UINT8_BITS + sizeof(uint64_t)));
             }
             std::vector<BitEncoder> encoders;
-            for(int i=0; i<streams.size(); i++){
+            for(int i=0; i<(int)streams.size(); i++){
                 encoders.push_back(BitEncoder(reinterpret_cast<uint64_t*>(streams[i])));
             }
-            // init level errors
             level_errors.clear();
-            level_errors.resize(num_bitplanes + 1);
-            for(int i=0; i<level_errors.size(); i++){
-                level_errors[i] = 0;
-            }
-            T_data const * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
-                T_stream sign_bitplane = 0;
-                for(int j=0; j<block_size; j++){
-                    T_data cur_data = *(data_pos++);
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
-                    bool sign = cur_data < 0;
-                    int64_t fix_point = (int64_t) shifted_data;
-                    T_fp fp_data = sign ? -fix_point : +fix_point;
-                    // compute level errors
-                    collect_level_errors(level_errors, fabs(shifted_data), num_bitplanes);
-                    bool first_bit = true;
-                    for(int k=num_bitplanes - 1; k>=0; k--){
-                        uint8_t index = num_bitplanes - 1 - k;
-                        uint8_t bit = (fp_data >> k) & 1u;
-                        encoders[index].encode(bit);
-                        if(bit && first_bit){
-                            encoders[index].encode(sign);
-                            first_bit = false;
-                        }
-                    }                    
+            level_errors.resize(num_bitplanes + 1, 0.0);
+            constexpr int32_t TILE = 4096;
+            std::vector<T_fp> fp_buf(TILE);
+            std::vector<uint8_t> sign_buf(TILE);
+            std::vector<uint8_t> lead_bp(TILE);
+            for(int32_t t = 0; t < n; t += TILE){
+                int32_t tlen = std::min(TILE, n - t);
+                for(int32_t i = 0; i < tlen; i++){
+                    T_data cur = data[t + i];
+                    T_data shifted = ldexp(cur, num_bitplanes - exp);
+                    bool s = cur < 0;
+                    int64_t fix = (int64_t) shifted;
+                    T_fp fp = s ? (T_fp)(-fix) : (T_fp)(fix);
+                    fp_buf[i] = fp;
+                    sign_buf[i] = s ? 1 : 0;
+                    if(fp != 0){
+                        int hi = (sizeof(T_fp) == 8) ? 63 - __builtin_clzll((uint64_t)fp)
+                                                     : 31 - __builtin_clz((uint32_t)fp);
+                        lead_bp[i] = (hi < num_bitplanes) ? (uint8_t)(num_bitplanes - 1 - hi) : num_bitplanes;
+                    } else {
+                        lead_bp[i] = num_bitplanes;
+                    }
+                    collect_level_errors(level_errors, fabs(shifted), num_bitplanes);
                 }
-            }
-            // leftover
-            {
-                int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
-                for(int j=0; j<rest_size; j++){
-                    T_data cur_data = *(data_pos++);
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
-                    bool sign = cur_data < 0;
-                    int64_t fix_point = (int64_t) shifted_data;
-                    T_fp fp_data = sign ? -fix_point : +fix_point;
-                    // compute level errors
-                    collect_level_errors(level_errors, fabs(shifted_data), num_bitplanes);
-                    bool first_bit = true;
-                    for(int k=num_bitplanes - 1; k>=0; k--){
-                        uint8_t index = num_bitplanes - 1 - k;
-                        uint8_t bit = (fp_data >> k) & 1u;
-                        encoders[index].encode(bit);
-                        if(bit && first_bit){
-                            encoders[index].encode(sign);
-                            first_bit = false;
+                for(uint8_t bp = 0; bp < num_bitplanes; bp++){
+                    int k = num_bitplanes - 1 - bp;
+                    int32_t i = 0;
+                    while(i + 64 <= tlen){
+                        bool has_sign = false;
+                        for(int32_t j = i; j < i + 64; j++){
+                            if(lead_bp[j] == bp){ has_sign = true; break; }
                         }
-                    }                    
+                        if(!has_sign){
+                            uint64_t word = 0;
+                            for(int32_t j = 0; j < 64; j++){
+                                word |= ((uint64_t)((fp_buf[i+j] >> k) & 1u)) << j;
+                            }
+                            encoders[bp].write_aligned_64(word);
+                        } else {
+                            for(int32_t j = i; j < i + 64; j++){
+                                uint8_t bit = (fp_buf[j] >> k) & 1u;
+                                encoders[bp].encode(bit);
+                                if(lead_bp[j] == bp) encoders[bp].encode(sign_buf[j]);
+                            }
+                        }
+                        i += 64;
+                    }
+                    for(; i < tlen; i++){
+                        uint8_t bit = (fp_buf[i] >> k) & 1u;
+                        encoders[bp].encode(bit);
+                        if(lead_bp[i] == bp) encoders[bp].encode(sign_buf[i]);
+                    }
                 }
             }
             for(int i=0; i<num_bitplanes; i++){
                 encoders[i].flush();
                 stream_sizes[i] = encoders[i].size() * sizeof(uint64_t);
             }
-            // translate level errors
-            for(int i=0; i<level_errors.size(); i++){
+            for(int i=0; i<(int)level_errors.size(); i++){
                 level_errors[i] = ldexp(level_errors[i], 2*(- num_bitplanes + exp));
             }
             return streams;
         }
 
+        // =====================================================================
+        // decode (full, non-progressive)
+        // =====================================================================
         T_data * decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t num_bitplanes) {
-            const int32_t block_size = PER_BIT_BLOCK_SIZE;
-            // define fixed point type
             using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
             T_data * data = (T_data *) malloc(n * sizeof(T_data));
             if(num_bitplanes == 0){
@@ -235,152 +268,119 @@ namespace MDR {
                 return data;
             }
             std::vector<BitDecoder> decoders;
-            for(int i=0; i<streams.size(); i++){
+            for(size_t i = 0; i < streams.size(); i++){
                 decoders.push_back(BitDecoder(reinterpret_cast<uint64_t const*>(streams[i])));
-                decoders[i].size();
             }
-            // decode
-            T_data * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
-                for(int j=0; j<block_size; j++){
-                    T_fp fp_data = 0;
-                    // decode each bit of the data for each level component
-                    bool first_bit = true;
-                    bool sign = false;
-                    for(int k=num_bitplanes - 1; k>=0; k--){
-                        uint8_t index = num_bitplanes - 1 - k;
-                        uint8_t bit = decoders[index].decode();
-                        fp_data += bit << k;
-                        if(bit && first_bit){
-                            // decode sign
-                            sign = decoders[index].decode();
-                            first_bit = false;
-                        }
+            // Keep element-major order — matches encoder's stream layout
+            // Use raw pointer array to avoid vector<BitDecoder> operator[] overhead
+            BitDecoder * dec = decoders.data();
+            const T_data scale = ldexp((T_data)1.0, -num_bitplanes + exp);
+            for(int32_t i = 0; i < n; i++){
+                T_fp fp_data = 0;
+                bool first_bit = true;
+                bool sign = false;
+                for(int k = num_bitplanes - 1; k >= 0; k--){
+                    uint8_t index = num_bitplanes - 1 - k;
+                    uint8_t bit = dec[index].decode();
+                    fp_data |= (T_fp)bit << k;
+                    if(bit && first_bit){
+                        sign = dec[index].decode();
+                        first_bit = false;
                     }
-                    T_data cur_data = ldexp((T_data)fp_data, - num_bitplanes + exp);
-                    *(data_pos++) = sign ? -cur_data : cur_data;
                 }
+                T_data cur_data = scale * (T_data)fp_data;
+                data[i] = sign ? -cur_data : cur_data;
             }
-            // leftover
-            {
-                int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
-                for(int j=0; j<rest_size; j++){
-                    T_fp fp_data = 0;
-                    // decode each bit of the data for each level component
-                    bool first_bit = true;
-                    bool sign = false;
-                    for(int k=num_bitplanes - 1; k>=0; k--){
+            return data;
+        }
+
+        // =====================================================================
+        // progressive_decode — conservatively optimized
+        //
+        //  Kept element-major order (must match encoder stream layout).
+        //  Changes:
+        //   1. vector<bool> → vector<uint8_t> for signs/flags
+        //      (avoids bit-packing proxy objects, ~2× faster random access)
+        //   2. Raw pointer to decoder array (skip vector operator[])
+        //   3. Precompute ldexp scale factor outside the loop
+        //   4. Eliminated block_size=1 boilerplate (single flat loop)
+        //   5. Use |= instead of += for bit assembly (no carry propagation)
+        //   6. Removed dead decoders[i].size() calls
+        // =====================================================================
+        T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp,
+                                     uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
+            T_data * data = (T_data *) malloc(n * sizeof(T_data));
+            return progressive_decode_into(data, streams, n, exp, starting_bitplane, num_bitplanes, level);
+        }
+        // decode directly into a caller-provided buffer of size n (avoids an internal malloc + external copy)
+        T_data * progressive_decode_into(T_data * data, const std::vector<uint8_t const *>& streams, int32_t n, int exp,
+                                     uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
+            using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
+
+            // Ensure sign/flag vectors exist for this level (uint8_t, not bool)
+            if((int)level_signs.size() <= level){
+                level_signs.resize(level + 1);
+                sign_flags.resize(level + 1);
+            }
+            if(level_signs[level].empty()){
+                level_signs[level].assign(n, 0);
+                sign_flags[level].assign(n, 0);
+            }
+
+            if(num_bitplanes == 0){
+                memset(data, 0, n * sizeof(T_data));
+                return data;
+            }
+
+            std::vector<BitDecoder> decoders;
+            decoders.reserve(streams.size());
+            for(size_t i = 0; i < streams.size(); i++){
+                decoders.push_back(BitDecoder(reinterpret_cast<uint64_t const*>(streams[i])));
+            }
+            // Raw pointer — avoids vector bounds-check / indirection in hot loop
+            BitDecoder * dec = decoders.data();
+
+            uint8_t * signs = level_signs[level].data();
+            uint8_t * flags = sign_flags[level].data();
+            const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
+            const T_data scale = ldexp((T_data)1.0, -(int)ending_bitplane + exp);
+
+            // Element-major decode — matches encoder's interleaved stream order
+            for(int32_t i = 0; i < n; i++){
+                T_fp fp_data = 0;
+
+                if(flags[i]){
+                    // Sign already known from a previous progressive round.
+                    // Pure data bits — tight loop, no branching on bit value.
+                    for(int k = num_bitplanes - 1; k >= 0; k--){
                         uint8_t index = num_bitplanes - 1 - k;
-                        uint8_t bit = decoders[index].decode();
-                        fp_data += bit << k;
+                        fp_data |= (T_fp)dec[index].decode() << k;
+                    }
+                    T_data cur_data = scale * (T_data)fp_data;
+                    data[i] = signs[i] ? -cur_data : cur_data;
+                }
+                else{
+                    // Sign not yet found — need to watch for first set bit.
+                    bool sign = false;
+                    bool first_bit = true;
+                    for(int k = num_bitplanes - 1; k >= 0; k--){
+                        uint8_t index = num_bitplanes - 1 - k;
+                        T_fp bit = dec[index].decode();
+                        fp_data |= bit << k;
                         if(bit && first_bit){
-                            // decode sign
-                            sign = decoders[index].decode();
+                            sign = dec[index].decode();
                             first_bit = false;
+                            flags[i] = 1;
                         }
                     }
-                    T_data cur_data = ldexp((T_data)fp_data, - num_bitplanes + exp);
-                    *(data_pos++) = sign ? -cur_data : cur_data;
+                    signs[i] = sign ? 1 : 0;
+                    T_data cur_data = scale * (T_data)fp_data;
+                    data[i] = sign ? -cur_data : cur_data;
                 }
             }
             return data;
         }
 
-        T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t starting_bitplane, uint8_t num_bitplanes, int level) {
-            const int32_t block_size = PER_BIT_BLOCK_SIZE;
-            // define fixed point type
-            using T_fp = typename std::conditional<std::is_same<T_data, double>::value, uint64_t, uint32_t>::type;
-            T_data * data = (T_data *) malloc(n * sizeof(T_data));
-            if(num_bitplanes == 0){
-                memset(data, 0, n * sizeof(T_data));
-                return data;
-            }
-            std::vector<BitDecoder> decoders;
-            for(int i=0; i<streams.size(); i++){
-                decoders.push_back(BitDecoder(reinterpret_cast<uint64_t const*>(streams[i])));
-                decoders[i].size();
-            }
-            if(level_signs.size() == level){
-                level_signs.push_back(std::vector<bool>(n, false));
-                sign_flags.push_back(std::vector<bool>(n, false));
-            }
-            std::vector<bool>& signs = level_signs[level];
-            std::vector<bool>& flags = sign_flags[level];
-            const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
-            // decode
-            T_data * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
-                for(int j=0; j<block_size; j++){
-                    T_fp fp_data = 0;
-                    // decode each bit of the data for each level component
-                    bool sign = false;
-                    if(flags[i + j]){
-                        // sign recorded
-                        sign = signs[i + j];
-                        for(int k=num_bitplanes - 1; k>=0; k--){
-                            uint8_t index = num_bitplanes - 1 - k;
-                            T_fp bit = decoders[index].decode();
-                            fp_data += bit << k;
-                        }
-                    }
-                    else{
-                        // decode sign if possible
-                        bool first_bit = true;
-                        for(int k=num_bitplanes - 1; k>=0; k--){
-                            uint8_t index = num_bitplanes - 1 - k;
-                            T_fp bit = decoders[index].decode();
-                            fp_data += bit << k;
-                            if(bit && first_bit){
-                                // decode sign
-                                sign = decoders[index].decode();
-                                first_bit = false;
-                                flags[i + j] = true;
-                            }
-                        }
-                        signs[i + j] = sign;
-                    }
-                    T_data cur_data = ldexp((T_data)fp_data, - ending_bitplane + exp);
-                    *(data_pos++) = sign ? -cur_data : cur_data;
-                }
-            }
-            // leftover
-            {
-                int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
-                for(int j=0; j<rest_size; j++){
-                    T_fp fp_data = 0;
-                    // decode each bit of the data for each level component
-                    bool sign = false;
-                    if(flags[n - rest_size + j]){
-                        sign = signs[n - rest_size + j];
-                        for(int k=num_bitplanes - 1; k>=0; k--){
-                            uint8_t index = num_bitplanes - 1 - k;
-                            T_fp bit = decoders[index].decode();
-                            fp_data += bit << k;
-                        }
-                    }
-                    else{
-                        bool first_bit = true;
-                        for(int k=num_bitplanes - 1; k>=0; k--){
-                            uint8_t index = num_bitplanes - 1 - k;
-                            T_fp bit = decoders[index].decode();
-                            fp_data += bit << k;
-                            if(bit && first_bit){
-                                // decode sign
-                                sign = decoders[index].decode();
-                                first_bit = false;
-                                flags[n - rest_size + j] = true;
-                            }
-                        }
-                        signs[n - rest_size + j] = sign;
-                    }
-                    T_data cur_data = ldexp((T_data)fp_data, - ending_bitplane + exp);
-                    *(data_pos++) = sign ? -cur_data : cur_data;
-                }
-            }
-            return data;
-        }
         void print() const {
             std::cout << "Per-bit bitplane encoder" << std::endl;
         }
@@ -396,8 +396,10 @@ namespace MDR {
             }
             level_errors[0] += data * data;
         }
-        std::vector<std::vector<bool>> level_signs;
-        std::vector<std::vector<bool>> sign_flags;
+
+        // uint8_t instead of bool — no bit-packing, direct byte access
+        std::vector<std::vector<uint8_t>> level_signs;
+        std::vector<std::vector<uint8_t>> sign_flags;
     };
 }
 #endif

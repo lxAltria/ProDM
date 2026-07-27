@@ -2,5 +2,6 @@
 #define _MDR_INTERLEAVER_HPP
 
 #include "DirectInterleaver.hpp"
+#include "NewInterleaver.hpp"
 
 #endif

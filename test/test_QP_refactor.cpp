@@ -1,0 +1,335 @@
+#include <iostream>
+#include <ctime>
+#include <cstdlib>
+#include <vector>
+#include <iomanip>
+#include <cmath>
+#include <bitset>
+#include "utils.hpp"
+#include "MDR/Refactor/Refactor.hpp"
+#include "MDR/Tuner/CoeffNaiveSamplingTuner.hpp"
+
+using namespace std;
+bool negabinary = true;
+
+template <class T, class Refactor>
+void evaluate(const vector<T>& data, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Refactor refactor){
+    struct timespec start, end;
+    int err = 0;
+    cout << "Start refactoring" << endl;
+    err = clock_gettime(CLOCK_REALTIME, &start);
+    refactor.refactor(data.data(), dims, target_level, num_bitplanes);
+    err = clock_gettime(CLOCK_REALTIME, &end);
+    cout << "Refactor time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+}
+
+template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
+void test(string filename, const vector<uint32_t>& dims, int target_level, int num_bitplanes, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer){
+    auto refactor = MDR::ComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
+    refactor.negabinary = negabinary;
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    evaluate(data, dims, target_level, num_bitplanes, refactor);
+}
+
+template <class T, class T_stream>
+void test_BitplaneRefactor(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int encoder_option=0){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<=target_level; i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    // negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    if(encoder_option == 0){
+        std::cout << "NegaBinaryBPEncoder" << std::endl;
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        negabinary = true;
+        auto refactor = MDR::BitplaneRefactor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+        refactor.negabinary = negabinary;
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        evaluate(data, dims, target_level, num_bitplanes, refactor);
+    } else {
+        std::cout << "PerBitBPEncoder" << std::endl;
+        auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        negabinary = false;
+        auto refactor = MDR::BitplaneRefactor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::PerBitBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+        refactor.negabinary = negabinary;
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        evaluate(data, dims, target_level, num_bitplanes, refactor);
+    } 
+}
+
+template <class T, class T_stream>
+void test_XORBitplaneRefactor(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<=target_level; i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    auto refactor = MDR::BitplaneRefactor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::XORNegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+    refactor.negabinary = negabinary;
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    evaluate(data, dims, target_level, num_bitplanes, refactor);
+}
+
+template <class T, class T_stream>
+void test_MDR(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<=target_level; i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    auto refactor = MDR::ComposedRefactor<T, MDR::MGARDHierarchicalDecomposer<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+    refactor.negabinary = negabinary;
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    evaluate(data, dims, target_level, num_bitplanes, refactor);
+}
+
+template <class T, class T_stream>
+void test_2D_decomposition(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int direction=0, int encoder_option=0){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<(target_level * 2 + 1); i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        // std::cout << "filename = " << filename << std::endl;
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(direction);
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    // negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    if(encoder_option == 0){
+        std::cout << "NegaBinaryBPEncoder" << std::endl;
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        negabinary = true;
+        auto refactor = MDR::FuseComposedRefactor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+        refactor.negabinary = negabinary;
+        refactor.direction = direction;
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        evaluate(data, dims, target_level, num_bitplanes, refactor);
+    } else {
+        std::cout << "PerBitBPEncoder" << std::endl;
+        auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+        negabinary = false;
+        auto refactor = MDR::FuseComposedRefactor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::PerBitBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+        refactor.negabinary = negabinary;
+        refactor.direction = direction;
+        size_t num_elements = 0;
+        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        evaluate(data, dims, target_level, num_bitplanes, refactor);
+    }
+}
+
+template<class T, class T_stream>
+void test_2D_Adaptive_decomposition(string filename, string output_path, const vector<uint32_t>& dims, int target_level, int num_bitplanes, int stride=10, int block_size=5){
+    string metadata_file = output_path + "/refactored_data/metadata.bin";
+    vector<string> files;
+    for(int i=0; i<(target_level * 2 + 1); i++){
+        string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+        // std::cout << "filename = " << filename << std::endl;
+        files.push_back(filename);
+    }
+    auto decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
+    auto interleaver = MDR::DirectInterleaver<T>();
+    // auto interleaver = MDR::SFCInterleaver<T>();
+    // auto interleaver = MDR::BlockedInterleaver<T>();
+    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    negabinary = true;
+    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // negabinary = false;
+    // auto compressor = MDR::DefaultLevelCompressor();
+    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // auto compressor = MDR::NullLevelCompressor();
+    auto collector = MDR::SquaredErrorCollector<T>();
+    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    auto estimator = MDR::MaxErrorEstimatorHB<T>();
+    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto tuner = MDR::CoeffNaiveSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>>(decomposer, encoder, compressor, interpreter);
+    tuner.negabinary = negabinary;
+    auto refactor = MDR::FuseComposedRefactor_2D<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, MDR::DirectInterleaver<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SquaredErrorCollector<T>, MDR::ConcatLevelFileWriter>(decomposer, interleaver, encoder, compressor, collector, writer);
+    refactor.negabinary = negabinary;
+    size_t num_elements = 0;
+    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    struct timespec start, end;
+    int err = 0;
+    cout << "Start Tuning" << endl;
+    err = clock_gettime(CLOCK_REALTIME, &start);
+    tuner.tune(data.data(), dims, target_level, num_bitplanes, stride, block_size);
+    err = clock_gettime(CLOCK_REALTIME, &end);
+    cout << "Tuner time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
+    std::cout << "Best direction = " << tuner.get_best_direction() << std::endl;
+    refactor.direction = tuner.get_best_direction();
+    evaluate(data, dims, target_level, num_bitplanes, refactor);
+}
+
+int main(int argc, char ** argv){
+
+    int argv_id = 1;
+    string filename = string(argv[argv_id ++]);
+    int option = atoi(argv[argv_id ++]);
+    int target_level = atoi(argv[argv_id ++]);
+    int num_bitplanes = atoi(argv[argv_id ++]);
+    if(num_bitplanes % 2 == 1) {
+        num_bitplanes += 1;
+        std::cout << "Change to " << num_bitplanes + 1 << " bitplanes for simplicity of negabinary encoding" << std::endl;
+    }
+    int num_dims = atoi(argv[argv_id ++]);
+    vector<uint32_t> dims(num_dims, 0);
+    for(int i=0; i<num_dims; i++){
+        dims[i] = atoi(argv[argv_id ++]);
+    }
+    string output_path = string(argv[argv_id++]);
+
+    // string metadata_file = output_path + "/refactored_data/metadata.bin";
+    // vector<string> files;
+    // for(int i=0; i<=target_level; i++){
+    //     string filename = output_path + "/refactored_data/level_" + to_string(i) + ".bin";
+    //     files.push_back(filename);
+    // }
+    // using T = float;
+    // using T_stream = uint32_t;
+    // if(num_bitplanes > 32){
+    //     num_bitplanes = 32;
+    //     std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
+    // }
+    using T = double;
+    using T_stream = uint64_t;
+    if(num_bitplanes > 64){
+        num_bitplanes = 64;
+        std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
+    }
+
+    // auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
+    // auto interleaver = MDR::DirectInterleaver<T>();
+    // // auto interleaver = MDR::SFCInterleaver<T>();
+    // // auto interleaver = MDR::BlockedInterleaver<T>();
+    // // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
+    // // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    // negabinary = true;
+    // // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // // negabinary = false;
+    // // auto compressor = MDR::DefaultLevelCompressor();
+    // auto compressor = MDR::AdaptiveLevelCompressor(64);
+    // // auto compressor = MDR::NullLevelCompressor();
+    // auto collector = MDR::SquaredErrorCollector<T>();
+    // auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+    // // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+
+    // test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+    switch(option){
+        case 0:
+        {
+            target_level = 0;
+            int encoder_option = 0;
+            if(argv_id < argc){
+                encoder_option = atoi(argv[argv_id ++]);
+            }
+            test_BitplaneRefactor<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes, encoder_option);
+            break;
+        }
+        case 1:
+        {
+            target_level = 0;
+            test_XORBitplaneRefactor<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes);
+            break;
+        }
+        case 2:
+        {
+            test_MDR<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes);
+            break;
+        }
+        case 3:
+        {
+            int direction = 0;
+            if(argv_id < argc){
+                direction = atoi(argv[argv_id ++]);
+            }
+            int encoder_option = 0;
+            if(argv_id < argc){
+                encoder_option = atoi(argv[argv_id ++]);
+            }
+            test_2D_decomposition<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes, direction, encoder_option);
+            break;
+        }
+        case 4:
+        {
+            int stride = 10;
+            int block_size = 5;
+            if(argv_id < argc){
+                stride = atoi(argv[argv_id ++]);
+                block_size = atoi(argv[argv_id ++]);
+            }
+            test_2D_Adaptive_decomposition<T, T_stream>(filename, output_path, dims, target_level, num_bitplanes, stride, block_size);
+            break;
+        }
+        default:
+            break;
+    }
+    return 0;
+}

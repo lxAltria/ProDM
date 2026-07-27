@@ -1,5 +1,5 @@
-#ifndef _PRODM_QOI_UTILS_HPP
-#define _PRODM_QOI_UTILS_HPP
+#ifndef _MDR_QOI_UTILS_HPP
+#define _MDR_QOI_UTILS_HPP
 
 #include <iostream>
 #include <ctime>
@@ -8,9 +8,9 @@
 #include <cmath>
 #include <bitset>
 #include <numeric>
+#include <cstdint>
 
-
-namespace QoI{
+namespace MDR{
 
 const std::vector<std::string> names{"V_TOT", "T", "C", "Mach", "PT", "mu"};
 
@@ -27,6 +27,21 @@ inline double compute_inverse_bound_x_square(T x, T eb, T tau){
 }
 
 // f(x) = sqrt(x)
+// template <class T>
+// inline double compute_bound_square_root_x(T x, T eb){
+// 	if(x == 0) {
+// 		return sqrt(eb);
+// 	}
+// 	if(x > eb){
+// 		return eb / (sqrt(x - eb) + sqrt(x));
+// 	}
+// 	else{
+// 		// return eb / sqrt(x);
+// 		T tau_1 = sqrt(x + eb) - sqrt(x);
+// 		T tau_2 = sqrt(x);
+// 		return (tau_1 > tau_2) ? tau_1 : tau_2;
+// 	}
+// }
 template <class T>
 inline double compute_bound_square_root_x(T x, T eb){
 	if(x == 0) {
@@ -66,7 +81,7 @@ inline double compute_bound_radical(T x, T a, T eb){
 		}
 	}
 	else{
-		std::cout << "Warning: cannot control error in 1/(x+a)\n";
+		// std::cout << "Warning: cannot control error in 1/(x+a)\n";
 		return 0;		
 	}
 }
@@ -83,7 +98,7 @@ inline double compute_inverse_bound_radical(T x, T a, T eb, T tau){
 		}
 	}
 	else{
-		std::cout << "Warning: cannot control error in 1/(x+a)\n";
+		// std::cout << "Warning: cannot control error in 1/(x+a)\n";
 		return 0;		
 	}
 }
@@ -99,10 +114,10 @@ inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
 	if(eb_y < fabs(y)){
 		double e = fabs(x)*eb_y + fabs(y)*eb_x;
 		if(y > 0) return e / (y*(y - eb_y));
-		else return e/ (y*(y + eb_y));
+		else return e / (y*(y + eb_y));
 	}
 	else{
-		std::cout << "Warning: cannot control error in x/y\n";
+		// std::cout << "Warning: cannot control error in x/y\n";
 		return 0;
 	}
 }
@@ -163,6 +178,14 @@ void compute_QoIs(const T * Vx, const T * Vy, const T * Vz, const T * P, const T
 		Mach_[i] = Mach;
 		PT_[i] = PT;
 		mu_[i] = mu;
+	}
+}
+
+template <class T>
+void compute_VTOT2(const T * Vx, const T * Vy, const T * Vz, size_t n, T * V_TOT2_){
+	for(int i=0; i<n; i++){
+		double V_TOT2 = Vx[i]*Vx[i] + Vy[i]*Vy[i] + Vz[i]*Vz[i];
+		V_TOT2_[i] = V_TOT2;
 	}
 }
 
@@ -253,6 +276,17 @@ T compute_value_range(const std::vector<T>& vec){
 	T min = vec[0];
 	T max = vec[0];
 	for(int i=0; i<vec.size(); i++){
+		if(vec[i] < min) min = vec[i];
+		if(vec[i] > max) max = vec[i];
+	}
+	return max - min;
+}
+
+template <class T>
+T compute_value_range(const T* vec, uint32_t size){
+	T min = vec[0];
+	T max = vec[0];
+	for(int i=0; i<size; i++){
 		if(vec[i] < min) min = vec[i];
 		if(vec[i] > max) max = vec[i];
 	}

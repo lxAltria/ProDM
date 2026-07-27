@@ -3,6 +3,9 @@
 
 #include "WriterInterface.hpp"
 #include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 namespace MDR {
     // A writer that writes the concatenated level components
@@ -36,6 +39,16 @@ namespace MDR {
             FILE * file = fopen(metadata_file.c_str(), "w");
             fwrite(metadata, 1, size, file);
             fclose(file);
+        }
+
+        std::string get_directory() const {
+            size_t pos = metadata_file.find_last_of('/');
+
+            if (pos != std::string::npos) {
+                return metadata_file.substr(0, pos + 1);
+            }  
+
+            return metadata_file;
         }
 
         ~ConcatLevelFileWriter(){}

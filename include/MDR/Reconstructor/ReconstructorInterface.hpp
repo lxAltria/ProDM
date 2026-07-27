@@ -1,5 +1,6 @@
 #ifndef _MDR_RECONSTRUCTOR_INTERFACE_HPP
 #define _MDR_RECONSTRUCTOR_INTERFACE_HPP
+#include <cstdint>
 
 namespace MDR {
     namespace concepts {

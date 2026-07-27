@@ -46,33 +46,37 @@ int main(int argc, char ** argv){
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);
     }
+    string output_path = string(argv[argv_id++]);
 
-    string metadata_file = "refactored_data/metadata.bin";
+    string metadata_file = output_path + "/metadata.bin";
     vector<string> files;
     for(int i=0; i<=target_level; i++){
-        string filename = "refactored_data/level_" + to_string(i) + ".bin";
+        string filename = output_path + "/level_" + to_string(i) + ".bin";
         files.push_back(filename);
     }
-    using T = float;
-    using T_stream = uint32_t;
-    if(num_bitplanes > 32){
-        num_bitplanes = 32;
-        std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
-    }
-    // using T = double;
-    // using T_stream = uint64_t;
-    // if(num_bitplanes > 64){
-    //     num_bitplanes = 64;
-    //     std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
+
+    int encoder_option = atoi(argv[argv_id++]);
+    // using T = float;
+    // using T_stream = uint32_t;
+    // if(num_bitplanes > 32){
+    //     num_bitplanes = 32;
+    //     std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
     // }
+    using T = double;
+    using T_stream = uint64_t;
+    if(num_bitplanes > 64){
+        num_bitplanes = 64;
+        std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
+    }
 
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
     // auto interleaver = MDR::SFCInterleaver<T>();
     // auto interleaver = MDR::BlockedInterleaver<T>();
     // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-    negabinary = true;
+    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    // negabinary = true;
     // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
     // negabinary = false;
     // auto compressor = MDR::DefaultLevelCompressor();
@@ -82,6 +86,14 @@ int main(int argc, char ** argv){
     auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
     // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
 
-    test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+    if(encoder_option == 0){
+        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        negabinary = true;
+        test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+    } else {
+        auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+        negabinary = false;
+        test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
+    }
     return 0;
 }

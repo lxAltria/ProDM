@@ -1,5 +1,5 @@
-#ifndef _PDR_SZ_APPROXIMATOR_HPP
-#define _PDR_SZ_APPROXIMATOR_HPP
+#ifndef _PDR_SZ3_APPROXIMATOR_HPP
+#define _PDR_SZ3_APPROXIMATOR_HPP
 
 #include "ApproximatorInterface.hpp"
 #include "SZ3/api/sz.hpp"
@@ -8,9 +8,9 @@
 namespace PDR {
     // SZ approximator with SZ3 prediction
     template<class T>
-    class SZApproximator : public concepts::ApproximatorInterface<T> {
+    class SZ3Approximator : public concepts::ApproximatorInterface<T> {
     public:
-        SZApproximator(){}
+        SZ3Approximator(){}
         size_t refactor_approximate(T * data, const std::vector<uint32_t>& dimensions, T approximator_eb, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
 
             size_t cmpSize = 0;
@@ -47,18 +47,18 @@ namespace PDR {
             if(filename.size()) approximator_file_name = filename;
             MGARD::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
             approximator_file_size = cmpSize;
-            std::cout << "Approximator size = " << approximator_file_size << std::endl;
-            std::cout << "num_elements = " << num_elements << std::endl;
+            // std::cout << "Approximator size = " << approximator_file_size << std::endl;
+            // std::cout << "num_elements = " << num_elements << std::endl;
             T * dec_data = (T *) malloc(num_elements * sizeof(T));
             SZ3::Config conf;
             SZ_decompress<T>(conf, cmpData, cmpSize, dec_data);
             free(cmpData);
-            T tmp = 0;
+            // T tmp = 0;
             for(int i=0; i<num_elements; i++){
                 data[i] -= dec_data[i];
-                if(fabs(data[i]) > tmp) tmp = fabs(data[i]);
+                // if(fabs(data[i]) > tmp) tmp = fabs(data[i]);
             }
-            std::cout << "max diff = " << tmp << std::endl;
+            // std::cout << "max diff = " << tmp << std::endl;
             free(dec_data);
             return approximator_file_size;
         }
@@ -77,7 +77,7 @@ namespace PDR {
         }
 
         void print() const {
-            std::cout << "PDR dummy approximator" << std::endl;
+            std::cout << "PDR SZ3 approximator" << std::endl;
         }
     private:
         size_t approximator_file_size;

@@ -54,7 +54,12 @@ namespace MDR {
             if(max_level == -1 || (max_level >= level_num_bitplanes.size())){
                 auto retrieve_sizes = interpreter.interpret_retrieve_size(level_sizes, level_errors, tolerance, level_num_bitplanes);
                 // retrieve data
-                level_components = retriever.retrieve_level_components(level_sizes, retrieve_sizes, prev_level_num_bitplanes, level_num_bitplanes);                
+                level_components = retriever.retrieve_level_components(level_sizes, retrieve_sizes, prev_level_num_bitplanes, level_num_bitplanes);     
+                // std::cout << "level_errors:" << std::endl;
+                // for(int i=0; i<level_errors.size(); i++){
+                //     std::cout << level_errors[i][level_num_bitplanes[i]] << " ";
+                // }           
+                // std::cout << std::endl;
             }
             else{
                 std::vector<std::vector<uint32_t>> tmp_level_sizes;
@@ -74,12 +79,12 @@ namespace MDR {
             }
             // check whether to reconstruct to full resolution
             int skipped_level = 0;
-            for(int i=0; i<=target_level; i++){
-                if(level_num_bitplanes[target_level - i] != 0){
-                    skipped_level = i;
-                    break;
-                }
-            }
+            // for(int i=0; i<=target_level; i++){
+            //     if(level_num_bitplanes[target_level - i] != 0){
+            //         skipped_level = i;
+            //         break;
+            //     }
+            // }
             // TODO: uncomment skip level to reconstruct low resolution data
             // target_level -= skipped_level;
             // timer.end();
@@ -165,6 +170,10 @@ namespace MDR {
             return current_level;
         }
 
+        size_t get_metadata_size(){
+            return retriever.get_metadata_size();
+        }
+
         size_t get_retrieved_size(){
             return retriever.get_retrieved_size();
         }
@@ -218,6 +227,13 @@ namespace MDR {
                     for(int i=0; i<current_dimensions[0]; i++){
                         data[i] += cur_data[i];
                     }
+                }
+                else if(current_dimensions.size() == 2){
+                    for(int i=0; i<current_dimensions[0]; i++){
+                        for(int j=0; j<current_dimensions[1]; j++){
+                            data[i*this->strides[0] + j] += cur_data[i*this->strides[0] + j];
+                        }
+                    }                    
                 }
                 else if(current_dimensions.size() == 3){
                     for(int i=0; i<current_dimensions[0]; i++){

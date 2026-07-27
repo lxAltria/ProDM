@@ -2,6 +2,10 @@
 #define _PDR_APPROXIMATOR_HPP
 
 #include "DummyApproximator.hpp"
-#include "SZApproximator.hpp"
+#include "HPEZApproximator.hpp"
+#include "SZ3Approximator.hpp"
+#include "SZ2Approximator.hpp"
+#include "GEApproximator.hpp"
+#include "MGARDApproximator.hpp"
 
 #endif
