@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 mkdir -p data
 curl -LO https://g-d0cd3f.fd635.8443.data.globus.org/raw-data/Hurricane-ISABEL/SDRBENCH-Hurricane-ISABEL-100x500x500.tar.gz

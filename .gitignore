@@ -6,3 +6,5 @@ example/100x500x500/
 example/*.tar.gz
 example/*.log
 example/refactored/
+install/
+.DS_Store

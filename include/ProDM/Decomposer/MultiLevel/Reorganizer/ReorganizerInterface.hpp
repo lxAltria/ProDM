@@ -1,5 +1,7 @@
 #ifndef _MDR_REORGANIZER_INTERFACE_HPP
 #define _MDR_REORGANIZER_INTERFACE_HPP
+
+#include <vector>
 #include <cstdint>
 
 namespace MDR {

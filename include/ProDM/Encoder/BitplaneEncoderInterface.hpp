@@ -1,5 +1,7 @@
 #ifndef _MDR_BITPLANE_ENCODER_INTERFACE_HPP
 #define _MDR_BITPLANE_ENCODER_INTERFACE_HPP
+
+#include <vector>
 #include <cstdint>
 #include <cassert>
 

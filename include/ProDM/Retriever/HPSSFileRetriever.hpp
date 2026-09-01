@@ -1,6 +1,14 @@
 #ifndef _MDR_HPSS_FILE_RETRIEVER_HPP
 #define _MDR_HOSS_FILE_RETRIEVER_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "RetrieverInterface.hpp"
 #include <cstdio>
 

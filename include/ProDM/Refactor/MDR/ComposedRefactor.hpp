@@ -1,6 +1,12 @@
 #ifndef _MDR_COMPOSED_REFACTOR_HPP
 #define _MDR_COMPOSED_REFACTOR_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

@@ -107,13 +107,13 @@ void launch_reconstructor(string filename, const vector<double>& tolerance, int 
 #endif
         default:
             std::cerr << "Approximator " << approximator_rank << " is unknown or not enabled at build time (see PRODM_WITH_* CMake options)" << std::endl;
-            break;
+            exit(-1);
     }
 }
 
 void usage(char* cmd) {
     std::cout << "usage: " << cmd <<
-                  " data_file refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]"
+                  " data_file refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4, GE-5]"
                   << std::endl
                   << "example: " << cmd <<
                   " density.d64 refactored/Density_refactored 3 1e-1 1e-2 1e-3 -d 4" << std::endl;
@@ -128,6 +128,11 @@ int main(int argc, char ** argv){
     std::string filename = string(argv[argv_id++]);
     std::string refactor_dict = string(argv[argv_id++]);
     int num_tolerance = atoi(argv[argv_id ++]);
+    if(num_tolerance <= 0 || argc < argv_id + num_tolerance + 2){
+        std::cerr << "Insufficient or invalid arguments (num_tolerance parsed as " << num_tolerance << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<double> tolerance(num_tolerance, 0);
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);  
@@ -139,6 +144,10 @@ int main(int argc, char ** argv){
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
         auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        if(num_bytes == 0){
+            std::cerr << "Cannot read " << metadata_file << "; run the refactor first" << std::endl;
+            return -1;
+        }
         num_dims = metadata[0];
         assert(num_bytes > num_dims * sizeof(uint32_t) + sizeof(size_t) + 2);
         // PDR metadata layout: num_dims (1B), dims (num_dims x 4B), approximator_size (8B), num_levels (1B), ...

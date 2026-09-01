@@ -1,6 +1,10 @@
 #ifndef _MDR_DP_BASED_SIZE_INTERPRETER_HPP
 #define _MDR_DP_BASED_SIZE_INTERPRETER_HPP
 
+#include <vector>
+
+#include <iostream>
+
 #include "SizeInterpreterInterface.hpp"
 #include <queue>
 #include "ProDM/Utils/RefactorUtils.hpp"

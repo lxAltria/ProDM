@@ -1,6 +1,14 @@
 #ifndef _MDR_NEGABINARY_BP_ENCODER_HPP
 #define _MDR_NEGABINARY_BP_ENCODER_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "BitplaneEncoderInterface.hpp"
 
 namespace MDR {
@@ -21,7 +29,7 @@ namespace MDR {
             exp += 2;
             // determine block size based on bitplane integer type
             uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
-            std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n - 1)/block_size + 1, 0);
+            std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n > 0) ? ((n - 1)/(int32_t)block_size + 1) : 0, 0);
             stream_sizes = std::vector<uint32_t>(num_bitplanes, 0);
             // define fixed point type
             using T_fps = typename std::conditional<std::is_same<T_data, double>::value, int64_t, int32_t>::type;
@@ -68,7 +76,7 @@ namespace MDR {
             exp += 2;
             // determine block size based on bitplane integer type
             uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
-            std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n - 1)/block_size + 1, 0);
+            std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n > 0) ? ((n - 1)/(int32_t)block_size + 1) : 0, 0);
             stream_sizes = std::vector<uint32_t>(num_bitplanes, 0);
             // define fixed point type
             using T_fps = typename std::conditional<std::is_same<T_data, double>::value, int64_t, int32_t>::type;

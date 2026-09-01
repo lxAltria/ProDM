@@ -1,5 +1,7 @@
 #ifndef _MDR_TUNER_INTERFACE_HPP
 #define _MDR_TUNER_INTERFACE_HPP
+
+#include <vector>
 #include <cstdint>
 
 namespace MDR{

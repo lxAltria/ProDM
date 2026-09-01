@@ -1,6 +1,12 @@
 #ifndef _MDR_FILE_WRITER_HPP
 #define _MDR_FILE_WRITER_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
 #include "WriterInterface.hpp"
 #include <cstdio>
 #include <iostream>
@@ -27,6 +33,7 @@ namespace MDR {
                     concated_level_data_pos += level_sizes[i][j];
                 }
                 FILE * file = fopen((level_files[i]).c_str(), "w");
+                if(!file){ std::cerr << "Failed to open " << (level_files[i]) << " for writing" << std::endl; exit(-1); }
                 fwrite(concated_level_data, 1, concated_level_size, file);
                 fclose(file);
                 free(concated_level_data);
@@ -37,6 +44,7 @@ namespace MDR {
 
         void write_metadata(uint8_t const * metadata, uint32_t size) const {
             FILE * file = fopen(metadata_file.c_str(), "w");
+                if(!file){ std::cerr << "Failed to open " << metadata_file << " for writing" << std::endl; exit(-1); }
             fwrite(metadata, 1, size, file);
             fclose(file);
         }

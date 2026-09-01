@@ -1,6 +1,14 @@
 #ifndef _MDR_COEFFICIENT_NAIVE_SAMPLING_TUNER_HPP
 #define _MDR_COEFFICIENT_NAIVE_SAMPLING_TUNER_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "TunerInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Encoder/BitplaneEncoder.hpp"

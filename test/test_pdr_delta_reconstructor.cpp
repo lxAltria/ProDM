@@ -107,7 +107,7 @@ void launch_reconstructor(string filename, string refactor_dict, const vector<do
 #endif
         default:
             std::cerr << "Approximator " << approximator_rank << " is unknown or not enabled at build time (see PRODM_WITH_* CMake options)" << std::endl;
-            break;
+            exit(-1);
     }
 }
 
@@ -128,6 +128,11 @@ int main(int argc, char ** argv){
     std::string filename = string(argv[argv_id++]);
     std::string refactor_dict = string(argv[argv_id++]);
     int num_tolerance = atoi(argv[argv_id ++]);
+    if(num_tolerance <= 0 || argc < argv_id + num_tolerance + 2){
+        std::cerr << "Insufficient or invalid arguments (num_tolerance parsed as " << num_tolerance << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<double> tolerance(num_tolerance, 0);
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);

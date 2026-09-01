@@ -1,6 +1,10 @@
 #ifndef _MDR_BASIC_SIZE_INTERPRETER_HPP
 #define _MDR_BASIC_SIZE_INTERPRETER_HPP
 
+#include <vector>
+
+#include <iostream>
+
 #include "SizeInterpreterInterface.hpp"
 
 // inorder and round-robin size interpreter

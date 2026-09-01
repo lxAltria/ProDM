@@ -83,7 +83,7 @@ void launch_refactor(string filename, string refactor_dict, const vector<uint32_
 #endif
         default:
             std::cerr << "Approximator " << approximator_rank << " is unknown or not enabled at build time (see PRODM_WITH_* CMake options)" << std::endl;
-            break;
+            exit(-1);
     }
 }
 
@@ -104,6 +104,11 @@ int main(int argc, char ** argv){
     std::string filename = string(argv[argv_id ++]);
     std::string refactor_dict = string(argv[argv_id ++]);
     int num_dims = atoi(argv[argv_id ++]);
+    if(num_dims <= 0 || argc < argv_id + num_dims + 2){
+        std::cerr << "Insufficient or invalid arguments (num_dims parsed as " << num_dims << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<uint32_t> dims(num_dims, 0);
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);

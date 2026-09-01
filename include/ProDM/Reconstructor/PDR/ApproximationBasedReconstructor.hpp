@@ -1,6 +1,14 @@
 #ifndef _PDR_COMPOSED_RECONSTRUCTOR_HPP
 #define _PDR_COMPOSED_RECONSTRUCTOR_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include <numeric>
 #include "ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"

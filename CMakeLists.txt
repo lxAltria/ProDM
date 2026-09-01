@@ -17,6 +17,7 @@ option(PRODM_WITH_SZ2 "Enable the SZ2 approximator" OFF)
 option(PRODM_WITH_SZ3 "Enable the SZ3 approximator and SZ3-based tools" OFF)
 option(PRODM_WITH_HPEZ "Enable the HPEZ (QoZ) approximator" OFF)
 option(PRODM_WITH_MGARD "Enable the MGARD approximator" OFF)
+option(PRODM_WITH_MPI "Build the MPI-parallel tools in prl_src (skipped automatically if MPI is not found)" ON)
 
 # zstd (required): taken from the system installation
 find_path(ZSTD_INCLUDE_DIR NAMES zstd.h
@@ -77,18 +78,28 @@ if(PRODM_WITH_SZ2)
 endif()
 
 if(PRODM_WITH_HPEZ)
-  # QoZ (HPEZ) is used header-only
+  # QoZ (HPEZ) is used header-only, but its headers reuse parts of the SZ3
+  # headers (e.g., SZ3/utils/ska_hash), so the SZ3 include directory is also needed
   set(QoZ_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/QoZ/install/include")
   if(NOT EXISTS "${QoZ_INCLUDE_DIR}/QoZ/api/sz.hpp")
     message(FATAL_ERROR
       "PRODM_WITH_HPEZ is ON but the QoZ headers were not found under external/QoZ; "
       "fetch them first (see build_script.sh) or set QoZ_INCLUDE_DIR.")
   endif()
-  target_include_directories(${PROJECT_NAME} INTERFACE "${QoZ_INCLUDE_DIR}")
+  set(SZ3_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/SZ3/install/include")
+  if(NOT EXISTS "${SZ3_INCLUDE_DIR}/SZ3")
+    message(FATAL_ERROR
+      "PRODM_WITH_HPEZ is ON but the SZ3 headers (required by QoZ) were not found "
+      "under external/SZ3; build SZ3 first (see build_script.sh).")
+  endif()
+  target_include_directories(${PROJECT_NAME} INTERFACE "${QoZ_INCLUDE_DIR}" "${SZ3_INCLUDE_DIR}")
   target_compile_definitions(${PROJECT_NAME} INTERFACE PRODM_HAVE_HPEZ)
 endif()
 
 if(PRODM_WITH_MGARD)
+  # Note: MGARD exposes a C++ API, so libmgard must be built with the same
+  # compiler/C++ standard library as ProDM (a gcc-built libmgard does not link
+  # under Apple Clang and vice versa). SZ2/SZ3 are C APIs and do not care.
   find_library(MGARD_LIBRARY NAMES mgard
     HINTS "${CMAKE_CURRENT_SOURCE_DIR}/external/MGARD/install-serial"
     PATH_SUFFIXES lib lib64 ${CMAKE_INSTALL_LIBDIR}
@@ -107,4 +118,6 @@ endif()
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 add_subdirectory(test)
-add_subdirectory(prl_src)
+if(PRODM_WITH_MPI)
+  add_subdirectory(prl_src)
+endif()

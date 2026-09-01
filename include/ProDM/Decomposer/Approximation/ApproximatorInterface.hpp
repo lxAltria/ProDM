@@ -1,5 +1,9 @@
 #ifndef _PDR_APPROXIMATOR_INTERFACE_HPP
 #define _PDR_APPROXIMATOR_INTERFACE_HPP
+
+#include <string>
+
+#include <vector>
 #include <cstdint>
 #include <cstddef>
 

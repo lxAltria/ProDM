@@ -1,6 +1,16 @@
 #ifndef _PDR_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
 #define _PDR_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

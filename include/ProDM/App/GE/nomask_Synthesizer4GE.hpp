@@ -1,6 +1,8 @@
 #ifndef _MDR_NOMASK_GE_SYNTHESIZER_HPP
 #define _MDR_NOMASK_GE_SYNTHESIZER_HPP
 
+#include <cstring>
+
 #include <iostream>
 #include <cstdlib>
 #include <fstream>

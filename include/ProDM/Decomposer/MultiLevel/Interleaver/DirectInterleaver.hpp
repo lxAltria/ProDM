@@ -1,6 +1,12 @@
 #ifndef _MDR_DIRECT_INTERLEAVER_HPP
 #define _MDR_DIRECT_INTERLEAVER_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "InterleaverInterface.hpp"
 
 namespace MDR {

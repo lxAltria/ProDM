@@ -1,6 +1,14 @@
 #ifndef _SIGN_ABSOLUTE_BP_ENCODER_HPP
 #define _SIGN_ABSOLUTE_BP_ENCODER_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "BitplaneEncoderInterface.hpp"
 
 namespace MDR {

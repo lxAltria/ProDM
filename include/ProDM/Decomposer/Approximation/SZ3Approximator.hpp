@@ -1,6 +1,14 @@
 #ifndef _PDR_SZ3_APPROXIMATOR_HPP
 #define _PDR_SZ3_APPROXIMATOR_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ApproximatorInterface.hpp"
 #include "SZ3/api/sz.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"

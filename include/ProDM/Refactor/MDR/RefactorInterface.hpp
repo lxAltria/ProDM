@@ -1,5 +1,7 @@
 #ifndef _MDR_REFACTOR_INTERFACE_HPP
 #define _MDR_REFACTOR_INTERFACE_HPP
+
+#include <vector>
 #include <cstdint>
 
 namespace MDR {

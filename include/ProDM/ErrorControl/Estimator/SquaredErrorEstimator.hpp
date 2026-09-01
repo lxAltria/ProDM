@@ -1,6 +1,10 @@
 #ifndef _MDR_SQUARED_ERROR_ESTIMATOR_HPP
 #define _MDR_SQUARED_ERROR_ESTIMATOR_HPP
 
+#include <vector>
+
+#include <iostream>
+
 #include "ErrorEstimatorInterface.hpp"
 
 namespace MDR {

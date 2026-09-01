@@ -26,13 +26,17 @@ ProDM also integrates other existing progressive approaches from researchers and
 
 ## Installation
 
-One-command compilation using `build_script.sh`. It will automatically build the ProDM library and its dependencies.
+**Prerequisites:** a C++17 compiler, CMake >= 3.13, and libzstd (e.g., `brew install zstd` or `apt install libzstd-dev`). MPI is optional (the parallel tools are skipped if it is absent), and the example workflow additionally uses python3 with numpy.
+
+One-command compilation using `build_script.sh`. It will automatically build the ProDM library and its dependencies (SZ2, SZ3, QoZ/HPEZ, and MGARD under `external/`), and enables all of them. Compilers default to the system ones and can be overridden, e.g. `CC=gcc-16 CXX=g++-16 sh build_script.sh`.
 
 ```bash
 git clone https://github.com/lxAltria/ProDM.git
 cd ProDM
 sh build_script.sh
 ```
+
+Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control — the SC'21/SC'26 tools plus the PDR tools with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The QoI tools (`refactor_d64`, `qoi_Vtot_d64`) require all four.
 
 ### Examples
 
@@ -123,7 +127,7 @@ Then perform refactoring and retrieval with weighted=0 to disable weighted bitpl
 ```bash
 cd build
 # Refactor
-# ./test/refactor_d64 $approximator $weighted=0 $dataset_name $path_to_dataset
+# ./test/refactor_d64 $approximator $weighted $dataset_name $path_to_dataset
 ./test/refactor_d64 4 0 Hurricane ../example
 # Retrieval
 # ./test/qoi_{$target_QoI}_d64 $approximator $weighted $decrease_method $rel_eb $path_to_dataset
@@ -147,7 +151,7 @@ QoI-based refactoring and progressive retrieval with weighted bitplanes (setting
 ```bash
 cd build
 # Refactor
-# ./test/refactor_d64 $approximator $weighted $dataset_id $path_to_dataset $max_weight_v $block_size $approximator_eb
+# ./test/refactor_d64 $approximator $weighted $dataset_name $path_to_dataset $max_weight_v $block_size $approximator_eb
 ./test/refactor_d64 4 1 Hurricane ../example 7 4 0.001
 # Retrieval
 # ./test/qoi_{$target_QoI}_d64 $approximator $weighted $decrease_method $rel_eb $path_to_dataset

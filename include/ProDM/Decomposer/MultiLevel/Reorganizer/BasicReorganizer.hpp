@@ -1,6 +1,14 @@
 #ifndef _MDR_BASIC_REORGANIZER_HPP
 #define _MDR_BASIC_REORGANIZER_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ReorganizerInterface.hpp"
 
 namespace MDR {

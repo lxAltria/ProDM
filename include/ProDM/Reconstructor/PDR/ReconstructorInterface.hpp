@@ -1,6 +1,7 @@
 #ifndef _PDR_RECONSTRUCTOR_INTERFACE_HPP
 #define _PDR_RECONSTRUCTOR_INTERFACE_HPP
 #include <cstdint>
+#include <vector>
 
 namespace PDR {
     namespace concepts {

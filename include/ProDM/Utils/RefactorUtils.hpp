@@ -6,6 +6,10 @@
 #include <cmath>
 #include <ctime>
 #include <cstring>
+#include <cstdint>
+#include <cstdlib>
+#include <string>
+#include <iostream>
 
 namespace MDR {
 

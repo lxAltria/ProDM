@@ -21,6 +21,10 @@ using namespace MDR;
 int main(int argc, char** argv){
 
     using T = double;
+    if(argc < 5){
+        std::cerr << "usage: " << argv[0] << " approximator weighted dataset_name path_to_dataset [max_weight block_size|max_weight_temperature approximator_eb [max_aggregated_weight]]" << std::endl;
+        return -1;
+    }
     int argv_id = 1;
     int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
@@ -39,7 +43,7 @@ int main(int argc, char** argv){
     int max_weight_for_temperature = 0;
 	int block_size = 1;
     T approximator_eb = 0.001;
-	if(argc > 5){
+	if(argc >= 8){
 		max_weight_for_vtot = atoi(argv[argv_id++]);
         if (std::strcmp(data.c_str(), "GE") == 0){
             max_weight_for_temperature = atoi(argv[argv_id++]);
@@ -358,6 +362,10 @@ int main(int argc, char** argv){
             }
         }
         else{
+            if(argv_id >= argc){
+                std::cerr << "HPEZ_Vtot2 weighted mode requires max_aggregated_weight as the last argument" << std::endl;
+                return -1;
+            }
             int max_aggregated_weight = atoi(argv[argv_id++]);
             if(!max_aggregated_weight){
                 if(std::strcmp(data.c_str(), "Hurricane") == 0){

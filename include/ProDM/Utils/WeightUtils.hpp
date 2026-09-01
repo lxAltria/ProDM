@@ -1,6 +1,8 @@
 #ifndef _MDR_WEIGHTUTILS_HPP
 #define _MDR_WEIGHTUTILS_HPP
 
+#include <cstring>
+
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
@@ -9,6 +11,7 @@
 #include <cmath>
 #include <bitset>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
+#include "ProDM/Utils/RefactorUtils.hpp"
 #include <numeric>
 #include <cstdint>
 

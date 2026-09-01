@@ -1,6 +1,14 @@
 #ifndef _PDR_HPEZ_APPROXIMATOR_HPP
 #define _PDR_HPEZ_APPROXIMATOR_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ApproximatorInterface.hpp"
 #include "QoZ/api/sz.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"

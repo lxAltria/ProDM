@@ -1,6 +1,12 @@
 #ifndef _MDR_DIRECT_INTERLEAVER_NEW_HPP
 #define _MDR_DIRECT_INTERLEAVER_NEW_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "InterleaverInterface.hpp"
 #include <cassert>
 

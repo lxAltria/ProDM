@@ -1,6 +1,12 @@
 #ifndef _MDR_XORNEGABINARY_BP_ENCODER_HPP
 #define _MDR_XORNEGABINARY_BP_ENCODER_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "BitplaneEncoderInterface.hpp"
 #include <cstring>
 #include <cmath>
@@ -141,6 +147,13 @@ namespace MDR {
         // decode — delegates to progressive_decode
         // =====================================================================
         T_data * decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t num_bitplanes) {
+            // decode() is one-shot: clear any progressive history kept under this synthetic level key
+            int level = streams.size();
+            if(level < (int)level_decoded_bp.size()){
+                level_decoded_bp[level] = 0;
+                level_hist1[level].clear();
+                level_hist2[level].clear();
+            }
             return progressive_decode(streams, n, exp, 0, num_bitplanes, streams.size());
         }
 

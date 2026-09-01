@@ -1719,6 +1719,10 @@ std::vector<size_t> retrieve_V_TOT_HPEZ_2(std::string rdata_file_prefix, T tau, 
 int main(int argc, char ** argv){
 	using T = double;
 	using T_stream = uint32_t;
+	if(argc < 6){
+		std::cerr << "usage: " << argv[0] << " approximator weighted decrease_method rel_eb path_to_dataset" << std::endl;
+		return -1;
+	}
 	int argv_id = 1;
 	int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);
@@ -1818,7 +1822,8 @@ int main(int argc, char ** argv){
 		total_retrieved_size = retrieve_V_TOT_HPEZ_update_eb<T>(rdata_file_prefix, tau, ebs, num_elements, mask, weighted, max_act_error, max_est_error, weight_file_size, decrease_method);
 		break;
 	default:
-		break;
+		std::cerr << "Unknown approximator id " << compressor << std::endl;
+		return -1;
 	}
 
 	err = clock_gettime(CLOCK_REALTIME, &end);

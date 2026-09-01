@@ -1,6 +1,12 @@
 #ifndef _PDR_DUMMY_APPROXIMATOR_HPP
 #define _PDR_DUMMY_APPROXIMATOR_HPP
 
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ApproximatorInterface.hpp"
 
 namespace PDR {

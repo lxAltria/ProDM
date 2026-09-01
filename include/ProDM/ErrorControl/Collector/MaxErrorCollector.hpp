@@ -1,6 +1,10 @@
 #ifndef _MDR_MAX_ERROR_COLLECTOR_HPP
 #define _MDR_MAX_ERROR_COLLECTOR_HPP
 
+#include <vector>
+
+#include <iostream>
+
 #include "ErrorCollectorInterface.hpp"
 
 namespace MDR {

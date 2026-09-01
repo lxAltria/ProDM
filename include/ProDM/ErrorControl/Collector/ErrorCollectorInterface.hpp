@@ -1,5 +1,7 @@
 #ifndef _MDR_ERROR_COLLECTOR_INTERFACE_HPP
 #define _MDR_ERROR_COLLECTOR_INTERFACE_HPP
+
+#include <vector>
 #include <cstdint>
 
 namespace MDR {

@@ -83,13 +83,13 @@ void launch_refactor(string filename, const vector<uint32_t>& dims, int num_bitp
 #endif
         default:
             std::cerr << "Approximator " << approximator_rank << " is unknown or not enabled at build time (see PRODM_WITH_* CMake options)" << std::endl;
-            break;
+            exit(-1);
     }
 }
 
 void usage(char* cmd) {
     std::cout << "usage: " << cmd <<
-                  " data_file output_dict num_bitplanes num_dim dim0 .. dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]"
+                  " data_file output_dict num_bitplanes num_dim dim0 .. dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4, GE-5]"
                   << std::endl
                   << "example: " << cmd <<
                   " density.d64 refactor/Density_refactored 3 256 384 384 -d 4" << std::endl;
@@ -107,9 +107,14 @@ int main(int argc, char ** argv){
     int num_bitplanes = atoi(argv[argv_id ++]);
     if(num_bitplanes % 2 == 1) {
         num_bitplanes += 1;
-        std::cout << "Change to " << num_bitplanes + 1 << " bitplanes for simplicity of negabinary encoding" << std::endl;
+        std::cout << "Change to " << num_bitplanes << " bitplanes for simplicity of negabinary encoding" << std::endl;
     }
     int num_dims = atoi(argv[argv_id ++]);
+    if(num_dims <= 0 || argc < argv_id + num_dims + 2){
+        std::cerr << "Insufficient or invalid arguments (num_dims parsed as " << num_dims << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<uint32_t> dims(num_dims, 0);
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);
@@ -149,6 +154,10 @@ int main(int argc, char ** argv){
         auto compressor = MDR::AdaptiveLevelCompressor(64);
         auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
         launch_refactor<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
+    } else {
+        std::cerr << "Unknown data type option: " << dtype << " (expected -f or -d); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
     }
 
     return 0;

@@ -1,6 +1,14 @@
 #ifndef _MDR_WEIGHTED_PERBIT_BP_ENCODER_HPP
 #define _MDR_WEIGHTED_PERBIT_BP_ENCODER_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "BitplaneEncoderInterface.hpp"
 #include "PerBitBPEncoder.hpp"
 #include <bitset>

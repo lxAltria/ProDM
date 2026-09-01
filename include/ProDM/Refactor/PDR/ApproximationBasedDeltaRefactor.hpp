@@ -1,6 +1,12 @@
 #ifndef _PDR_APPROXIMATION_BASED_DELTA_REFACTOR_HPP
 #define _PDR_APPROXIMATION_BASED_DELTA_REFACTOR_HPP
 
+#include <iostream>
+
+#include <string>
+#include <vector>
+#include <cstdio>
+#include <cstdlib>
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 

@@ -1,6 +1,14 @@
 #ifndef _MDR_2D_FUSE_COMPOSED_RECONSTRUCTOR_NEW_HPP
 #define _MDR_2D_FUSE_COMPOSED_RECONSTRUCTOR_NEW_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

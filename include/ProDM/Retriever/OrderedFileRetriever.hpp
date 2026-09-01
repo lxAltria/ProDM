@@ -1,6 +1,10 @@
 #ifndef _MDR_ORDERED_FILE_RETRIEVER_HPP
 #define _MDR_ORDERED_FILE_RETRIEVER_HPP
 
+#include <string>
+
+#include <vector>
+
 #include "RetrieverInterface.hpp"
 #include <cstdio>
 #include <cstdlib>

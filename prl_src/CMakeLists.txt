@@ -1,4 +1,8 @@
-find_package(MPI REQUIRED)
+find_package(MPI)
+if(NOT MPI_FOUND)
+    message(STATUS "MPI not found; skipping the parallel tools in prl_src (install MPI or set PRODM_WITH_MPI=OFF to silence)")
+    return()
+endif()
 
 function(add_my_executable target source)
     add_executable(${target} ${source})

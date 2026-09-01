@@ -104,6 +104,11 @@ int main(int argc, char ** argv){
     string filename = string(argv[argv_id ++]);
     string refactored_path = string(argv[argv_id++]);
     int num_tolerance = atoi(argv[argv_id ++]);
+    if(num_tolerance <= 0 || argc < argv_id + num_tolerance + 2){
+        std::cerr << "Insufficient or invalid arguments (num_tolerance parsed as " << num_tolerance << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<double> tolerance(num_tolerance, 0);
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);
@@ -115,6 +120,10 @@ int main(int argc, char ** argv){
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
         auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        if(num_bytes == 0){
+            std::cerr << "Cannot read " << metadata_file << "; run the refactor first" << std::endl;
+            return -1;
+        }
         num_dims = metadata[0];
         assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_levels = metadata[num_dims * sizeof(uint32_t) + 1];

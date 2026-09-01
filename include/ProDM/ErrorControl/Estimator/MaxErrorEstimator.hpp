@@ -1,6 +1,12 @@
 #ifndef _MDR_MAX_ERROR_ESTIMATOR_HPP
 #define _MDR_MAX_ERROR_ESTIMATOR_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ErrorEstimatorInterface.hpp"
 
 namespace MDR {

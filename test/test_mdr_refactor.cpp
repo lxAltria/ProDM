@@ -81,9 +81,14 @@ int main(int argc, char ** argv){
     int num_bitplanes = atoi(argv[argv_id ++]);
     if(num_bitplanes % 2 == 1) {
         num_bitplanes += 1;
-        std::cout << "Change to " << num_bitplanes + 1 << " bitplanes for simplicity of negabinary encoding" << std::endl;
+        std::cout << "Change to " << num_bitplanes << " bitplanes for simplicity of negabinary encoding" << std::endl;
     }
     int num_dims = atoi(argv[argv_id ++]);
+    if(num_dims <= 0 || argc < argv_id + num_dims + 2){
+        std::cerr << "Insufficient or invalid arguments (num_dims parsed as " << num_dims << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<uint32_t> dims(num_dims, 0);
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);

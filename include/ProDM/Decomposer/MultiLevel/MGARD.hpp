@@ -1,6 +1,12 @@
 #ifndef _MDR_MGARD_DECOMPOSER_HPP
 #define _MDR_MGARD_DECOMPOSER_HPP
 
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "DecomposerInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/decompose.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/recompose.hpp"

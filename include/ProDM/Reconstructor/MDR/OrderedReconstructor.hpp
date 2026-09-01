@@ -1,6 +1,14 @@
 #ifndef _MDR_ORDERED_RECONSTRUCTOR_HPP
 #define _MDR_ORDERED_RECONSTRUCTOR_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

@@ -1,6 +1,12 @@
 #ifndef _MDR_DEFAULT_LEVEL_COMPRESSOR_HPP
 #define _MDR_DEFAULT_LEVEL_COMPRESSOR_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "LevelCompressorInterface.hpp"
 #include "LosslessCompressor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"

@@ -1,6 +1,16 @@
 #ifndef _PDR_GE_WEIGHTED_APPROXIMATION_BASED_REFACTOR_HPP
 #define _PDR_GE_WEIGHTED_APPROXIMATION_BASED_REFACTOR_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 #include "ProDM/Encoder/BitplaneEncoder.hpp"

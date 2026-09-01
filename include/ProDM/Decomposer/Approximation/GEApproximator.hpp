@@ -1,6 +1,12 @@
 #ifndef _PDR_GE_APPROXIMATOR_HPP
 #define _PDR_GE_APPROXIMATOR_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <iostream>
+
 #include "ApproximatorInterface.hpp"
 #include "QoZ/api/sz.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"

@@ -319,7 +319,7 @@ void usage(char* cmd) {
 }
 
 int main(int argc, char ** argv){
-    if (argc < 2) {
+    if (argc < 7) {
         usage(argv[0]);
         return 0;
     }
@@ -332,7 +332,7 @@ int main(int argc, char ** argv){
     int num_bitplanes = atoi(argv[argv_id ++]);
     if(num_bitplanes % 2 == 1) {
         num_bitplanes += 1;
-        std::cout << "Change to " << num_bitplanes + 1 << " bitplanes for simplicity of negabinary encoding" << std::endl;
+        std::cout << "Change to " << num_bitplanes << " bitplanes for simplicity of negabinary encoding" << std::endl;
     }
     int num_dims = atoi(argv[argv_id ++]);
     // need num_dims dims + encoder_option + prior_mode + CP_option after this point

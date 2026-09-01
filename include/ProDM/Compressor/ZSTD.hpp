@@ -9,7 +9,7 @@ namespace MDR {
     namespace ZSTD{
         #define ZSTD_LEVEL 3 //default setting of level is 3
         // ZSTD lossless compressor
-        uint32_t compress(const uint8_t* data, uint32_t dataLength, uint8_t** compressBytes) {
+        inline uint32_t compress(const uint8_t* data, uint32_t dataLength, uint8_t** compressBytes) {
             size_t dstCapacity = ZSTD_compressBound(dataLength);
             *compressBytes = (uint8_t*)malloc(dstCapacity + sizeof(size_t));
             *reinterpret_cast<size_t*>(*compressBytes) = dataLength;
@@ -20,7 +20,11 @@ namespace MDR {
             }
             return outSize + sizeof(size_t);
         }
-        uint32_t decompress(const uint8_t* compressBytes, uint32_t cmpSize, uint8_t** oriData) {
+        inline uint32_t decompress(const uint8_t* compressBytes, uint32_t cmpSize, uint8_t** oriData) {
+            if(cmpSize < sizeof(size_t)){
+                std::cerr << "ZSTD decompression error: compressed stream is truncated" << std::endl;
+                exit(-1);
+            }
             size_t outSize = *reinterpret_cast<const size_t*>(compressBytes);
             *oriData = (uint8_t*)malloc(outSize);
             size_t decompressedSize = ZSTD_decompress(*oriData, outSize, compressBytes + sizeof(size_t), cmpSize - sizeof(size_t));

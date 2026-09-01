@@ -1,5 +1,7 @@
 #ifndef _MDR_RETRIEVER_INTERFACE_HPP
 #define _MDR_RETRIEVER_INTERFACE_HPP
+
+#include <vector>
 #include <cstdint>
 #include <cassert>
 

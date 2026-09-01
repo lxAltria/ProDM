@@ -1,6 +1,14 @@
 #ifndef _MDR_SERIAL_FILE_WRITER_HPP
 #define _MDR_SERIAL_FILE_WRITER_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include "WriterInterface.hpp"
 #include <cstdio>
 
@@ -17,6 +25,7 @@ namespace MDR {
 
         uint32_t write_components(uint8_t const * data, uint32_t size) const {
             FILE * file = fopen(data_file.c_str(), "wb");
+            if(!file){ std::cerr << "Failed to open " << data_file << " for writing" << std::endl; exit(-1); }
             fwrite(data, 1, size, file);
             fclose(file);
             return 0;

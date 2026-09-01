@@ -1,6 +1,14 @@
 #ifndef _PDR_APPROXIMATION_BASED_REFACTOR_HPP
 #define _PDR_APPROXIMATION_BASED_REFACTOR_HPP
 
+#include <cstdlib>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #include <numeric>
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"

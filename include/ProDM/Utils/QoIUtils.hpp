@@ -1,6 +1,8 @@
 #ifndef _MDR_QOI_UTILS_HPP
 #define _MDR_QOI_UTILS_HPP
 
+#include <string>
+
 #include <iostream>
 #include <ctime>
 #include <cstdlib>

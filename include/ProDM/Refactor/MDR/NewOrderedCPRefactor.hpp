@@ -1,6 +1,14 @@
 #ifndef _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_NEW_HPP
 #define _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_NEW_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <vector>
+
+#include <iostream>
+
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

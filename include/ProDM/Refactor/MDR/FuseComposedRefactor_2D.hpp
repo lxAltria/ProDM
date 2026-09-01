@@ -1,6 +1,12 @@
 #ifndef _MDR_2D_FUSE_COMPOSED_REFACTOR_NEW_HPP
 #define _MDR_2D_FUSE_COMPOSED_REFACTOR_NEW_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

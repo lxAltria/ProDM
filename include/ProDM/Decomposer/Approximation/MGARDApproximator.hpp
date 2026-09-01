@@ -1,6 +1,16 @@
 #ifndef _PDR_MGARD_APPROXIMATOR_HPP
 #define _PDR_MGARD_APPROXIMATOR_HPP
 
+#include <cstdlib>
+
+#include <cstring>
+
+#include <string>
+
+#include <vector>
+
+#include <iostream>
+
 #undef REL
 #undef ABS
 

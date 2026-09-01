@@ -115,8 +115,12 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
         auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
-        assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
+        if(num_bytes == 0){
+            std::cerr << "Cannot read " << metadata_file << "; run the refactor first" << std::endl;
+            exit(-1);
+        }
         num_dims = metadata[0];
+        assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
         cout << "number of dimension = " << num_dims << ", number of levels = " << num_levels << endl;
         if(!strcmp(data_type.c_str(), "-f")){
@@ -493,14 +497,14 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
 
 void usage(char* cmd) {
     std::cout << "two_modes_reconstructor usage: " << cmd <<
-                  " data_file -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln refactored_path -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] [Optional: Reconstructed data path]"
+                  " data_file refactored_path -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] [Optional: Reconstructed data path]"
                   << std::endl
                   << "example: " << cmd <<
-                  " density.d64 -d 5 1e-1 1e-2 1e-3 1e-4 1e-5 /refactored/path -PerBit -BFS -CP" << std::endl;
+                  " density.d64 /refactored/path -d 5 1e-1 1e-2 1e-3 1e-4 1e-5 -PerBit -BFS -CP" << std::endl;
 }
 
 int main(int argc, char ** argv){
-    if (argc < 2) {
+    if (argc < 5) {
         usage(argv[0]);
         return 0;
     }
@@ -509,6 +513,11 @@ int main(int argc, char ** argv){
     string refactored_path = string(argv[argv_id++]);
     string data_type = string(argv[argv_id ++]);
     int num_tolerance = atoi(argv[argv_id ++]);
+    if(num_tolerance <= 0 || argc < argv_id + num_tolerance + 3){
+        std::cerr << "Insufficient or invalid arguments (num_tolerance parsed as " << num_tolerance << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     std::vector<double> tolerance(num_tolerance, 0);
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);

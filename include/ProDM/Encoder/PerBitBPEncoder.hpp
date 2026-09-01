@@ -1,6 +1,12 @@
 #ifndef _MDR_PERBIT_BP_ENCODER_HPP
 #define _MDR_PERBIT_BP_ENCODER_HPP
 
+#include <cstdlib>
+
+#include <vector>
+
+#include <iostream>
+
 #include "BitplaneEncoderInterface.hpp"
 #include <bitset>
 #include <cstring>

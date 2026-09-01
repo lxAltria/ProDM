@@ -1,6 +1,8 @@
 #ifndef _MGARD_UTILS_HPP
 #define _MGARD_UTILS_HPP
 
+#include <iostream>
+
 #include <vector>
 #include <cstdlib>
 #include <cstring>

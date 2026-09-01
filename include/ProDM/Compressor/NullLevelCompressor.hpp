@@ -1,6 +1,10 @@
 #ifndef _MDR_NULL_LEVEL_COMPRESSOR_HPP
 #define _MDR_NULL_LEVEL_COMPRESSOR_HPP
 
+#include <vector>
+
+#include <iostream>
+
 #include "LevelCompressorInterface.hpp"
 
 namespace MDR {
