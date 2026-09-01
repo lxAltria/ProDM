@@ -5,13 +5,13 @@
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"
 #include "ProDM/Encoder/BitplaneEncoder.hpp"
-#include "ProDM/ErrorControl/ErrorEstimator.hpp"
-#include "ProDM/ErrorControl/ErrorCollector.hpp"
+#include "ProDM/ErrorControl/Estimator/ErrorEstimator.hpp"
+#include "ProDM/ErrorControl/Collector/ErrorCollector.hpp"
 #include "ProDM/Compressor/LevelCompressor.hpp"
 #include "ProDM/Writer/Writer.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 #include "ProDM/Decomposer/MultiLevel/Tuner/Tuner.hpp"
-#include "ProDM/ErrorControl/SizeInterpreter.hpp"
+#include "ProDM/ErrorControl/SizeInterpreter/SizeInterpreter.hpp"
 #include <queue>
 
 namespace MDR {
