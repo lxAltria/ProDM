@@ -8,7 +8,7 @@
 #include<limits>
 #include "mpi.h"
 #include <sstream>
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"

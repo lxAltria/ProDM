@@ -6,7 +6,7 @@
 
 #include "ApproximatorInterface.hpp"
 #include "mgard/compress_x.hpp"
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 
 namespace PDR {
     // MGARD approximator with MGARDx prediction

@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <cmath>
 #include <bitset>
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "SZ3/api/sz.hpp"
 #include "mpi.h"
 

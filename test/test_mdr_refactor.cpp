@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include <sys/stat.h>
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "ProDM/Refactor/MDR/Refactor.hpp"
 
 using namespace std;

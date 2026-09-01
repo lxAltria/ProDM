@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cstring>
 #include "reorder.hpp"
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "correction.hpp"
 
 namespace MGARD{

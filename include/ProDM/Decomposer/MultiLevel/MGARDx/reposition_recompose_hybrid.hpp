@@ -1,12 +1,12 @@
-#ifndef _MGARD_REPOSITION_RECOMPOSE_HPP
-#define _MGARD_REPOSITION_RECOMPOSE_HPP
+#ifndef _MGARD_REPOSITION_RECOMPOSE_HYBRID_HPP
+#define _MGARD_REPOSITION_RECOMPOSE_HYBRID_HPP
 
 #include <vector>
 #include <cstdlib>
 #include <algorithm>
 #include <cstring>
 #include "reorder.hpp"
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "correction.hpp"
 
 namespace MGARD{
@@ -14,16 +14,16 @@ namespace MGARD{
 using namespace std;
 
 template <class T>
-class Repositioner_Recomposer{
+class Repositioner_Recomposer_hybrid{
 public:
-	Repositioner_Recomposer(bool use_sz_=true){
+	Repositioner_Recomposer_hybrid(bool use_sz_=true){
             use_sz = use_sz_;
         };
-	~Repositioner_Recomposer(){
+	~Repositioner_Recomposer_hybrid(){
 	};
     // return repositioned and recomposed data
 	// Combining MGARD repositioner and recomposer
-	std::vector<T> recompose(std::vector<std::vector<T>>& level_buffers_, const vector<size_t>& dims, size_t target_level, bool hierarchical=false, bool cubic=false, vector<size_t> strides=vector<size_t>()){
+	std::vector<T> recompose(std::vector<std::vector<T>>& level_buffers_, const vector<size_t>& dims, size_t target_level, vector<size_t> strides=vector<size_t>()){
 		size_t num_elements = 1;
 		for(const auto& d:dims){
 			num_elements *= d;
@@ -38,7 +38,8 @@ public:
 			size_t h = 1 << target_level;
 			size_t n = dims[0];
 			for(int current_level=0; current_level <= target_level; current_level++){
-				if(hierarchical && !cubic) recompose_level_1D_with_hierarchical_basis(data_buffer.data(), n, h, current_level);
+				bool use_linear = (current_level == 1);
+				if(use_linear) recompose_level_1D_with_hierarchical_basis(data_buffer.data(), n, h, current_level);
 				else recompose_level_1D_cubic_with_hierarchical_basis(data_buffer.data(), n, h, current_level);
 				h >>= 1;
 			}
@@ -48,7 +49,8 @@ public:
 			size_t n1 = dims[0];
 			size_t n2 = dims[1];
 			for(int current_level=0; current_level <= target_level; current_level++){
-				if(hierarchical && !cubic) recompose_level_2D_with_hierarchical_basis(data_buffer.data(), n1, n2, h, current_level);
+				bool use_linear = (current_level == 1);
+				if(use_linear) recompose_level_2D_with_hierarchical_basis(data_buffer.data(), n1, n2, h, current_level);
 				else recompose_level_2D_cubic_with_hierarchical_basis(data_buffer.data(), n1, n2, h, current_level);
 				h >>= 1;
 			}
@@ -59,7 +61,8 @@ public:
 			size_t n2 = dims[1];
 			size_t n3 = dims[2];
 			for(int current_level=0; current_level <= target_level; current_level++){
-				if(hierarchical && !cubic) recompose_level_3D_with_hierarchical_basis(data_buffer.data(), n1, n2, n3, h, current_level);
+				bool use_linear = (current_level == 1);
+				if(use_linear) recompose_level_3D_with_hierarchical_basis(data_buffer.data(), n1, n2, n3, h, current_level);
 				else recompose_level_3D_cubic_with_hierarchical_basis(data_buffer.data(), n1, n2, n3, h, current_level);
 				h >>= 1;
 			}

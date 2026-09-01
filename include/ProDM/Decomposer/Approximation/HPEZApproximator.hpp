@@ -3,7 +3,7 @@
 
 #include "ApproximatorInterface.hpp"
 #include "QoZ/api/sz.hpp"
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 
 
 namespace PDR {

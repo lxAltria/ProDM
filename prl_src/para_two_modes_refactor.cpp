@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <cmath>
 #include <bitset>
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "ProDM/Refactor/MDR/Refactor.hpp"
 #include "ProDM/Decomposer/MultiLevel/Tuner/Tuner.hpp"
 #include "mpi.h"

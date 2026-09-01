@@ -1,71 +1,80 @@
-#ifndef _MGARD_REPOSITION_RECOMPOSE_NEW_HPP
-#define _MGARD_REPOSITION_RECOMPOSE_NEW_HPP
+#ifndef _MGARD_DECOMPOSE_INTERLEAVE_NEW_HYBRID_HPP
+#define _MGARD_DECOMPOSE_INTERLEAVE_NEW_HYBRID_HPP
 
 #include <vector>
 #include <cstdlib>
 #include <algorithm>
 #include <cstring>
 #include "reorder.hpp"
-#include "ProDM/MGARDx/utils.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "correction.hpp"
+
+#define FIRST_LINE 0
+#define NORMAL_LINE 1
+#define LAST_LINE 2
+#define LAST_EVEN_LINE 3
 
 namespace MGARD{
 
 using namespace std;
 
+// Hybrid interpolation: current_level == 1 uses linear, current_level >= 2 uses cubic.
+// current_level == 0 always copies coarse grid data (unchanged).
 template <class T>
-class Repositioner_Recomposer_new{
+class Decomposer_Interleaver_new_hybrid{
 public:
-	Repositioner_Recomposer_new(bool use_sz_=true){
+	Decomposer_Interleaver_new_hybrid(bool use_sz_=true){
             use_sz = use_sz_;
         };
-	~Repositioner_Recomposer_new(){
+	~Decomposer_Interleaver_new_hybrid(){
 	};
-    // return repositioned and recomposed data
-	// Combining MGARD repositioner and recomposer
-	std::vector<T> recompose(std::vector<std::vector<T>>& level_buffers_, const vector<size_t>& dims, size_t target_level, bool hierarchical=false, bool cubic=false, vector<size_t> strides=vector<size_t>()){
+	std::vector<std::vector<T>> decompose(T * data, const vector<size_t>& dims, size_t target_level, vector<size_t> strides=vector<size_t>()){
+		data_begin = data;
 		size_t num_elements = 1;
 		for(const auto& d:dims){
 			num_elements *= d;
 		}
-
+        int max_level = log2(*min_element(dims.begin(), dims.end()));
+        if(target_level > max_level) target_level = max_level;
 		init(dims, target_level);
-		data_buffer.resize(num_elements);
-		std::fill(data_buffer.begin(), data_buffer.end(), 0);
-		data_begin = data_buffer.data();
-
-		level_buffers = level_buffers_;
 		if(dims.size() == 1){
-			size_t h = 1 << target_level;
+			size_t h = 1;
 			size_t n = dims[0];
-			for(int current_level=0; current_level <= target_level; current_level++){
-				if(hierarchical && !cubic) recompose_level_1D_with_hierarchical_basis(data_buffer.data(), n, h, current_level);
-				else recompose_level_1D_cubic_with_hierarchical_basis(data_buffer.data(), n, h, current_level);
-				h >>= 1;
+			for(int current_level=target_level; current_level >= 0; current_level--){
+				bool use_linear = (current_level == 1);
+				if(use_linear) decompose_interleave_level_1D_with_hierarchical_basis(data, n, h, current_level);
+				else           decompose_interleave_level_1D_cubic_with_hierarchical_basis(data, n, h, current_level);
+				h <<= 1;
 			}
 		}
 		else if(dims.size() == 2){
-			size_t h = 1 << target_level;
+			size_t h = 1;
 			size_t n1 = dims[0];
 			size_t n2 = dims[1];
-			for(int current_level=0; current_level <= target_level; current_level++){
-				if(hierarchical && !cubic) recompose_level_2D_with_hierarchical_basis(data_buffer.data(), n1, n2, h, current_level);
-				else recompose_level_2D_cubic_with_hierarchical_basis(data_buffer.data(), n1, n2, h, current_level);
-				h >>= 1;
+			for(int current_level=target_level; current_level >= 0; current_level--){
+				bool use_linear = (current_level == 1);
+				if(use_linear) decompose_interleave_2D_with_hierarchical_basis(data, n1, n2, h, current_level);
+				else           decompose_interleave_2D_cubic_with_hierarchical_basis(data, n1, n2, h, current_level);
+				h <<= 1;
 			}
 		}
 		else if(dims.size() == 3){
-			size_t h = 1 << target_level;
+			size_t h = 1;
 			size_t n1 = dims[0];
 			size_t n2 = dims[1];
 			size_t n3 = dims[2];
-			for(int current_level=0; current_level <= target_level; current_level++){
-				if(hierarchical && !cubic) recompose_level_3D_with_hierarchical_basis(data_buffer.data(), n1, n2, n3, h, current_level);
-				else recompose_level_3D_cubic_with_hierarchical_basis(data_buffer.data(), n1, n2, n3, h, current_level);
-				h >>= 1;
+			for(int current_level=target_level; current_level >= 0; current_level--){
+				abs_max = 0;
+				pos = 0;
+				left = 0;
+				right = 0;
+				bool use_linear = (current_level == 1);
+				if(use_linear) decompose_interleave_3D_with_hierarchical_basis(data, n1, n2, n3, h, current_level);
+				else           decompose_interleave_3D_cubic_with_hierarchical_basis(data, n1, n2, n3, h, current_level);
+				h <<= 1;
 			}
 		}
-        return std::move(data_buffer);
+        return std::move(level_buffers);
 	}
 	std::vector<std::vector<uint32_t>> get_level_buffer_dims(){
 		return level_buffer_dims;
@@ -74,25 +83,39 @@ public:
 
 private:
     bool use_sz = true;
-	std::vector<std::vector<T>> level_buffers;
+	std::vector<std::vector<uint32_t>> level_dims;
 	std::vector<std::vector<uint32_t>> level_buffer_dims;
+	std::vector<std::vector<T>> level_buffers;
 	std::vector<uint32_t> level_sizes;
-	std::vector<T> data_buffer;
 	T * data_begin;
+	double abs_max = 0;
+	size_t pos = 0;
+	size_t left = 0;
+	size_t right = 0;
 
 	void init(const vector<size_t>& dims, size_t target_level){
+		level_dims.clear();
+		level_buffer_dims.clear();
+		level_buffers.clear();
+		level_sizes.clear();
 		std::vector<uint32_t> dims_uint32(dims.begin(), dims.end());
-		auto level_dims = compute_level_dims_new(dims_uint32, target_level);
+		level_dims = compute_level_dims_new(dims_uint32, target_level);
 		level_sizes = compute_level_buffers_size_generic(level_dims, target_level, interp_order, level_buffer_dims);
-		// for(int i=0; i<level_sizes.size(); i++){
-		// 	std::cout << "level_sizes[" << i << "] = " << level_sizes[i] << std::endl;
-		// }
+		for(int i=0; i<level_sizes.size(); i++){
+			level_buffers.push_back(std::vector<T>(level_sizes[i]));
+		}
 	}
 
-	size_t reposition_1D_level_0(const size_t begin, const size_t end, const size_t stride, T * data, T * buffer){
+	size_t interleave_1D_level_0(const size_t begin, const size_t end, const size_t stride, T * data, T * buffer){
 		size_t count = 0;
 		for(size_t i=begin; i<=end; i+=stride){
-			data[i] = buffer[count++];
+			if(abs(data[i]) > abs_max){
+				abs_max = abs(data[i]);
+				pos = (&data[i] - data_begin);
+				left = -1;
+				right = -1;
+			}
+			buffer[count++] = data[i];
 		}
 		return count;
 	}
@@ -101,15 +124,14 @@ private:
 		size_t n = (end - begin) / stride + 1;
 		size_t i = 1;
 		size_t count = 0;
+		size_t c;
 		for(i=1; i+1<n; i+=2){
-			size_t c = begin + i * stride;
-			data[c] = (data[c - stride] + data[c + stride]) / 2 + buffer[count];
-			count++;
+			c = begin + i * stride;
+			buffer[count++] = data[c] - (data[c - stride] + data[c + stride]) / 2;
 		}
-		if(n % 2 == 0){
-			size_t c = begin + (n - 1) * stride;
-			data[c] = data[c - stride] + buffer[count];
-			count++;
+		if(!(n&1)){
+			c = begin + (n - 1) * stride;
+			buffer[count++] = data[c] - data[c - stride];
 		}
 		return count;
 	}
@@ -122,20 +144,16 @@ private:
 		size_t stride3x = 3 * stride;
 		size_t stride5x = 5 * stride;
 		c = begin + i * stride;
-		data[c] = interp_quad_1(data[c - stride], data[c + stride], data[c + stride3x]) + buffer[count];
-		count++;
+		buffer[count++] = data[c] - interp_quad_1(data[c - stride], data[c + stride], data[c + stride3x]);
 		for(i=3; i+3<n; i+=2){
 			c = begin + i * stride;
-			data[c] = interp_cubic(data[c - stride3x], data[c - stride], data[c + stride], data[c + stride3x]) + buffer[count];
-			count++;
+			buffer[count++] = data[c] - interp_cubic(data[c - stride3x], data[c - stride], data[c + stride], data[c + stride3x]);
 		}
 		c = begin + i * stride;
-		data[c] = interp_quad_2(data[c - stride3x], data[c - stride], data[c + stride]) + buffer[count];
-		count++;
+		buffer[count++] = data[c] - interp_quad_2(data[c - stride3x], data[c - stride], data[c + stride]);
 		if(!(n&1)){
 			c = begin + (n - 1) * stride;
-			data[c] = interp_quad_3(data[c - stride5x], data[c - stride3x], data[c - stride]) + buffer[count];
-			count++;
+			buffer[count++] = data[c] - interp_quad_3(data[c - stride5x], data[c - stride3x], data[c - stride]);
 		}
 		return count;
 	}
@@ -144,17 +162,16 @@ private:
 		size_t n = (end - begin) / stride + 1;
 		size_t i = 0;
 		size_t count = 0;
+		size_t c;
 		if(!last_even){
 			for(i=0; i<n; i++){
-				size_t c = begin + i * stride;
-				data[c] = (data[c - interp_stride] + data[c + interp_stride]) / 2 + buffer[count];
-				count++;
+				c = begin + i * stride;
+				buffer[count++] = data[c] - (data[c - interp_stride] + data[c + interp_stride]) / 2;
 			}
 		} else {
 			for(i=0; i<n; i++){
-				size_t c = begin + i * stride;
-				data[c] = data[c - interp_stride] + buffer[count];
-				count++;
+				c = begin + i * stride;
+				buffer[count++] = data[c] - data[c - interp_stride];
 			}
 		}
 		return count;
@@ -173,8 +190,7 @@ private:
 			{
 				for(i=0; i<n; i++){
 					c = begin + i * stride;
-					data[c] = interp_quad_1(data[c - interp_stride], data[c + interp_stride], data[c + interp_stride3x]) + buffer[count];
-					count++;
+					buffer[count++] = data[c] - interp_quad_1(data[c - interp_stride], data[c + interp_stride], data[c + interp_stride3x]);
 				}
 				break;
 			}
@@ -182,8 +198,7 @@ private:
 			{
 				for(i=0; i<n; i++){
 					c = begin + i * stride;
-					data[c] = interp_cubic(data[c - interp_stride3x], data[c - interp_stride], data[c + interp_stride], data[c + interp_stride3x]) + buffer[count];
-					count++;
+					buffer[count++] = data[c] - interp_cubic(data[c - interp_stride3x], data[c - interp_stride], data[c + interp_stride], data[c + interp_stride3x]);
 				}
 				break;
 			}
@@ -191,8 +206,7 @@ private:
 			{
 				for(i=0; i<n; i++){
 					c = begin + i * stride;
-					data[c] = interp_quad_2(data[c - interp_stride3x], data[c - interp_stride], data[c + interp_stride]) + buffer[count];
-					count++;
+					buffer[count++] = data[c] - interp_quad_2(data[c - interp_stride3x], data[c - interp_stride], data[c + interp_stride]);
 				}
 				break;
 			}
@@ -200,8 +214,7 @@ private:
 			{
 				for(i=0; i<n; i++){
 					c = begin + i * stride;
-					data[c] = interp_quad_3(data[c - interp_stride5x], data[c - interp_stride3x], data[c - interp_stride]) + buffer[count];
-					count++;
+					buffer[count++] = data[c] - interp_quad_3(data[c - interp_stride5x], data[c - interp_stride3x], data[c - interp_stride]);
 				}
 				break;
 			}
@@ -213,68 +226,21 @@ private:
 		return count;
 	}
 
-	size_t recover_from_interpolant_difference_1D(const size_t begin, const size_t end, const size_t stride, T * data, T * buffer){
-		size_t n = (end - begin) / stride + 1;
-		size_t i = 1;
-		size_t count = 0;
-		for(i=1; i+1<n; i+=2){
-			size_t c = begin + i * stride;
-			data[c] += buffer[count++];
-		}
-		if(n % 2 == 0){
-			size_t c = begin + (n - 1) * stride;
-			data[c] += buffer[count++];
-		}
-		return count;
-	}
-
-	size_t recover_from_interpolant_difference_1D_diff_direct(const size_t begin, const size_t end, const size_t stride, const size_t interp_stride, bool last_even, T * data, T * buffer){
-		size_t n = (end - begin) / stride + 1;
-		size_t i = 0;
-		size_t count = 0;
-		if(!last_even){
-			for(i=0; i<n; i++){
-				size_t c = begin + i * stride;
-				// std::cout << (&(data[c]) - data_buffer.data()) << std::endl;
-				data[c] += buffer[count++];
-			}
-		} else {
-			for(i=0; i<n; i++){
-				size_t c = begin + i * stride;
-				// std::cout << (&(data[c]) - data_buffer.data()) << std::endl;
-				data[c] += buffer[count++];
-			}
-		}
-		return count;
-	}
-
-	void recompose_level_1D_with_hierarchical_basis(T * data_pos, size_t n, T h, size_t current_level){
+	void decompose_interleave_level_1D_with_hierarchical_basis(T * data_pos, size_t n, T h, size_t current_level){
 		size_t count_1D = 0;
-		if(current_level){
-			count_1D = compute_interpolant_difference_1D(0, n-1, h, data_pos, level_buffers[current_level].data());
-			// size_t count_1D_ = recover_from_interpolant_difference_1D(0, n-1, h, data_pos, level_buffers[current_level].data());
-			// assert(count_1D == count_1D_);
-		}
-		else{
-			count_1D = reposition_1D_level_0(0, n-1, h, data_pos, level_buffers[current_level].data());
-		}
+		size_t buffer_index = current_level;
+		count_1D = (current_level) ? compute_interpolant_difference_1D(0, n-1, h, data_pos, level_buffers[buffer_index].data()) : interleave_1D_level_0(0, n-1, h, data_pos, level_buffers[buffer_index].data());
 		assert(count_1D == level_sizes[current_level]);
     }
 
-	void recompose_level_1D_cubic_with_hierarchical_basis(T * data_pos, size_t n, T h, size_t current_level){
+	void decompose_interleave_level_1D_cubic_with_hierarchical_basis(T * data_pos, size_t n, T h, size_t current_level){
 		size_t count_1D = 0;
-		if(current_level){
-			count_1D = compute_interpolant_difference_1D_cubic(0, n-1, h, data_pos, level_buffers[current_level].data());
-			// size_t count_1D_ = recover_from_interpolant_difference_1D(0, n-1, h, data_pos, level_buffers[current_level].data());
-			// assert(count_1D == count_1D_);
-		}
-		else{
-			count_1D = reposition_1D_level_0(0, n-1, h, data_pos, level_buffers[current_level].data());
-		}
+		size_t buffer_index = current_level;
+		count_1D = (current_level) ? compute_interpolant_difference_1D_cubic(0, n-1, h, data_pos, level_buffers[buffer_index].data()) : interleave_1D_level_0(0, n-1, h, data_pos, level_buffers[buffer_index].data());
 		assert(count_1D == level_sizes[current_level]);
     }
 
-	size_t reposition_2D_level_0(T * data_pos, size_t n1, size_t n2, size_t h){
+	size_t interleave_2D_level_0(T * data_pos, size_t n1, size_t n2, size_t h){
 		size_t count_2D = 0;
 		size_t count;
 		size_t stride_n2 = h;
@@ -285,7 +251,7 @@ private:
 		size_t n2_begin = 0;
 		size_t n2_end = n2 - 1;
 		for(size_t i=0; i<n1; i+=h){
-			count = reposition_1D_level_0(n2_begin, n2_end, stride_n2, cur_data_pos, cur_buffer_pos);
+			count = interleave_1D_level_0(n2_begin, n2_end, stride_n2, cur_data_pos, cur_buffer_pos);
 			cur_data_pos += stride_n1;
 			cur_buffer_pos += count;
 			count_2D += count;
@@ -294,7 +260,6 @@ private:
 	}
 
 	size_t compute_interpolant_difference_2D(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
-		// Generic: change interp_order to control interpolation direction order
 		size_t count_2D = 0;
 		size_t count;
 		size_t h2x = h << 1;
@@ -312,7 +277,6 @@ private:
 			size_t y_stride = interpolated[1] ? h : h2x;
 
 			if(id == 1){
-				// Interpolating fastest dim (Y): standard 1D
 				d0_pos = data_pos;
 				for(size_t i=0; i<n1; i+=step0){
 					count = compute_interpolant_difference_1D(0, n2-1, h, d0_pos, cur_buffer_pos);
@@ -321,7 +285,6 @@ private:
 					count_2D += count;
 				}
 			} else {
-				// Interpolating dim 0 (X): diff_direct along Y
 				d0_pos = data_pos + stride[0];
 				for(size_t i=1; i+1<new_n[0]; i+=2){
 					count = compute_interpolant_difference_1D_diff_direct(0, n2-1, y_stride, stride[0], false, d0_pos, cur_buffer_pos);
@@ -336,12 +299,10 @@ private:
 			}
 			interpolated[id] = true;
 		}
-		
 		return count_2D;
 	}
 
 	size_t compute_interpolant_difference_2D_cubic(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
-		// Generic: change interp_order to control interpolation direction order
 		size_t count_2D = 0;
 		size_t count;
 		size_t h2x = h << 1;
@@ -359,7 +320,6 @@ private:
 			size_t y_stride = interpolated[1] ? h : h2x;
 
 			if(id == 1){
-				// Interpolating fastest dim (Y): cubic 1D
 				d0_pos = data_pos;
 				for(size_t i=0; i<n1; i+=step0){
 					count = compute_interpolant_difference_1D_cubic(0, n2-1, h, d0_pos, cur_buffer_pos);
@@ -368,7 +328,6 @@ private:
 					count_2D += count;
 				}
 			} else {
-				// Interpolating dim 0 (X): cubic diff_direct along Y
 				d0_pos = data_pos + stride[0];
 				// First
 				count = compute_interpolant_difference_1D_cubic_diff_direct(0, n2-1, y_stride, stride[0], FIRST_LINE, d0_pos, cur_buffer_pos);
@@ -395,90 +354,24 @@ private:
 			}
 			interpolated[id] = true;
 		}
-		
 		return count_2D;
 	}
 
-	size_t recover_from_interpolant_difference_2D(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
-		// Generic: change interp_order to control interpolation direction order
-		size_t count_2D = 0;
-		size_t count;
-		size_t h2x = h << 1;
-		size_t stride[2] = {n2*h, h};
-		size_t new_n[2] = {(n1-1)/h + 1, (n2-1)/h + 1};
-		bool interpolated[2] = {false, false};
-		T * d0_pos;
-		T * cur_buffer_pos;
-
-		for(int s = 0; s < 2; s++){
-			uint32_t id = interp_order[s];
-			cur_buffer_pos = level_buffers[((current_level - 1) * 2) + s + 1].data();
-			size_t step0 = interpolated[0] ? h : h2x;
-			size_t dstep0 = n2 * step0;
-			size_t y_stride = interpolated[1] ? h : h2x;
-
-			if(id == 1){
-				// Interpolating fastest dim (Y): standard 1D
-				d0_pos = data_pos;
-				for(size_t i=0; i<n1; i+=step0){
-					count = recover_from_interpolant_difference_1D(0, n2-1, h, d0_pos, cur_buffer_pos);
-					d0_pos += dstep0;
-					cur_buffer_pos += count;
-					count_2D += count;
-				}
-			} else {
-				// Interpolating dim 0 (X): diff_direct along Y
-				d0_pos = data_pos + stride[0];
-				for(size_t i=1; i+1<new_n[0]; i+=2){
-					count = recover_from_interpolant_difference_1D_diff_direct(0, n2-1, y_stride, stride[0], false, d0_pos, cur_buffer_pos);
-					d0_pos += 2 * stride[0];
-					cur_buffer_pos += count;
-					count_2D += count;
-				}
-				if(!(new_n[0] & 1)){
-					count = recover_from_interpolant_difference_1D_diff_direct(0, n2-1, y_stride, stride[0], true, d0_pos, cur_buffer_pos);
-					count_2D += count;
-				}
-			}
-			interpolated[id] = true;
-		}
-		
-		return count_2D;
-	}
-
-	void recompose_level_2D_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
+	void decompose_interleave_2D_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
         size_t count_2D = 0;
-		if(current_level){
-			count_2D = compute_interpolant_difference_2D(data_pos, n1, n2, h, current_level);
-			// size_t count_2D_ = recover_from_interpolant_difference_2D(data_pos, n1, n2, h, current_level);
-			// assert(count_2D == count_2D_);
-		}
-		else{
-			count_2D = reposition_2D_level_0(data_pos, n1, n2, h);
-		}
+		count_2D = (current_level) ? compute_interpolant_difference_2D(data_pos, n1, n2, h, current_level) : interleave_2D_level_0(data_pos, n1, n2, h);
 		assert(count_2D == (current_level) ? level_sizes[((current_level - 1) * 2) + 1] + level_sizes[((current_level - 1) * 2) + 2] : level_sizes[0]);
     }
 
-	void recompose_level_2D_cubic_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
+	void decompose_interleave_2D_cubic_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t h, size_t current_level){
         size_t count_2D = 0;
-		if(current_level){
-			count_2D = compute_interpolant_difference_2D_cubic(data_pos, n1, n2, h, current_level);
-			// size_t count_2D_ = recover_from_interpolant_difference_2D(data_pos, n1, n2, h, current_level);
-			// assert(count_2D == count_2D_);
-		}
-		else{
-			count_2D = reposition_2D_level_0(data_pos, n1, n2, h);
-		}
+		count_2D = (current_level) ? compute_interpolant_difference_2D_cubic(data_pos, n1, n2, h, current_level) : interleave_2D_level_0(data_pos, n1, n2, h);
 		assert(count_2D == (current_level) ? level_sizes[((current_level - 1) * 2) + 1] + level_sizes[((current_level - 1) * 2) + 2] : level_sizes[0]);
     }
 
-	size_t reposition_3D_level_0(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h){
+	size_t interleave_3D_level_0(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h){
 		size_t count_3D = 0;
 		size_t count;
-		size_t stride_n3 = h;
-		size_t stride_n2 = n3*h;
-		size_t stride_n1 = n2 * n3 * h;
-
 		T * cur_data_pos = data_pos;
 		T * temp_data_pos = cur_data_pos;
 		T * cur_buffer_pos = level_buffers[0].data();
@@ -487,19 +380,17 @@ private:
 		for(size_t i=0; i<n1; i+=h){
 			temp_data_pos = cur_data_pos;
 			for(size_t j=0; j<n2; j+=h){
-				count = reposition_1D_level_0(n3_begin, n3_end, h, temp_data_pos, cur_buffer_pos);
+				count = interleave_1D_level_0(n3_begin, n3_end, h, temp_data_pos, cur_buffer_pos);
 				temp_data_pos += n3*h;
 				cur_buffer_pos += count;
 				count_3D += count;
 			}
 			cur_data_pos += n2*n3*h;
 		}
-
 		return count_3D;
 	}
 
 	size_t compute_interpolant_difference_3D(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h, size_t current_level){
-		// Generic: change interp_order to control interpolation direction order
 		size_t count_3D = 0;
 		size_t count;
 		size_t h2x = h << 1;
@@ -520,7 +411,6 @@ private:
 			size_t z_stride = interpolated[2] ? h : h2x;
 
 			if(id == 2){
-				// Interpolating fastest dim (Z): standard 1D
 				d0_pos = data_pos;
 				for(size_t i=0; i<n1; i+=step0){
 					d1_pos = d0_pos;
@@ -533,7 +423,6 @@ private:
 					d0_pos += dstep0;
 				}
 			} else if(id == 0){
-				// Interpolating dim 0 (X): diff_direct along Z
 				d0_pos = data_pos + stride[0];
 				for(size_t i=1; i+1<new_n[0]; i+=2){
 					d1_pos = d0_pos;
@@ -555,7 +444,6 @@ private:
 					}
 				}
 			} else {
-				// Interpolating dim 1 (Y): diff_direct along Z
 				d0_pos = data_pos + stride[1];
 				for(size_t i=0; i<n1; i+=step0){
 					d1_pos = d0_pos;
@@ -575,12 +463,10 @@ private:
 			}
 			interpolated[id] = true;
 		}
-
 		return count_3D;
 	}
 
 	size_t compute_interpolant_difference_3D_cubic(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h, size_t current_level){
-		// Generic: change interp_order to control interpolation direction order
 		size_t count_3D = 0;
 		size_t count;
 		size_t h2x = h << 1;
@@ -601,7 +487,6 @@ private:
 			size_t z_stride = interpolated[2] ? h : h2x;
 
 			if(id == 2){
-				// Interpolating fastest dim (Z): cubic 1D
 				d0_pos = data_pos;
 				for(size_t i=0; i<n1; i+=step0){
 					d1_pos = d0_pos;
@@ -614,7 +499,6 @@ private:
 					d0_pos += dstep0;
 				}
 			} else if(id == 0){
-				// Interpolating dim 0 (X): cubic diff_direct along Z
 				d0_pos = data_pos + stride[0];
 				// First plane
 				d1_pos = d0_pos;
@@ -656,7 +540,6 @@ private:
 					}
 				}
 			} else {
-				// Interpolating dim 1 (Y): cubic diff_direct along Z
 				d0_pos = data_pos + stride[1];
 				for(size_t i=0; i<n1; i+=step0){
 					d1_pos = d0_pos;
@@ -688,114 +571,18 @@ private:
 			}
 			interpolated[id] = true;
 		}
-		
 		return count_3D;
 	}
 
-	size_t recover_from_interpolant_difference_3D(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h, size_t current_level){
-		// Generic: change interp_order to control interpolation direction order
+	void decompose_interleave_3D_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h, size_t current_level){
 		size_t count_3D = 0;
-		size_t count;
-		size_t h2x = h << 1;
-		size_t stride[3] = {n2*n3*h, n3*h, h};
-		size_t new_n[3] = {(n1-1)/h + 1, (n2-1)/h + 1, (n3-1)/h + 1};
-		bool interpolated[3] = {false, false, false};
-		T * d0_pos;
-		T * d1_pos;
-		T * cur_buffer_pos;
-
-		for(int s = 0; s < 3; s++){
-			uint32_t id = interp_order[s];
-			cur_buffer_pos = level_buffers[((current_level - 1) * 3) + s + 1].data();
-			size_t step0 = interpolated[0] ? h : h2x;
-			size_t step1 = interpolated[1] ? h : h2x;
-			size_t dstep0 = n2 * n3 * step0;
-			size_t dstep1 = n3 * step1;
-			size_t z_stride = interpolated[2] ? h : h2x;
-
-			if(id == 2){
-				// Interpolating fastest dim (Z): standard 1D
-				d0_pos = data_pos;
-				for(size_t i=0; i<n1; i+=step0){
-					d1_pos = d0_pos;
-					for(size_t j=0; j<n2; j+=step1){
-						count = recover_from_interpolant_difference_1D(0, n3-1, h, d1_pos, cur_buffer_pos);
-						d1_pos += dstep1;
-						cur_buffer_pos += count;
-						count_3D += count;
-					}
-					d0_pos += dstep0;
-				}
-			} else if(id == 0){
-				// Interpolating dim 0 (X): diff_direct along Z
-				d0_pos = data_pos + stride[0];
-				for(size_t i=1; i+1<new_n[0]; i+=2){
-					d1_pos = d0_pos;
-					for(size_t j=0; j<n2; j+=step1){
-						count = recover_from_interpolant_difference_1D_diff_direct(0, n3-1, z_stride, stride[0], false, d1_pos, cur_buffer_pos);
-						d1_pos += dstep1;
-						cur_buffer_pos += count;
-						count_3D += count;
-					}
-					d0_pos += 2 * stride[0];
-				}
-				if(!(new_n[0] & 1)){
-					d1_pos = d0_pos;
-					for(size_t j=0; j<n2; j+=step1){
-						count = recover_from_interpolant_difference_1D_diff_direct(0, n3-1, z_stride, stride[0], true, d1_pos, cur_buffer_pos);
-						d1_pos += dstep1;
-						cur_buffer_pos += count;
-						count_3D += count;
-					}
-				}
-			} else {
-				// Interpolating dim 1 (Y): diff_direct along Z
-				d0_pos = data_pos + stride[1];
-				for(size_t i=0; i<n1; i+=step0){
-					d1_pos = d0_pos;
-					for(size_t j=1; j+1<new_n[1]; j+=2){
-						count = recover_from_interpolant_difference_1D_diff_direct(0, n3-1, z_stride, stride[1], false, d1_pos, cur_buffer_pos);
-						d1_pos += 2 * stride[1];
-						cur_buffer_pos += count;
-						count_3D += count;
-					}
-					if(!(new_n[1] & 1)){
-						count = recover_from_interpolant_difference_1D_diff_direct(0, n3-1, z_stride, stride[1], true, d1_pos, cur_buffer_pos);
-						cur_buffer_pos += count;
-						count_3D += count;
-					}
-					d0_pos += dstep0;
-				}
-			}
-			interpolated[id] = true;
-		}
-
-		return count_3D;
-	}
-
-	void recompose_level_3D_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t n3, T h, size_t current_level){
-		size_t count_3D = 0;
-		if(current_level){
-			count_3D = compute_interpolant_difference_3D(data_pos, n1, n2, n3, h, current_level);
-			// size_t count_3D_ = recover_from_interpolant_difference_3D(data_pos, n1, n2, n3, h, current_level);
-			// assert(count_3D == count_3D_);
-		}
-		else{
-			count_3D = reposition_3D_level_0(data_pos, n1, n2, n3, h);
-		}
+        count_3D = (current_level != 0) ? compute_interpolant_difference_3D(data_pos, n1, n2, n3, h, current_level) : interleave_3D_level_0(data_pos, n1, n2, n3, h);
 		assert(count_3D == (current_level) ? level_sizes[((current_level - 1) * 3) + 1] + level_sizes[((current_level - 1) * 3) + 2] + level_sizes[((current_level - 1) * 3) + 3] : level_sizes[0]);
     }
 
-	void recompose_level_3D_cubic_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t n3, T h, size_t current_level){
+	void decompose_interleave_3D_cubic_with_hierarchical_basis(T * data_pos, size_t n1, size_t n2, size_t n3, size_t h, size_t current_level){
 		size_t count_3D = 0;
-		if(current_level){
-			count_3D = compute_interpolant_difference_3D_cubic(data_pos, n1, n2, n3, h, current_level);
-			// size_t count_3D_ = recover_from_interpolant_difference_3D(data_pos, n1, n2, n3, h, current_level);
-			// assert(count_3D == count_3D_);
-		}
-		else{
-			count_3D = reposition_3D_level_0(data_pos, n1, n2, n3, h);
-		}
+        count_3D = (current_level != 0) ? compute_interpolant_difference_3D_cubic(data_pos, n1, n2, n3, h, current_level) : interleave_3D_level_0(data_pos, n1, n2, n3, h);
 		assert(count_3D == (current_level) ? level_sizes[((current_level - 1) * 3) + 1] + level_sizes[((current_level - 1) * 3) + 2] + level_sizes[((current_level - 1) * 3) + 3] : level_sizes[0]);
     }
 };
