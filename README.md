@@ -61,9 +61,10 @@ Hurricane_d64
 cd build
 mkdir refactored
 # Refactor
-# ./test/test_mdr_refactor $data_file $refactored_dict $target_level $num_bitplanes $num_dimensions [dimensions] $dtype
+# ./test/test_mdr_refactor $data_file $refactored_dict $target_level $num_bitplanes $num_dimensions [dimensions] $encoder_option $dtype
 ./test/test_mdr_refactor ../Hurricane/data/VelocityX.dat refactored 4 30 3 100 500 500 0 -f
 # Retrieval
+# ./test/test_mdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN $encoder_option $dtype 
 ./test/test_mdr_reconstructor ../Hurricane/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 0 -f
 ```
 
@@ -85,7 +86,7 @@ The following steps demonstrate how to test Hurricane ISABEL using `V_total` as 
 
 First convert float data to double for testing and create the refactor directories:
 ```bash
-cd Hurricane
+cd ../Hurricane
 python float2double.py data/VelocityX.dat
 python float2double.py data/VelocityY.dat
 python float2double.py data/VelocityZ.dat
