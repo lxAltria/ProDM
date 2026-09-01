@@ -174,10 +174,14 @@ namespace MDR {
             }
             level_num_bitplanes = std::vector<uint8_t>(num_levels, 0);
             strides = std::vector<uint32_t>(dimensions.size());
-            uint32_t stride = 1;
+            size_t stride = 1;
             for(int i=dimensions.size()-1; i>=0; i--){
-                strides[i] = stride;
+                strides[i] = (uint32_t) stride;
                 stride *= dimensions[i];
+            }
+            if(stride > (size_t) UINT32_MAX){
+                std::cerr << "Data with more than 2^32 elements is not supported." << std::endl;
+                exit(-1);
             }
             data = std::vector<T>(stride, 0);
             free(metadata);

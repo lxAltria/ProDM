@@ -36,7 +36,7 @@ namespace MDR {
                 streams_pos[i] = reinterpret_cast<T_stream*>(streams[i]);
             }
             T_data const * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
                     T_data cur_data = *(data_pos++);
                     T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
@@ -89,7 +89,7 @@ namespace MDR {
                 level_errors[i] = 0;
             }
             T_data const * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
                     T_data cur_data = *(data_pos++);
                     T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
@@ -155,7 +155,7 @@ namespace MDR {
             T_data * data_pos = data;
             // std::cout << "ending_bitplane = " << +ending_bitplane << std::endl;
             if(ending_bitplane % 2 == 0){
-                for(int i=0; i<n - block_size; i+=block_size){
+                for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                     memset(int_data_buffer.data(), 0, block_size * sizeof(T_fp));
                     decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<block_size; j++){
@@ -174,7 +174,7 @@ namespace MDR {
                 }                
             }
             else{
-                for(int i=0; i<n - block_size; i+=block_size){
+                for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                     memset(int_data_buffer.data(), 0, block_size * sizeof(T_fp));
                     decode_block(streams_pos, block_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<block_size; j++){
@@ -232,11 +232,12 @@ namespace MDR {
         inline int32_t negabinary2binary(const uint32_t x) const {
             return (x ^0xaaaaaaaau) - 0xaaaaaaaau;
         }
-        inline void collect_level_errors(std::vector<double>& level_errors, uint32_t negabinary_data, float data, float mantissa, int num_bitplanes) const {
+        template <class T_fp_int>
+        inline void collect_level_errors(std::vector<double>& level_errors, T_fp_int negabinary_data, double data, double mantissa, int num_bitplanes) const {
             level_errors[num_bitplanes] += mantissa * mantissa;
             for(int k=1; k<num_bitplanes; k++){
-                uint32_t mask = (1 << k) - 1;
-                double diff = (double) negabinary2binary(negabinary_data & mask) + mantissa;
+                T_fp_int mask = (((T_fp_int) 1) << k) - 1;
+                double diff = (double) negabinary2binary((T_fp_int)(negabinary_data & mask)) + mantissa;
                 level_errors[num_bitplanes - k] += diff * diff;
             }
             level_errors[0] += data * data;

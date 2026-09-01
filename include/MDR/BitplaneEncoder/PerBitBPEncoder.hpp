@@ -385,12 +385,12 @@ namespace MDR {
             std::cout << "Per-bit bitplane encoder" << std::endl;
         }
     private:
-        inline void collect_level_errors(std::vector<double>& level_errors, float data, int num_bitplanes) const {
-            uint32_t fp_data = (uint32_t) data;
-            double mantissa = data - (uint32_t) data;
+        inline void collect_level_errors(std::vector<double>& level_errors, double data, int num_bitplanes) const {
+            uint64_t fp_data = (uint64_t) data;
+            double mantissa = data - (double) fp_data;
             level_errors[num_bitplanes] += mantissa * mantissa;
             for(int k=1; k<num_bitplanes; k++){
-                uint32_t mask = (1 << k) - 1;
+                uint64_t mask = (((uint64_t) 1) << k) - 1;
                 double diff = (double) (fp_data & mask) + mantissa;
                 level_errors[num_bitplanes - k] += diff * diff;
             }

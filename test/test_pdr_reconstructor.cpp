@@ -102,7 +102,7 @@ void launch_reconstructor(string filename, const vector<double>& tolerance, int 
 }
 
 void usage(char* cmd) {
-    std::cout << "QPro usage: " << cmd <<
+    std::cout << "usage: " << cmd <<
                   " data_file refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]"
                   << std::endl
                   << "example: " << cmd <<
@@ -129,9 +129,10 @@ int main(int argc, char ** argv){
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
         auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
-        assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_dims = metadata[0];
-        num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
+        assert(num_bytes > num_dims * sizeof(uint32_t) + sizeof(size_t) + 2);
+        // PDR metadata layout: num_dims (1B), dims (num_dims x 4B), approximator_size (8B), num_levels (1B), ...
+        num_levels = metadata[num_dims * sizeof(uint32_t) + sizeof(size_t) + 1];
         cout << "number of dimension = " << num_dims << ", number of levels = " << num_levels << endl;
     }
     vector<string> files;
@@ -160,6 +161,10 @@ int main(int argc, char ** argv){
         auto estimator = MDR::MaxErrorEstimatorHB<T>();
         auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
         launch_reconstructor<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
+    } else {
+        std::cerr << "Unknown data type option: " << dtype << " (expected -f or -d); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
     }
 
     return 0;

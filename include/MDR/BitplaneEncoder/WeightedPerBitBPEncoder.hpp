@@ -41,7 +41,7 @@ namespace MDR {
             }
             T_data const * data_pos = data;
             int const * weights_pos = weights;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 T_stream sign_bitplane = 0;
                 for(int j=0; j<block_size; j++){
                     T_data cur_data = *(data_pos++);
@@ -117,7 +117,7 @@ namespace MDR {
                 level_errors[i] = 0;
             }
             T_data const * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 T_stream sign_bitplane = 0;
                 for(int j=0; j<block_size; j++){
                     T_data cur_data = *(data_pos++);
@@ -203,7 +203,7 @@ namespace MDR {
             }
             T_data const * data_pos = data;
             int * weights_pos = weights;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 T_stream sign_bitplane = 0;
                 for(int j=0; j<block_size; j++){
                     T_data cur_data = *(data_pos++);
@@ -305,7 +305,7 @@ namespace MDR {
             const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
             // decode
             T_data * data_pos = data;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
                     T_fp fp_data = 0;
                     // decode each bit of the data for each level component
@@ -401,7 +401,7 @@ namespace MDR {
             // decode
             T_data * data_pos = data;
             int const * weights_pos = weights;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
                     T_fp fp_data = 0;
                     // decode each bit of the data for each level component
@@ -500,7 +500,7 @@ namespace MDR {
             // decode
             T_data * data_pos = data;
             int * weights_pos = weights;
-            for(int i=0; i<n - block_size; i+=block_size){
+            for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
                     T_fp fp_data = 0;
                     // decode each bit of the data for each level component
@@ -595,12 +595,12 @@ namespace MDR {
             num_weight_bitplanes = num_weight_bitplanes_;
         }
     private:
-        inline void collect_level_errors(std::vector<double>& level_errors, float data, int num_bitplanes) const {
-            uint32_t fp_data = (uint32_t) data;
-            double mantissa = data - (uint32_t) data;
+        inline void collect_level_errors(std::vector<double>& level_errors, double data, int num_bitplanes) const {
+            uint64_t fp_data = (uint64_t) data;
+            double mantissa = data - (double) fp_data;
             level_errors[num_bitplanes] += mantissa * mantissa;
             for(int k=1; k<num_bitplanes; k++){
-                uint32_t mask = (1 << k) - 1;
+                uint64_t mask = (((uint64_t) 1) << k) - 1;
                 double diff = (double) (fp_data & mask) + mantissa;
                 level_errors[num_bitplanes - k] += diff * diff;
             }

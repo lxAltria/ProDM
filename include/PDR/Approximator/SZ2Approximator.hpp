@@ -49,8 +49,7 @@ namespace PDR {
             approximator_file_size = cmpSize;
             // std::cout << "Approximator size = " << approximator_file_size << std::endl;
             // std::cout << "num_elements = " << num_elements << std::endl;
-            T * dec_data = (T *) malloc(num_elements * sizeof(T));
-            dec_data = static_cast<T*>(::SZ_decompress(datatype, cmpData, cmpSize, r5, r4, r3, r2, r1));
+            T * dec_data = static_cast<T*>(::SZ_decompress(datatype, cmpData, cmpSize, r5, r4, r3, r2, r1));
             free(cmpData);
             // T tmp = 0;
             for(int i=0; i<num_elements; i++){

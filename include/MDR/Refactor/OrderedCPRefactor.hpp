@@ -26,9 +26,13 @@ namespace MDR {
             // Timer timer;
             // timer.start();
             dimensions = dims;
-            uint32_t num_elements = 1;
+            size_t num_elements = 1;
             for(const auto& dim:dimensions){
                 num_elements *= dim;
+            }
+            if(num_elements > (size_t) UINT32_MAX){
+                std::cerr << "Data with more than 2^32 elements is not supported." << std::endl;
+                exit(-1);
             }
             data = std::vector<T>(data_, data_ + num_elements);
             double value_range = compute_value_range(data);
@@ -222,6 +226,10 @@ namespace MDR {
             }
 
             // Attention: file size cannot be over 4GB
+            if(total_size_64 > (uint64_t) UINT32_MAX){
+                std::cerr << "Refactored data over 4GB is not supported by the ordered file writer." << std::endl;
+                exit(-1);
+            }
             uint32_t total_size = static_cast<uint32_t>(total_size_64);
 
             std::vector<uint8_t> packed(total_size);

@@ -158,10 +158,14 @@ namespace MDR {
             negabinary = *(metadata_pos ++);
             level_num_bitplanes = std::vector<uint8_t>(num_levels, 0);
             strides = std::vector<uint32_t>(dimensions.size());
-            uint32_t stride = 1;
+            size_t stride = 1;
             for(int i=dimensions.size()-1; i>=0; i--){
-                strides[i] = stride;
+                strides[i] = (uint32_t) stride;
                 stride *= dimensions[i];
+            }
+            if(stride > (size_t) UINT32_MAX){
+                std::cerr << "Data with more than 2^32 elements is not supported." << std::endl;
+                exit(-1);
             }
             data = std::vector<T>(stride, 0);
 
@@ -218,8 +222,9 @@ namespace MDR {
             memset(data.data(), 0, data.size() * sizeof(T));
 
             auto level_buffer_sizes = compute_level_elements(level_dims, target_level);
+            level_buffers.resize(level_buffer_sizes.size());
             for(int i=0; i<level_buffer_sizes.size(); i++){
-                level_buffers.push_back(std::vector<T>(level_buffer_sizes[i], 0));
+                level_buffers[i].assign(level_buffer_sizes[i], 0);
             }
             // auto level_elements = compute_level_elements(level_dims, target_level);
             // std::vector<uint32_t> dims_dummy(reconstruct_dimensions.size(), 0);
@@ -233,8 +238,8 @@ namespace MDR {
                     compressor.decompress_release();
                     // const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
                     // interleaver.reposition(level_decoded_data, reconstruct_dimensions, level_dims[i], prev_dims, data.data(), i, target_level, this->strides);
-                    // free(level_decoded_data);
-                    memcpy(level_buffers[i].data(), level_decoded_data, level_buffer_sizes[i] * sizeof(T));                    
+                    memcpy(level_buffers[i].data(), level_decoded_data, level_buffer_sizes[i] * sizeof(T));
+                    free(level_decoded_data);
                 } else {
                     memset(level_buffers[i].data(), 0, level_buffer_sizes[i] * sizeof(T));
                 }
@@ -280,8 +285,8 @@ namespace MDR {
                 compressor.decompress_release();
                 // const std::vector<uint32_t>& prev_dims = (i == 0) ? dims_dummy : level_dims[i - 1];
                 // interleaver.reposition(level_decoded_data, reconstruct_dimensions, level_dims[i], prev_dims, data.data(), i, target_level, this->strides);
-                // free(level_decoded_data);          
                 memcpy(level_buffers[i].data(), level_decoded_data, level_buffer_sizes[i] * sizeof(T));
+                free(level_decoded_data);
             }
             if(current_level >= 0){
                 // data = decomposer.reposition_recompose(level_buffers, reconstruct_dimensions, MGARD_target_level, this->strides);      

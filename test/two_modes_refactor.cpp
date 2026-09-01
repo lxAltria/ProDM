@@ -311,10 +311,10 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
 
 void usage(char* cmd) {
     std::cout << "two_modes_refactor usage: " << cmd <<
-                  " data_file -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn output_path -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)"
+                  " data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)"
                   << std::endl
                   << "example: " << cmd <<
-                  " density.d64 -d 4 60 3 256 384 384 /output/path -PerBit -eb -CP" << std::endl;
+                  " density.d64 /output/path -d 4 60 3 256 384 384 -PerBit -eb -CP" << std::endl;
 }
 
 int main(int argc, char ** argv){
@@ -324,6 +324,7 @@ int main(int argc, char ** argv){
     }
     int argv_id = 1;
     string filename = string(argv[argv_id ++]);
+    string output_path = string(argv[argv_id++]);
     string data_type = string(argv[argv_id ++]);
     int target_level = atoi(argv[argv_id ++]);
     int num_bitplanes = atoi(argv[argv_id ++]);
@@ -332,6 +333,12 @@ int main(int argc, char ** argv){
         std::cout << "Change to " << num_bitplanes + 1 << " bitplanes for simplicity of negabinary encoding" << std::endl;
     }
     int num_dims = atoi(argv[argv_id ++]);
+    // need num_dims dims + encoder_option + prior_mode + CP_option after this point
+    if(num_dims <= 0 || argc < argv_id + num_dims + 3){
+        std::cerr << "Insufficient or invalid arguments (num_dims parsed as " << num_dims << "); check the argument order" << std::endl;
+        usage(argv[0]);
+        return -1;
+    }
     vector<uint32_t> dims(num_dims, 0);
     for(int i=0; i<num_dims; i++){
         dims[i] = atoi(argv[argv_id ++]);
@@ -342,7 +349,6 @@ int main(int argc, char ** argv){
         target_level = max_level;
         std::cout << "Target level exceeds the min dimension, change to target_level = " << target_level << " for correctness" << std::endl;
     }
-    string output_path = string(argv[argv_id++]);
     string encoder_option = string(argv[argv_id++]);
     string mode = string(argv[argv_id++]);
     string cp = string(argv[argv_id++]);

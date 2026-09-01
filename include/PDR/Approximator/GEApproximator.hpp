@@ -58,6 +58,7 @@ namespace PDR {
             if(filename.size()) approximator_file_name = filename;
             MGARD::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
             approximator_file_size = cmpSize;
+            free(cmpData);
             // std::cout << "Approximator size = " << approximator_file_size << std::endl;
             T * data_pos2 = data;
             for(int i=0; i<num_blocks; i++){

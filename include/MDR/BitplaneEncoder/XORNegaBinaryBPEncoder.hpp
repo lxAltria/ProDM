@@ -302,11 +302,12 @@ namespace MDR {
             return (x ^ 0xaaaaaaaau) - 0xaaaaaaaau;
         }
 
-        inline void collect_level_errors(std::vector<double>& level_errors, uint32_t negabinary_data, float data, float mantissa, int num_bitplanes) const {
+        template <class T_fp_int>
+        inline void collect_level_errors(std::vector<double>& level_errors, T_fp_int negabinary_data, double data, double mantissa, int num_bitplanes) const {
             level_errors[num_bitplanes] += mantissa * mantissa;
             for(int k = 1; k < num_bitplanes; k++){
-                uint32_t mask = (1 << k) - 1;
-                double diff = (double) negabinary2binary(negabinary_data & mask) + mantissa;
+                T_fp_int mask = (((T_fp_int) 1) << k) - 1;
+                double diff = (double) negabinary2binary((T_fp_int)(negabinary_data & mask)) + mantissa;
                 level_errors[num_bitplanes - k] += diff * diff;
             }
             level_errors[0] += data * data;

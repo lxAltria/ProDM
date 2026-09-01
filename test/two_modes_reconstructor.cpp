@@ -506,13 +506,13 @@ int main(int argc, char ** argv){
     }
     int argv_id = 1;
     string filename = string(argv[argv_id ++]);
+    string refactored_path = string(argv[argv_id++]);
     string data_type = string(argv[argv_id ++]);
     int num_tolerance = atoi(argv[argv_id ++]);
     std::vector<double> tolerance(num_tolerance, 0);
     for(int i=0; i<num_tolerance; i++){
         tolerance[i] = atof(argv[argv_id ++]);
     }
-    string refactored_path = string(argv[argv_id++]);
     string encoder_option = string(argv[argv_id++]);
     string interpreter_option = string(argv[argv_id++]);
     string cp = string(argv[argv_id++]);

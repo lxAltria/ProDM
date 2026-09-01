@@ -60,6 +60,7 @@ size_t PSZ3_delta_reconstructor(string refactor_dict, const vector<T>& data, dou
             }
         }
     }
+    free(tmp_reconstructed_data);
     return retrieved_size;
 }
 

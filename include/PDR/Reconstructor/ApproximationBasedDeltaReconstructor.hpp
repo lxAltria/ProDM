@@ -12,6 +12,11 @@ namespace PDR {
         ApproximationBasedDeltaReconstructor(Approximator approximator)
             : approximator(approximator){}
 
+        ApproximationBasedDeltaReconstructor(Approximator approximator, const std::string& refactor_dict)
+            : approximator(approximator),
+              metadata_file(refactor_dict + "/metadata.bin"),
+              file_prefix(refactor_dict + "/delta_segment_") {}
+
         T * reconstruct(double tolerance){
             return progressive_reconstruct(tolerance);
         }

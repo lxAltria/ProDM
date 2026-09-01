@@ -77,7 +77,7 @@ void launch_refactor(string filename, const vector<uint32_t>& dims, int num_bitp
 }
 
 void usage(char* cmd) {
-    std::cout << "QPro usage: " << cmd <<
+    std::cout << "usage: " << cmd <<
                   " data_file output_dict num_bitplanes num_dim dim0 .. dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]"
                   << std::endl
                   << "example: " << cmd <<

@@ -13,6 +13,11 @@ namespace PDR {
         ApproximationBasedDeltaRefactor(Approximator approximator)
             : approximator(approximator) {}
 
+        ApproximationBasedDeltaRefactor(Approximator approximator, const std::string& refactor_dict)
+            : approximator(approximator),
+              metadata_file(refactor_dict + "/metadata.bin"),
+              file_prefix(refactor_dict + "/delta_segment_") {}
+
         void refactor(T const * data_, const std::vector<uint32_t>& dims, uint8_t target_level, uint8_t num_bitplanes){
 
             num_segments = std::is_same<T, float>::value ? 7 : 16;

@@ -23,9 +23,13 @@ namespace MDR {
             Timer timer;
             timer.start();
             dimensions = dims;
-            uint32_t num_elements = 1;
+            size_t num_elements = 1;
             for(const auto& dim:dimensions){
                 num_elements *= dim;
+            }
+            if(num_elements > (size_t) UINT32_MAX){
+                std::cerr << "Data with more than 2^32 elements is not supported." << std::endl;
+                exit(-1);
             }
             data = std::vector<T>(data_, data_ + num_elements);
             // if refactor successfully
