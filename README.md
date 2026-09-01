@@ -90,10 +90,10 @@ python float2double.py data/VelocityX.dat
 python float2double.py data/VelocityY.dat
 python float2double.py data/VelocityZ.dat
 
-mkdir Hurricane/refactor
-mkdir Hurricane/refactor/VelocityX_refactored
-mkdir Hurricane/refactor/VelocityY_refactored
-mkdir Hurricane/refactor/VelocityZ_refactored
+mkdir refactor
+mkdir refactor/VelocityX_refactored
+mkdir refactor/VelocityY_refactored
+mkdir refactor/VelocityZ_refactored
 cd ..
 ```
 
@@ -119,7 +119,7 @@ mkdir refactored
 ./test/test_pdr_refactor ../Hurricane/data/VelocityX.dat refactored 30 3 100 500 500 -d 4
 # Retrieval
 # ./test/test_pdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_reconstructor ../Hurricane/data/VelocityX.dat refactored refactored 3 0.01 0.001 0.0001 -d 4
+./test/test_pdr_reconstructor ../Hurricane/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 -d 4
 ```
 QoI-based refactoring and progressive retrieval with weighted bitplanes (setting weighted=1 to enable weighted bitplane encoding):
 
@@ -142,7 +142,7 @@ cd build
 # Refactor
 # ./test/two_modes_refactor data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn \
 #   -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)
-./test/two_modes_refactor ../Hurricane/data/VelocityX.dat refactored -d 4 60 100 500 500 -Nega -eb -CP 
+./test/two_modes_refactor ../Hurricane/data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP 
 
 # Retrieval
 # ./test/two_modes_reconstructor data_file refactored_path -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln \
