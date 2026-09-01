@@ -4,4 +4,5 @@ example/data/
 example/refactor/
 example/100x500x500/
 example/*.tar.gz
-*.log
+example/*.log
+example/refactored/

@@ -1,8 +1,12 @@
 #!/bin/bash
 
 export CMAKE_POLICY_VERSION_MINIMUM=3.5
-export CC=gcc-16
-export CXX=g++-16
+# Compilers: uses the system default unless overridden, e.g.
+#   CC=gcc-16 CXX=g++-16 sh build_script.sh
+# Note: changing compilers requires removing the build directories first,
+# since CMake caches the compiler on the first configure.
+export CC=${CC:-gcc}
+export CXX=${CXX:-g++}
 source_dir=`pwd`
 external_dir=${source_dir}/external
 mkdir -p external
@@ -14,7 +18,7 @@ cd SZ2
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ2/install ..
+cmake -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ2/install ..
 make -j
 make install
 
@@ -62,12 +66,12 @@ cmake -DCMAKE_INSTALL_PREFIX=${source_dir}/install ..
 make -j 8
 
 # build ADIOS2
-cd ${external_dir}
-git clone https://github.com/ornladios/ADIOS2.git
-cd ADIOS2
-mkdir -p adios2-build && mkdir -p adios2-install
-cd adios2-build
-cmake -DADIOS2_USE_MPI=OFF -DADIOS2_USE_SZ=OFF -DCMAKE_INSTALL_PREFIX=${external_dir}/ADIOS2/adios2-install ..
-make -j 8
-make install
+# cd ${external_dir}
+# git clone https://github.com/ornladios/ADIOS2.git
+# cd ADIOS2
+# mkdir -p adios2-build && mkdir -p adios2-install
+# cd adios2-build
+# cmake -DADIOS2_USE_MPI=OFF -DADIOS2_USE_SZ=OFF -DCMAKE_INSTALL_PREFIX=${external_dir}/ADIOS2/adios2-install ..
+# make -j 8
+# make install
 
