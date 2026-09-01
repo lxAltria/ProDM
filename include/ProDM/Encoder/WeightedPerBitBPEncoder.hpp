@@ -66,7 +66,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     cur_data *= std::pow(2.0, *(weights_pos++));
@@ -142,7 +142,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
@@ -243,7 +243,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     cur_data *= exp2(*(weights_pos++));
@@ -342,7 +342,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_fp fp_data = 0;
                     // decode each bit of the data for each level component
@@ -438,7 +438,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_fp fp_data = 0;
                     // decode each bit of the data for each level component
@@ -549,7 +549,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_fp fp_data = 0;
                     // decode each bit of the data for each level component

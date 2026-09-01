@@ -70,7 +70,7 @@ namespace MDR {
             }
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j = 0; j < rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
@@ -118,7 +118,7 @@ namespace MDR {
             }
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j = 0; j < rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);

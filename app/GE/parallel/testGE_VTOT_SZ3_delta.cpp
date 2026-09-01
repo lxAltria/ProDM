@@ -7,7 +7,7 @@
 #include <numeric>
 #include "mpi.h"
 #include "adios2.h"
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 #include "SZ3/api/sz.hpp"
 

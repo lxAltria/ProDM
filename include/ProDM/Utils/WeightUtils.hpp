@@ -8,7 +8,7 @@
 #include <iomanip>
 #include <cmath>
 #include <bitset>
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include <numeric>
 #include <cstdint>
 

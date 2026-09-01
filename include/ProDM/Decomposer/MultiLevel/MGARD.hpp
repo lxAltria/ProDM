@@ -2,18 +2,18 @@
 #define _MDR_MGARD_DECOMPOSER_HPP
 
 #include "DecomposerInterface.hpp"
-#include "decompose.hpp"
-#include "recompose.hpp"
-#include "decompose_new.hpp"
-#include "recompose_new.hpp"
-#include "decompose_interleave.hpp"
-#include "reposition_recompose.hpp"
-#include "decompose_interleave_new.hpp"
-#include "reposition_recompose_new.hpp"
-#include "decompose_interleave_hybrid.hpp"
-#include "reposition_recompose_hybrid.hpp"
-#include "coeff_decompose_interleave.hpp"
-#include "coeff_reposition_recompose.hpp"
+#include "ProDM/MGARDx/decompose.hpp"
+#include "ProDM/MGARDx/recompose.hpp"
+#include "ProDM/MGARDx/decompose_new.hpp"
+#include "ProDM/MGARDx/recompose_new.hpp"
+#include "ProDM/MGARDx/decompose_interleave.hpp"
+#include "ProDM/MGARDx/reposition_recompose.hpp"
+#include "ProDM/MGARDx/decompose_interleave_new.hpp"
+#include "ProDM/MGARDx/reposition_recompose_new.hpp"
+#include "ProDM/MGARDx/decompose_interleave_hybrid.hpp"
+#include "ProDM/MGARDx/reposition_recompose_hybrid.hpp"
+#include "ProDM/MGARDx/coeff_decompose_interleave.hpp"
+#include "ProDM/MGARDx/coeff_reposition_recompose.hpp"
 
 namespace MDR {
     // MGARD decomposer with orthogonal basis

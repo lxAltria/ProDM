@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <cmath>
 #include <bitset>
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
@@ -70,33 +70,43 @@ void launch_reconstructor(string filename, const vector<double>& tolerance, int 
             test<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
             break;
         }
+#ifdef PRODM_HAVE_MGARD
         case MGARD_Cmp:{
             auto approximator = PDR::MGARDApproximator<T>();
             test<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_SZ2
         case SZ2_Cmp:{
             auto approximator = PDR::SZ2Approximator<T>();
             test<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_SZ3
         case SZ3_Cmp:{
             auto approximator = PDR::SZ3Approximator<T>();
             test<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_HPEZ
         case HPEZ_Cmp:{
             auto approximator = PDR::HPEZApproximator<T>();
             test<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_HPEZ
         case GE_Cmp:{
             auto approximator = PDR::GEApproximator<T>();
             test<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
             break;
         }
+#endif
         default:
-            perror("Undefined Approximator\n");
+            std::cerr << "Approximator " << approximator_rank << " is unknown or not enabled at build time (see PRODM_WITH_* CMake options)" << std::endl;
             break;
     }
 }

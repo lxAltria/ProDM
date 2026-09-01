@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include <sys/stat.h>
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include "ProDM/Refactor/MDR/Refactor.hpp"
 #include "ProDM/Decomposer/MultiLevel/Tuner/Tuner.hpp"
 

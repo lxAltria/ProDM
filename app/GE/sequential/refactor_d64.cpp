@@ -5,7 +5,7 @@
 #include <cmath>
 #include <bitset>
 #include <numeric>
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #define Dummy_Cmp 0
 #define SZ3_Cmp 1

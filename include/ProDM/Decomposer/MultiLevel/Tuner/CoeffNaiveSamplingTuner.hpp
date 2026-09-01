@@ -9,7 +9,7 @@
 #include "ProDM/ErrorControl/SizeInterpreter.hpp"
 #include "ProDM/Compressor/LevelCompressor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
-#include "sample.hpp"
+#include "ProDM/MGARDx/sample.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 
 namespace MDR{

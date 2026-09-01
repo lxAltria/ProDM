@@ -5,7 +5,7 @@
 #include <cmath>
 #include <bitset>
 #include <numeric>
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"

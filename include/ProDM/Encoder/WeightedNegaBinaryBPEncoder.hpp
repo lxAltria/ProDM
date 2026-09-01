@@ -73,7 +73,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     // std::cout << cur_data << " ";
@@ -138,7 +138,7 @@ namespace MDR {
             // leftover
             {
                 int rest_size = n % block_size;
-                if(rest_size == 0) rest_size = block_size;
+                if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
                     cur_data *= 2;
@@ -207,7 +207,7 @@ namespace MDR {
                 // leftover
                 {
                     int rest_size = n % block_size;
-                    if(rest_size == 0) rest_size = block_size;
+                    if(rest_size == 0 && n > 0) rest_size = block_size;
                     memset(int_data_buffer.data(), 0, rest_size * sizeof(T_fp));
                     decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<rest_size; j++){
@@ -234,7 +234,7 @@ namespace MDR {
                 // leftover
                 {
                     int rest_size = n % block_size;
-                    if(rest_size == 0) rest_size = block_size;
+                    if(rest_size == 0 && n > 0) rest_size = block_size;
                     memset(int_data_buffer.data(), 0, rest_size * sizeof(T_fp));
                     decode_block(streams_pos, rest_size, num_bitplanes, int_data_buffer.data());
                     for(int j=0; j<rest_size; j++){

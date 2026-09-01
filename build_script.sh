@@ -33,17 +33,6 @@ cmake -DCMAKE_INSTALL_PREFIX=${external_dir}/SZ3/install ..
 make -j
 make install
 
-# build MGARDx
-cd ${external_dir}
-git clone https://github.com/Linus-Li-1037/MGARDx.git
-cd MGARDx
-mkdir -p build
-mkdir -p install
-cd build
-cmake -DCMAKE_INSTALL_PREFIX=${external_dir}/MGARDx/install ..
-make -j
-make install
-
 # build QoZ (HPEZ)
 cd ${external_dir}
 git clone https://github.com/Linus-Li-1037/QoZ.git
@@ -62,7 +51,7 @@ cd ${source_dir}
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=${source_dir}/install ..
+cmake -DCMAKE_INSTALL_PREFIX=${source_dir}/install -DPRODM_WITH_SZ2=ON -DPRODM_WITH_SZ3=ON -DPRODM_WITH_HPEZ=ON -DPRODM_WITH_MGARD=ON ..
 make -j 8
 
 # build ADIOS2

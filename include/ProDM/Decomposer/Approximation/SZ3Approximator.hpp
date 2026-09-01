@@ -3,7 +3,7 @@
 
 #include "ApproximatorInterface.hpp"
 #include "SZ3/api/sz.hpp"
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 
 namespace PDR {
     // SZ approximator with SZ3 prediction

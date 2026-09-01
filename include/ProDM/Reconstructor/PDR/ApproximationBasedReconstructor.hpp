@@ -1,6 +1,7 @@
 #ifndef _PDR_COMPOSED_RECONSTRUCTOR_HPP
 #define _PDR_COMPOSED_RECONSTRUCTOR_HPP
 
+#include <numeric>
 #include "ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"

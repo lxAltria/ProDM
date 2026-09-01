@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include <sys/stat.h>
-#include "utils.hpp"
+#include "ProDM/MGARDx/utils.hpp"
 #include "ProDM/Refactor/PDR/Refactor.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
@@ -46,33 +46,43 @@ void launch_refactor(string filename, const vector<uint32_t>& dims, int num_bitp
             test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
             break;
         }
+#ifdef PRODM_HAVE_MGARD
         case MGARD_Cmp:{
             auto approximator = PDR::MGARDApproximator<T>();
             test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_SZ2
         case SZ2_Cmp:{
             auto approximator = PDR::SZ2Approximator<T>();
             test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_SZ3
         case SZ3_Cmp:{
             auto approximator = PDR::SZ3Approximator<T>();
             test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_HPEZ
         case HPEZ_Cmp:{
             auto approximator = PDR::HPEZApproximator<T>();
             test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
             break;
         }
+#endif
+#ifdef PRODM_HAVE_HPEZ
         case GE_Cmp:{
             auto approximator = PDR::GEApproximator<T>();
             test<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
             break;
         }
+#endif
         default:
-            perror("Undefined Approximator\n");
+            std::cerr << "Approximator " << approximator_rank << " is unknown or not enabled at build time (see PRODM_WITH_* CMake options)" << std::endl;
             break;
     }
 }

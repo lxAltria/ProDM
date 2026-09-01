@@ -1,6 +1,7 @@
 #ifndef _PDR_APPROXIMATION_BASED_REFACTOR_HPP
 #define _PDR_APPROXIMATION_BASED_REFACTOR_HPP
 
+#include <numeric>
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 #include "ProDM/Encoder/BitplaneEncoder.hpp"
