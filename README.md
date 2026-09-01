@@ -80,6 +80,7 @@ mkdir refactored
 ```
 
 **Progressive Retrieval with QoI error control [SC'24]**
+
 The following steps demonstrate how to test Hurricane ISABEL using `V_total` as the targeted QoI. If the confidential GE data is available, please check the codes in `app/GE` to reproduce the results in the SC'24 paper.  
 
 First convert float data to double for testing and create the refactor directories:
