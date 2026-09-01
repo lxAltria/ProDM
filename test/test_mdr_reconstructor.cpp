@@ -6,8 +6,8 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "MDR/Reconstructor/Reconstructor.hpp"
-#include "qoi_utils.hpp"
+#include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
+#include "ProDM/Utils/QoIUtils.hpp"
 
 using namespace std;
 

@@ -9,11 +9,11 @@
 #include "mpi.h"
 #include <sstream>
 #include "utils.hpp"
-#include "qoi_utils.hpp"
-#include "MDR/Reconstructor/Reconstructor.hpp"
-#include "nomask_Synthesizer4GE.hpp"
-#include "PDR/Reconstructor/Reconstructor.hpp"
-#include "MDR/RefactorUtils.hpp"
+#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
+#include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
+#include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
+#include "ProDM/Utils/RefactorUtils.hpp"
 #define Dummy 0
 #define SZ3 1
 #define PMGARD 2

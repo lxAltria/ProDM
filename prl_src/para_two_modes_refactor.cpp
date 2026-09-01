@@ -6,8 +6,8 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "MDR/Refactor/Refactor.hpp"
-#include "MDR/Tuner/Tuner.hpp"
+#include "ProDM/Refactor/MDR/Refactor.hpp"
+#include "ProDM/Decomposer/MultiLevel/Tuner/Tuner.hpp"
 #include "mpi.h"
 
 using namespace std;

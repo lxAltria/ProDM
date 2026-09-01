@@ -7,8 +7,8 @@
 #include <bitset>
 #include <sys/stat.h>
 #include "utils.hpp"
-#include "PDR/Refactor/Refactor.hpp"
-#include "PDR/Refactor/ApproximationBasedDeltaRefactor.hpp"
+#include "ProDM/Refactor/PDR/Refactor.hpp"
+#include "ProDM/Refactor/PDR/ApproximationBasedDeltaRefactor.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
 #define SZ2_Cmp 2

@@ -6,7 +6,7 @@
 #include <bitset>
 #include <numeric>
 #include "utils.hpp"
-#include "nomask_Synthesizer4GE.hpp"
+#include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #include "mpi.h"
 #include <sstream>
 #define Dummy 0

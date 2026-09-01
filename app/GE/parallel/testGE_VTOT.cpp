@@ -9,8 +9,8 @@
 #include "mpi.h"
 #include "adios2.h"
 #include "utils.hpp"
-#include "qoi_utils.hpp"
-#include "MDR/Reconstructor/Reconstructor.hpp"
+#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 
 const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;

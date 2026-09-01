@@ -13,8 +13,8 @@
 #include <zstd.h>
 #include "mpi.h"
 #include "adios2.h"
-#include "MDR/Reconstructor/Reconstructor.hpp"
-#include "MDR/Refactor/Refactor.hpp"
+#include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
+#include "ProDM/Refactor/MDR/Refactor.hpp"
 #include "SZ3/api/sz.hpp"
 
 const std::vector<std::string> var_name{"U_aver", "V_aver", "W_aver", "Pressure", "Rho"};

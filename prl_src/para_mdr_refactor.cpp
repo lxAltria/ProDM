@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "MDR/Refactor/Refactor.hpp"
+#include "ProDM/Refactor/MDR/Refactor.hpp"
 #include "mpi.h"
 
 using namespace std;

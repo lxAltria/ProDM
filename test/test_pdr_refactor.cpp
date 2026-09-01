@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "PDR/Refactor/Refactor.hpp"
+#include "ProDM/Refactor/PDR/Refactor.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
 #define SZ2_Cmp 2

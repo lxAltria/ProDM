@@ -8,13 +8,12 @@
 #include <cstdint>
 #include <numeric>
 #include <mpi.h>
-#include "nomask_Synthesizer4GE.hpp"
-#include "MDR/Reconstructor/Reconstructor.hpp"
-#include "MDR/Refactor/Refactor.hpp"
+#include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
+#include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
+#include "ProDM/Refactor/MDR/Refactor.hpp"
 #include "SZ3/api/sz.hpp"
-#include "PDR/Refactor/Refactor.hpp"
-#include "PDR/Reconstructor/Reconstructor.hpp"
-#include "ompSZp_typemanager.h"
+#include "ProDM/Refactor/PDR/Refactor.hpp"
+#include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
 
 int max_weight_for_vtot = 4;
 int max_weight_for_pressure = 3;

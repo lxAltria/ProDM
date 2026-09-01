@@ -154,7 +154,7 @@ cd build
 Please follow  `artifacts/SC-26/evaluation.ipynb` to reproduce the results in the paper.
 
 ## Acknoledgment
-This project is partially supported by NSF projects under OAC-2628470, OAC-2628472, OAC-2144403, OAC-2311757, OAC-2311758, and DOE RAPIDS-3 SciDAC and Sirius-2 projects. This work used computing resources from Oak Ridge Leadership Computing Facilities (OLCF) and the NSF Advanced Cyberinfrastructure Coordination Ecosystem: Services & Support (ACCESS) program.
+This project is partially supported by NSF projects under OAC-2628470, OAC-2628472, OAC-2144403, OAC-2311757, OAC-2311758, and DOE RAPIDS-3 SciDAC and Sirius-2 projects. This work used computing resources from Oak Ridge Leadership Computing Facilities (OLCF) and the NSF Advanced Cyberinfrastructure Coordination Ecosystem: Services & Support (ACCESS) program. This work used Claude Code for code refactoring and review. 
 
 ## Q&A
 Please address your questions to xin.liang@oregonstate.edu with subject title ProDM.

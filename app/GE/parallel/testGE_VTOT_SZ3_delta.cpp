@@ -8,7 +8,7 @@
 #include "mpi.h"
 #include "adios2.h"
 #include "utils.hpp"
-#include "qoi_utils.hpp"
+#include "ProDM/Utils/QoIUtils.hpp"
 #include "SZ3/api/sz.hpp"
 
 using namespace QoI;

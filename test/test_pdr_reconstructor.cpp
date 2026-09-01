@@ -6,7 +6,7 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "PDR/Reconstructor/Reconstructor.hpp"
+#include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
 #define SZ2_Cmp 2

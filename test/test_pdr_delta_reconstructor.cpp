@@ -7,8 +7,8 @@
 #include <cmath>
 #include <bitset>
 #include "utils.hpp"
-#include "PDR/Reconstructor/Reconstructor.hpp"
-#include "PDR/Reconstructor/ApproximationBasedDeltaReconstructor.hpp"
+#include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
+#include "ProDM/Reconstructor/PDR/ApproximationBasedDeltaReconstructor.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
 #define SZ2_Cmp 2
