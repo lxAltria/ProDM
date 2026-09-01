@@ -38,14 +38,31 @@ sh build_script.sh
 
 **Example: Hurricane ISABEL dataset**
 
-Hurricane ISABEL data can be downloaded from [SDRBench](https://sdrbench.github.io/). Double-precision versions of `VelocityX.dat`, `VelocityY.dat`, and `VelocityZ.dat` are converted from `Uf48.bin.f32`, `Vf48.bin.f32`, and `Wf48.bin.f32`.
+Hurricane ISABEL data can be downloaded from [SDRBench](https://sdrbench.github.io/). The specific variables `VelocityX.dat`, `VelocityY.dat`, and `VelocityZ.dat` used in the examples are renamed from `Uf48.bin.f32`, `Vf48.bin.f32`, and `Wf48.bin.f32`, respectively. 
 
-The float versions (`Uf48.bin.f32`, `Vf48.bin.f32`, `Wf48.bin.f32`) are already provided under **`Hurricane/data`** (with the names `VelocityX.dat`, `VelocityY.dat`, and `VelocityZ.dat`) and can be tested directly.
+```bash
+cd example
+mkdir -p data
+curl -LO https://g-d0cd3f.fd635.8443.data.globus.org/raw-data/Hurricane-ISABEL/SDRBENCH-Hurricane-ISABEL-100x500x500.tar.gz
+tar -xvf SDRBENCH-Hurricane-ISABEL-100x500x500.tar.gz
+cp 100x500x500/Uf48.bin.f32 data/VelocityX.dat
+cp 100x500x500/Vf48.bin.f32 data/VelocityY.dat
+cp 100x500x500/Wf48.bin.f32 data/VelocityZ.dat
+```
+
+or
+
+```bash
+cd example
+sh download_data.sh
+```
+
+The copied files are single-precision (float32) and can be tested directly with the `-f` data type option.
 
 Expected directory layout:
 
 ```
-Hurricane_d64
+example
 ├── data
 │   ├── VelocityX.dat
 │   ├── VelocityY.dat
@@ -59,25 +76,23 @@ Hurricane_d64
 **Refactoring and Progressive Retrieval with Multilevel Decomposition [SC'21]**
 ```bash
 cd build
-mkdir refactored
 # Refactor
 # ./test/test_mdr_refactor $data_file $refactored_dict $target_level $num_bitplanes $num_dimensions [dimensions] $encoder_option $dtype
-./test/test_mdr_refactor ../Hurricane/data/VelocityX.dat refactored 4 30 3 100 500 500 0 -f
+./test/test_mdr_refactor ../example/data/VelocityX.dat refactored 4 30 3 100 500 500 0 -f
 # Retrieval
 # ./test/test_mdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN $encoder_option $dtype 
-./test/test_mdr_reconstructor ../Hurricane/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 0 -f
+./test/test_mdr_reconstructor ../example/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 0 -f
 ```
 
 **Refactoring and Progressive Retrieval with Iterative Compression [TVCG'23]**
 ```bash
 cd build
-mkdir refactored
 # Refactor
 # ./test/test_pdr_delta_refactor $data_file $refactored_dict $num_dim $dim0 .. $dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_delta_refactor ../Hurricane/data/VelocityX.dat refactored 3 100 500 500 -f 3
+./test/test_pdr_delta_refactor ../example/data/VelocityX.dat refactored 3 100 500 500 -f 3
 # Retrieval
 # ./test/test_pdr_delta_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_delta_reconstructor ../Hurricane/data/VelocityX.dat refactored 3 0.05 0.005 0.0005 -f 3
+./test/test_pdr_delta_reconstructor ../example/data/VelocityX.dat refactored 3 0.05 0.005 0.0005 -f 3
 ```
 
 **Progressive Retrieval with QoI error control [SC'24]**
@@ -86,15 +101,11 @@ The following steps demonstrate how to test Hurricane ISABEL using `V_total` as 
 
 First convert float data to double for testing and create the refactor directories:
 ```bash
-cd ../Hurricane
+cd ../example
 python float2double.py data/VelocityX.dat
 python float2double.py data/VelocityY.dat
 python float2double.py data/VelocityZ.dat
 
-mkdir refactor
-mkdir refactor/VelocityX_refactored
-mkdir refactor/VelocityY_refactored
-mkdir refactor/VelocityZ_refactored
 cd ..
 ```
 
@@ -103,10 +114,10 @@ Then perform refactoring and retrieval with weighted=0 to disable weighted bitpl
 cd build
 # Refactor
 # ./test/refactor_d64 $approximator $weighted=0 $dataset_name $path_to_dataset
-./test/refactor_d64 4 0 Hurricane ../Hurricane
+./test/refactor_d64 4 0 Hurricane ../example
 # Retrieval
 # ./test/qoi_{$target_QoI}_d64 $approximator $weighted $eb $path_to_dataset
-./test/qoi_Vtot_d64 4 0 1 $eb ../Hurricane
+./test/qoi_Vtot_d64 4 0 1 $eb ../example
 ```
 
 **QoI-based Refactoring and Progressive Retrieval (QProR) [HPDC'26]**
@@ -114,13 +125,12 @@ cd build
 Precision data refactoring using approximators:
 ```bash
 cd build
-mkdir refactored
 # Refactor
 # ./test/test_pdr_refactor $data_file $refactored_dict $num_bitplanes $num_dim $dim0 .. $dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_refactor ../Hurricane/data/VelocityX.dat refactored 30 3 100 500 500 -d 4
+./test/test_pdr_refactor ../example/data/VelocityX.dat refactored 30 3 100 500 500 -d 4
 # Retrieval
 # ./test/test_pdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_reconstructor ../Hurricane/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 -d 4
+./test/test_pdr_reconstructor ../example/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 -d 4
 ```
 QoI-based refactoring and progressive retrieval with weighted bitplanes (setting weighted=1 to enable weighted bitplane encoding):
 
@@ -128,10 +138,10 @@ QoI-based refactoring and progressive retrieval with weighted bitplanes (setting
 cd build
 # Refactor
 # ./test/refactor_d64 $approximator $weighted $dataset_id $path_to_dataset $max_weight_v $block_size $approximator_eb
-./test/refactor_d64 4 1 Hurricane ../Hurricane 7 4 0.001
+./test/refactor_d64 4 1 Hurricane ../example 7 4 0.001
 # Retrieval
 # ./test/qoi_{$target_QoI}_d64 $approximator $weighted $dataset_id $eb $path_to_dataset
-./test/qoi_Vtot_d64 4 1 1 $eb ../Hurricane
+./test/qoi_Vtot_d64 4 1 1 $eb ../example
 ```
 Please refer to  `artifacts/HPDC-26/Appendix.pdf` for artifact description and evaluation.
 
@@ -143,12 +153,12 @@ cd build
 # Refactor
 # ./test/two_modes_refactor data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn \
 #   -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)
-./test/two_modes_refactor ../Hurricane/data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP 
+./test/two_modes_refactor ../example/data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP 
 
 # Retrieval
 # ./test/two_modes_reconstructor data_file refactored_path -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln \
 #   -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] [Optional: Reconstructed data path]
-./test/two_modes_reconstructor ../Hurricane/data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP
+./test/two_modes_reconstructor ../example/data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP
 ```
 
 Please follow  `artifacts/SC-26/evaluation.ipynb` to reproduce the results in the paper.

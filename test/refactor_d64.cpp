@@ -5,6 +5,7 @@
 #include <cmath>
 #include <bitset>
 #include <numeric>
+#include <sys/stat.h>
 #include "utils.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #define Dummy_Cmp 0
@@ -28,6 +29,12 @@ int main(int argc, char** argv){
 	std::string data_prefix_path = argv[argv_id++];
 	std::string data_file_prefix = data_prefix_path + "/data/";
 	std::string rdata_file_prefix = data_prefix_path + "/refactor/";
+	mkdir(rdata_file_prefix.c_str(), 0777);
+	// GE refactors all variables in varlist; other datasets only use the three velocities
+	const size_t num_refactored_vars = (std::strcmp(data.c_str(), "GE") == 0) ? varlist.size() : 3;
+	for(size_t i=0; i<num_refactored_vars; i++){
+		mkdir((rdata_file_prefix + varlist[i] + "_refactored").c_str(), 0777);
+	}
     int max_weight_for_vtot = 4;
     int max_weight_for_temperature = 0;
 	int block_size = 1;

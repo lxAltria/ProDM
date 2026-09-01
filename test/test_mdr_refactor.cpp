@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <cmath>
 #include <bitset>
+#include <sys/stat.h>
 #include "utils.hpp"
 #include "ProDM/Refactor/MDR/Refactor.hpp"
 
@@ -75,6 +76,7 @@ int main(int argc, char ** argv){
     int argv_id = 1;
     string filename = string(argv[argv_id ++]);
     string output_path = string(argv[argv_id++]);
+    mkdir(output_path.c_str(), 0777);
     int target_level = atoi(argv[argv_id ++]);
     int num_bitplanes = atoi(argv[argv_id ++]);
     if(num_bitplanes % 2 == 1) {
