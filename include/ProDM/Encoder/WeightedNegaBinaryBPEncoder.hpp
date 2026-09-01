@@ -65,6 +65,12 @@ namespace MDR {
             for(int i=0; i<streams.size(); i++){
                 streams_pos[i] = reinterpret_cast<T_stream*>(streams[i]);
             }
+            // a missing weight array means unweighted: use all-zero weights
+            std::vector<int> uniform_weights;
+            if(weights == NULL){
+                uniform_weights.assign(n, 0);
+                weights = uniform_weights.data();
+            }
             T_data const * data_pos = data;
             int const * weights_pos = weights;
             for(int i=0; i<n - (int32_t)block_size; i+=block_size){
@@ -108,7 +114,7 @@ namespace MDR {
             // leave room for negabinary format
             exp += 2;
             // leave room for multiplication
-            exp += 1;
+            // exp += 1;
             // determine block size based on bitplane integer type
             uint32_t block_size = block_size_based_on_bitplane_int_type<T_stream>();
             std::vector<uint8_t> starting_bitplanes = std::vector<uint8_t>((n > 0) ? ((n - 1)/(int32_t)block_size + 1) : 0, 0);
@@ -131,13 +137,18 @@ namespace MDR {
             for(int i=0; i<level_errors.size(); i++){
                 level_errors[i] = 0;
             }
+            // a missing weight array means unweighted: use all-zero weights
+            std::vector<int> uniform_weights;
+            if(weights == NULL){
+                uniform_weights.assign(n, 0);
+                weights = uniform_weights.data();
+            }
             T_data const * data_pos = data;
             int const * weights_pos = weights;
             for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
                     T_data cur_data = *(data_pos++);
-                    cur_data *= 2;
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
+                    T_data shifted_data = ldexp(cur_data, (num_bitplanes - exp) + *(weights_pos++));
                     T_fps signed_int_data = (T_fps) shifted_data;
                     int_data_buffer[j] = binary2negabinary(signed_int_data);
                     // compute level errors
@@ -151,8 +162,7 @@ namespace MDR {
                 if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
-                    cur_data *= 2;
-                    T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
+                    T_data shifted_data = ldexp(cur_data, (num_bitplanes - exp) + *(weights_pos++));
                     T_fps signed_int_data = (T_fps) shifted_data;
                     int_data_buffer[j] = binary2negabinary(signed_int_data);
                     // compute level errors
@@ -175,7 +185,7 @@ namespace MDR {
         }
 
         T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t starting_bitplane, uint8_t num_bitplanes, int level){
-            return progressive_decode(streams, n, exp, 0, num_bitplanes, streams.size(), NULL);
+            return progressive_decode(streams, n, exp, starting_bitplane, num_bitplanes, level, NULL);
         }
         // decode the data and record necessary information for progressiveness
         T_data * progressive_decode(const std::vector<uint8_t const *>& streams, int32_t n, int exp, uint8_t starting_bitplane, uint8_t num_bitplanes, int level, int * weights=NULL) {
@@ -199,6 +209,12 @@ namespace MDR {
             std::vector<T_fp> int_data_buffer(block_size, 0);
             // decode
             const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
+            // a missing weight array means unweighted: use all-zero weights
+            std::vector<int> uniform_weights;
+            if(weights == NULL){
+                uniform_weights.assign(n, 0);
+                weights = uniform_weights.data();
+            }
             T_data * data_pos = data;
             int const * weights_pos = weights;
             // std::cout << "ending_bitplane = " << +ending_bitplane << std::endl;

@@ -47,6 +47,12 @@ namespace MDR {
             for(int i=0; i<streams.size(); i++){
                 encoders.push_back(BitEncoder(reinterpret_cast<uint64_t*>(streams[i])));
             }
+            // a missing weight array means unweighted: use all-zero weights
+            std::vector<int> uniform_weights;
+            if(weights == NULL){
+                uniform_weights.assign(n, 0);
+                weights = uniform_weights.data();
+            }
             T_data const * data_pos = data;
             int const * weights_pos = weights;
             for(int i=0; i<n - (int32_t)block_size; i+=block_size){
@@ -210,6 +216,10 @@ namespace MDR {
                 level_errors[i] = 0;
             }
             T_data const * data_pos = data;
+            if(weights == NULL){
+                std::cerr << "WeightedPerBitBPEncoder: weights must be set before calling the weighted encode/decode" << std::endl;
+                exit(-1);
+            }
             int * weights_pos = weights;
             for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 T_stream sign_bitplane = 0;
@@ -254,7 +264,7 @@ namespace MDR {
                 if(rest_size == 0 && n > 0) rest_size = block_size;
                 for(int j=0; j<rest_size; j++){
                     T_data cur_data = *(data_pos++);
-                    cur_data *= exp2(*(weights_pos++));
+                    // cur_data *= exp2(*(weights_pos++));
                     // T_data shifted_data = ldexp(cur_data, num_bitplanes - exp);
                     T_data shifted_data = ldexp(cur_data, num_bitplanes - exp + *(weights_pos++));
                     bool sign = cur_data < 0;
@@ -324,7 +334,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                         }
                     }
                     else{
@@ -333,7 +343,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                             if(bit && first_bit){
                                 // decode sign
                                 sign = decoders[index].decode();
@@ -360,7 +370,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                         }
                     }
                     else{
@@ -368,7 +378,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                             if(bit && first_bit){
                                 // decode sign
                                 sign = decoders[index].decode();
@@ -407,6 +417,12 @@ namespace MDR {
             std::vector<bool>& flags = sign_flags[level];
             const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
             // decode
+            // a missing weight array means unweighted: use all-zero weights
+            std::vector<int> uniform_weights;
+            if(weights == NULL){
+                uniform_weights.assign(n, 0);
+                weights = uniform_weights.data();
+            }
             T_data * data_pos = data;
             int const * weights_pos = weights;
             for(int i=0; i<n - (int32_t)block_size; i+=block_size){
@@ -420,7 +436,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                         }
                     }
                     else{
@@ -429,7 +445,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                             if(bit && first_bit){
                                 // decode sign
                                 sign = decoders[index].decode();
@@ -456,7 +472,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                         }
                     }
                     else{
@@ -464,7 +480,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                             if(bit && first_bit){
                                 // decode sign
                                 sign = decoders[index].decode();
@@ -507,6 +523,10 @@ namespace MDR {
             const uint8_t ending_bitplane = starting_bitplane + num_bitplanes;
             // decode
             T_data * data_pos = data;
+            if(weights == NULL){
+                std::cerr << "WeightedPerBitBPEncoder: weights must be set before calling the weighted encode/decode" << std::endl;
+                exit(-1);
+            }
             int * weights_pos = weights;
             for(int i=0; i<n - (int32_t)block_size; i+=block_size){
                 for(int j=0; j<block_size; j++){
@@ -519,7 +539,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                         }
                     }
                     else{
@@ -528,7 +548,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                             if(bit && first_bit){
                                 // decode sign
                                 sign = decoders[index].decode();
@@ -567,7 +587,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                         }
                     }
                     else{
@@ -575,7 +595,7 @@ namespace MDR {
                         for(int k=num_bitplanes - 1; k>=0; k--){
                             uint8_t index = num_bitplanes - 1 - k;
                             uint8_t bit = decoders[index].decode();
-                            fp_data += bit << k;
+                            fp_data += ((T_fp)bit) << k;
                             if(bit && first_bit){
                                 // decode sign
                                 sign = decoders[index].decode();
