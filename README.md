@@ -29,9 +29,8 @@ ProDM also integrates other existing progressive approaches from researchers and
 One-command compilation using `build_script.sh`. It will automatically build the ProDM library and its dependencies.
 
 ```bash
-git clone https://github.com/Linus-Li-1037/ProDM.git
+git clone https://github.com/lxAltria/ProDM.git
 cd ProDM
-git switch Predict
 sh build_script.sh
 ```
 
