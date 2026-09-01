@@ -132,6 +132,8 @@ cd build
 # ./test/qoi_{$target_QoI}_d64 $approximator $weighted $dataset_id $eb $path_to_dataset
 ./test/qoi_Vtot_d64 4 1 1 $eb ../Hurricane
 ```
+Please refer to  `artifacts/HPDC-26/Appendix.pdf` for artifact description and evaluation.
+
 
 **Progressive retrieval with Adaptive Interpolation and Coefficient Decomposition (ProAICD) [SC'26]**
 
@@ -148,7 +150,7 @@ cd build
 ./test/two_modes_reconstructor ../Hurricane/data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP
 ```
 
-Please follow  `artifacts/evaluation.ipynb` to reproduce the results in the paper.
+Please follow  `artifacts/SC-26/evaluation.ipynb` to reproduce the results in the paper.
 
 ## Acknoledgment
 This project is partially supported by NSF projects under OAC-2628470, OAC-2628472, OAC-2144403, OAC-2311757, OAC-2311758, and DOE RAPIDS-3 SciDAC and Sirius-2 projects. This work used computing resources from Oak Ridge Leadership Computing Facilities (OLCF) and the NSF Advanced Cyberinfrastructure Coordination Ecosystem: Services & Support (ACCESS) program.
