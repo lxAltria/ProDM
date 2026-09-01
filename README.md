@@ -1,4 +1,4 @@
-# ProDM: Progressive Data Refactoring and Retrieval Framework
+# ProDM: A Progressive Data Management Framework for Exascale Science
 
 This is the code repo for NSF project "Collaborative Research: Elements: ProDM: Developing A Unified Progressive Data Management Library for Exascale Computational Science". It is a joint collaborative effort from the Oregon State University (OSU), New Jersey Institute of Technology (NJIT), and Temple University.
 
