@@ -1,3 +1,5 @@
+// QoZ headers use the non-standard 'uint' typedef, which not all toolchains provide
+typedef unsigned int uint;
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
@@ -1407,6 +1409,10 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
 
 int main(int argc, char ** argv){
     using T = double;
+	if(argc < 6){
+		std::cerr << "usage: " << argv[0] << " approximator weighted decrease_method rel_eb path_to_dataset" << std::endl;
+		return -1;
+	}
 	int argv_id = 1;
     int compressor = atoi(argv[argv_id++]);
     int weighted = atoi(argv[argv_id++]);

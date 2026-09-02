@@ -14,7 +14,7 @@
 #include "mpi.h"
 #include "adios2.h"
 #include "SZ3/api/sz.hpp"
-#include "recompose.hpp"
+#include "ProDM/Decomposer/MultiLevel/MGARDx/recompose.hpp"
 
 const std::vector<std::string> var_name{"U_aver", "V_aver", "W_aver", "Pressure", "Rho"};
 const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};

@@ -118,6 +118,7 @@ endif()
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 add_subdirectory(test)
+add_subdirectory(app)
 if(PRODM_WITH_MPI)
   add_subdirectory(prl_src)
 endif()

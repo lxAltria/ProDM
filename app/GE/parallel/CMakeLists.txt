@@ -1,9 +1,25 @@
-find_package(MPI REQUIRED)
+# Parallel GE tools: require MPI, ADIOS2, and the SZ3 baselines.
+# Skipped gracefully when any prerequisite is missing 
+if(NOT PRODM_WITH_SZ3)
+    message(STATUS "Skipping the parallel GE tools (require PRODM_WITH_SZ3)")
+    return()
+endif()
+find_package(MPI)
+if(NOT MPI_FOUND)
+    message(STATUS "Skipping the parallel GE tools (MPI not found)")
+    return()
+endif()
+find_package(ADIOS2 CONFIG QUIET
+  HINTS "${CMAKE_SOURCE_DIR}/external/ADIOS2/adios2-install"
+)
+if(NOT ADIOS2_FOUND)
+    message(STATUS "Skipping the parallel GE tools (ADIOS2 not found; see build_script.sh)")
+    return()
+endif()
 
 function(add_my_executable_prl target source)
     add_executable(${target} ${source})
-    target_include_directories(${target} PRIVATE ${MDR_INCLUDES} ${MGARDx_INCLUDES} ${SZ3_INCLUDES} ${ZSTD_INCLUDES} ${MPI_INCLUDE_PATH})
-    target_link_libraries(${target} ${PROJECT_NAME} adios2::adios2 ${SZ3_LIB} ${ZSTD_LIB} ${MPI_C_LIBRARIES})
+    target_link_libraries(${target} ${PROJECT_NAME} MPI::MPI_CXX adios2::adios2)
 endfunction()
 
 add_my_executable_prl(refactorGE refactorGE.cpp)
