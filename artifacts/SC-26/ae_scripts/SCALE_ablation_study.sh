@@ -83,11 +83,11 @@ done
 ###################################################################################################
 # Prior-eb
 # 5. AdatInterp eb mode
-./build/test/two_modes_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-PerBit" "-eb" "-no_CP" > $tmp_file
+./build/test/test_proaicd_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-PerBit" "-eb" "-no_CP" > $tmp_file
 time=$(grep "Refactor_time" $tmp_file | head -n 1)
 echo "Method#5, AdatInterp-EB, $time" >> $output_file
 for error_bound in "${error_bounds[@]}"; do
-    ./build/test/two_modes_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-PerBit" "-DP" "-no_CP"  > $tmp_file
+    ./build/test/test_proaicd_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-PerBit" "-DP" "-no_CP"  > $tmp_file
     PSNR=$(grep "PSNR" $tmp_file | head -n 1)
     bitrate=$(grep "Bitrate" $tmp_file | head -n 1)
     time=$(grep "Reconstruct_time" $tmp_file | head -n 1)
@@ -95,11 +95,11 @@ for error_bound in "${error_bounds[@]}"; do
 done
 
 # 6. CoeffDecom eb mode
-./build/test/two_modes_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-PerBit" "-eb" "-CP" > $tmp_file
+./build/test/test_proaicd_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-PerBit" "-eb" "-CP" > $tmp_file
 time=$(grep "Refactor_time" $tmp_file | head -n 1)
 echo "Method#6, CoeffDecom-EB, $time" >> $output_file
 for error_bound in "${error_bounds[@]}"; do
-    ./build/test/two_modes_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-PerBit" "-DP" "-CP" > $tmp_file
+    ./build/test/test_proaicd_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-PerBit" "-DP" "-CP" > $tmp_file
     PSNR=$(grep "PSNR" $tmp_file | head -n 1)
     bitrate=$(grep "Bitrate" $tmp_file | head -n 1)
     time=$(grep "Reconstruct_time" $tmp_file | head -n 1)
@@ -109,11 +109,11 @@ done
 ###################################################################################################
 # Prior-PSNR
 # 7. AdatInterp psnr mode
-./build/test/two_modes_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-XOR" "-PSNR" "-no_CP" > $tmp_file
+./build/test/test_proaicd_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-XOR" "-PSNR" "-no_CP" > $tmp_file
 time=$(grep "Refactor_time" $tmp_file | head -n 1)
 echo "Method#7, AdatInterp-PSNR, $time" >> $output_file
 for error_bound in "${error_bounds[@]}"; do
-    ./build/test/two_modes_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-XOR" "-DP" "-no_CP"  > $tmp_file
+    ./build/test/test_proaicd_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-XOR" "-DP" "-no_CP"  > $tmp_file
     PSNR=$(grep "PSNR" $tmp_file | head -n 1)
     bitrate=$(grep "Bitrate" $tmp_file | head -n 1)
     time=$(grep "Reconstruct_time" $tmp_file | head -n 1)
@@ -121,11 +121,11 @@ for error_bound in "${error_bounds[@]}"; do
 done
 
 # 8. CoeffDecom psnr mode
-./build/test/two_modes_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-XOR" "-PSNR" "-CP" > $tmp_file
+./build/test/test_proaicd_refactor $data_file "-d" 4 60 3 98 1200 1200 $refactor_file "-XOR" "-PSNR" "-CP" > $tmp_file
 time=$(grep "Refactor_time" $tmp_file | head -n 1)
 echo "Method#8, CoeffDecom-PSNR, $time" >> $output_file
 for error_bound in "${error_bounds[@]}"; do
-    ./build/test/two_modes_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-XOR" "-DP" "-CP" > $tmp_file
+    ./build/test/test_proaicd_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-XOR" "-DP" "-CP" > $tmp_file
     PSNR=$(grep "PSNR" $tmp_file | head -n 1)
     bitrate=$(grep "Bitrate" $tmp_file | head -n 1)
     time=$(grep "Reconstruct_time" $tmp_file | head -n 1)

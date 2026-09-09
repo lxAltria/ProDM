@@ -31,7 +31,7 @@ std::vector<double> error_V_TOT;
 std::vector<double> error_est_V_TOT;
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const double tau, std::vector<double>& ebs){
+bool halving_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const std::vector<unsigned char>& mask, const double tau, std::vector<double>& ebs){
 	double eb_Vx = ebs[0];
 	double eb_Vy = ebs[1];
 	double eb_Vz = ebs[2];
@@ -218,7 +218,7 @@ int main(int argc, char ** argv){
 	    Vz_dec = reconstructed_vars[2].data();
 	    error_V_TOT = std::vector<double>(num_elements);
 	    error_est_V_TOT = std::vector<double>(num_elements);
-	    tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
+	    tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, mask, tau, ebs);
     }
     	free(reconstructed_data);
 	local_elapsed_time += MPI_Wtime();

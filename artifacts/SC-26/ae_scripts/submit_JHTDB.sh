@@ -122,11 +122,11 @@ for np in "${core_counts[@]}"; do
     refactor_times=()
     recon_times=()
     for run in $(seq 1 $NUM_RUNS); do
-        mpirun -n $np ./build/prl_src/para_two_modes_refactor $data_file "-d" 4 60 3 256 512 512 $refactor_file "-PerBit" "-eb" "-CP" > $tmp_file
+        mpirun -n $np ./build/prl_src/para_proaicd_refactor $data_file "-d" 4 60 3 256 512 512 $refactor_file "-PerBit" "-eb" "-CP" > $tmp_file
         t=$(extract_time $tmp_file)
         refactor_times+=("$t")
 
-        mpirun -n $np ./build/prl_src/para_two_modes_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-PerBit" "-DP" "-CP" $write_file > $tmp_file
+        mpirun -n $np ./build/prl_src/para_proaicd_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-PerBit" "-DP" "-CP" $write_file > $tmp_file
         t=$(extract_time $tmp_file)
         recon_times+=("$t")
 

@@ -20,14 +20,14 @@ for var in VelocityX VelocityY VelocityZ; do
     python3 float2double.py data/${var}.dat.f32
 done
 
-${BUILD}/refactor_d64 4 0 Hurricane . > qoi.log
-${BUILD}/qoi_Vtot_d64 4 0 1 0.01 . >> qoi.log
+${BUILD}/test_qoi_refactor data refactor 60 3 100 500 500 -d 0 0 > qoi.log
+${BUILD}/test_qoi_reconstructor data refactor 1 0.01 -d 0 0 1 >> qoi.log
 
 ${BUILD}/test_pdr_refactor data/VelocityX.dat refactored 30 3 100 500 500 -d 4 > pdr.log
 ${BUILD}/test_pdr_reconstructor data/VelocityX.dat refactored 3 0.01 0.001 0.0001 -d 4 >> pdr.log
 
-${BUILD}/refactor_d64 4 1 Hurricane . 7 4 0.001 > qoi_weighted.log
-${BUILD}/qoi_Vtot_d64 4 1 1 0.01 . >> qoi_weighted.log
+${BUILD}/test_qoi_refactor data refactor 60 3 100 500 500 -d 1 0 0.001 7 4 > qoi_weighted.log
+${BUILD}/test_qoi_reconstructor data refactor 1 0.01 -d 1 0 1 >> qoi_weighted.log
 
-${BUILD}/two_modes_refactor data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP > proaicd.log
-${BUILD}/two_modes_reconstructor data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP >> proaicd.log
+${BUILD}/test_proaicd_refactor data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP > proaicd.log
+${BUILD}/test_proaicd_reconstructor data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP >> proaicd.log

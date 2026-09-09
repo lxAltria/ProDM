@@ -36,7 +36,7 @@ cd ProDM
 sh build_script.sh
 ```
 
-Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control — the SC'21/SC'26 tools plus the PDR tools with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The QoI tools (`refactor_d64`, `qoi_Vtot_d64`) require all four.
+Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control — the SC'21/SC'26 tools plus the PDR tools with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The QoI walkthrough tools (`test_qoi_refactor`, `test_qoi_reconstructor`) additionally require `PRODM_WITH_HPEZ`; the GE application tools under `app/GE` require all four.
 
 ### Examples
 
@@ -123,15 +123,15 @@ python float2double.py data/VelocityY.dat.f32
 python float2double.py data/VelocityZ.dat.f32
 ```
 
-Then perform refactoring and retrieval with weighted=0 to disable weighted bitplane encoding (the technique introduced in the HPDC'26 paper):
+Then perform refactoring and retrieval with mode=0 (BP) to disable weighted bitplane encoding (the technique introduced in the HPDC'26 paper):
 ```bash
 cd build
 # Refactor
-# ./test/refactor_d64 $approximator $weighted $dataset_name $path_to_dataset
-./test/refactor_d64 4 0 Hurricane ../example
+# ./test/test_qoi_refactor $data_dir $refactor_dir $num_bitplanes $num_dim $dim0 .. $dimn -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1]
+./test/test_qoi_refactor ../example/data ../example/refactor 60 3 100 500 500 -d 0 0
 # Retrieval
-# ./test/qoi_{$target_QoI}_d64 $approximator $weighted $decrease_method $rel_eb $path_to_dataset
-./test/qoi_Vtot_d64 4 0 1 0.01 ../example
+# ./test/test_qoi_reconstructor $data_dir $refactor_dir num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1] [decrease_method: uniform-0, coordinate-1]
+./test/test_qoi_reconstructor ../example/data ../example/refactor 1 0.01 -d 0 0 1
 ```
 
 **QoI-based Refactoring and Progressive Retrieval (QProR) [HPDC'26]**
@@ -146,16 +146,16 @@ cd build
 # ./test/test_pdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
 ./test/test_pdr_reconstructor ../example/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 -d 4
 ```
-QoI-based refactoring and progressive retrieval with weighted bitplanes (setting weighted=1 to enable weighted bitplane encoding):
+QoI-based refactoring and progressive retrieval with weighted bitplanes (setting mode=1 to enable weighted bitplane encoding; the trailing arguments are $approximator_eb $max_weight $block_size):
 
 ```bash
 cd build
 # Refactor
-# ./test/refactor_d64 $approximator $weighted $dataset_name $path_to_dataset $max_weight_v $block_size $approximator_eb
-./test/refactor_d64 4 1 Hurricane ../example 7 4 0.001
+# ./test/test_qoi_refactor $data_dir $refactor_dir $num_bitplanes $num_dim $dim0 .. $dimn -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1] [$approximator_eb $max_weight $block_size]
+./test/test_qoi_refactor ../example/data ../example/refactor 60 3 100 500 500 -d 1 0 0.001 7 4
 # Retrieval
-# ./test/qoi_{$target_QoI}_d64 $approximator $weighted $decrease_method $rel_eb $path_to_dataset
-./test/qoi_Vtot_d64 4 1 1 0.01 ../example
+# ./test/test_qoi_reconstructor $data_dir $refactor_dir num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1] [decrease_method: uniform-0, coordinate-1]
+./test/test_qoi_reconstructor ../example/data ../example/refactor 1 0.01 -d 1 0 1
 ```
 Please refer to  `artifacts/HPDC-26/Appendix.pdf` for artifact description and evaluation.
 
@@ -165,14 +165,14 @@ Please refer to  `artifacts/HPDC-26/Appendix.pdf` for artifact description and e
 ```bash
 cd build
 # Refactor
-# ./test/two_modes_refactor data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn \
+# ./test/test_proaicd_refactor data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn \
 #   -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)
-./test/two_modes_refactor ../example/data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP 
+./test/test_proaicd_refactor ../example/data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP 
 
 # Retrieval
-# ./test/two_modes_reconstructor data_file refactored_path -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln \
+# ./test/test_proaicd_reconstructor data_file refactored_path -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln \
 #   -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] [Optional: Reconstructed data path]
-./test/two_modes_reconstructor ../example/data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP
+./test/test_proaicd_reconstructor ../example/data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP
 ```
 
 Please follow  `artifacts/SC-26/evaluation.ipynb` to reproduce the results in the paper.

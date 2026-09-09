@@ -10,8 +10,8 @@ function(add_my_executable target source)
 endfunction()
 
 # core parallel tools
-add_my_executable(para_two_modes_refactor para_two_modes_refactor.cpp)
-add_my_executable(para_two_modes_reconstructor para_two_modes_reconstructor.cpp)
+add_my_executable(para_proaicd_refactor para_proaicd_refactor.cpp)
+add_my_executable(para_proaicd_reconstructor para_proaicd_reconstructor.cpp)
 add_my_executable(para_mdr_refactor para_mdr_refactor.cpp)
 add_my_executable(para_mdr_reconstructor para_mdr_reconstructor.cpp)
 
@@ -31,8 +31,6 @@ else()
     message(STATUS "Skipping para_refactor and para_Vtot (require PRODM_WITH_SZ2/SZ3/HPEZ/MGARD)")
 endif()
 
-# add_my_executable(refactorROD refactorROD.cpp)
-# add_my_executable(test_PT test_PT.cpp)
 # add_my_executable(para_refactor_d64 para_refactor_d64.cpp)
 # add_my_executable(paraGE_Vtot paraGE_Vtot.cpp)
 # add_my_executable(paraGE_T paraGE_T.cpp)

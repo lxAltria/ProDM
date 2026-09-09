@@ -298,7 +298,7 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
 }
 
 void usage(char* cmd) {
-    std::cout << "two_modes_refactor usage: " << cmd <<
+    std::cout << "test_proaicd_refactor usage: " << cmd <<
                   " data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)"
                   << std::endl
                   << "example: " << cmd <<

@@ -515,7 +515,7 @@ double overall_reconstructing_initiator(std::string filename, std::string refact
 }
 
 void usage(char* cmd) {
-    std::cout << "two_modes_reconstructor usage: " << cmd <<
+    std::cout << "para_proaicd_reconstructor usage: " << cmd <<
                   " data_file -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln refactored_path -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] output_path"
                   << std::endl
                   << "example: " << cmd <<

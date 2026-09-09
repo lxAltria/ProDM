@@ -36,7 +36,7 @@ int iter = 0;
 double local_elapsed_time = 0;
 
 template<class T>
-bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs){
+bool halving_error_C_uniform(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs){
 	double eb_P = ebs[0];
 	double eb_D = ebs[1];
 	double R = 287.1;
@@ -88,7 +88,7 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
 }
 
 template<class T>
-bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs){
+bool halving_error_C_coordinate(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs){
 	double eb_P = ebs[0];
 	double eb_D = ebs[1];
 	double R = 287.1;
@@ -160,7 +160,7 @@ bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double
 }
 
 template<class T>
-bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
+bool halving_error_C_uniform(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
 	double eb_P = ebs[0];
 	double eb_D = ebs[1];
 	double R = 287.1;
@@ -212,7 +212,7 @@ bool halfing_error_C_uniform(const T * P, const T * D, size_t n, const double ta
 }
 
 template<class T>
-bool halfing_error_C_coordinate(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
+bool halving_error_C_coordinate(const T * P, const T * D, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
 	double eb_P = ebs[0];
 	double eb_D = ebs[1];
 	double R = 287.1;
@@ -344,7 +344,7 @@ std::vector<size_t> retrieve_C_Dummy(std::string rdata_file_prefix, T tau, std::
             error_est_C = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -392,7 +392,7 @@ std::vector<size_t> retrieve_C_Dummy(std::string rdata_file_prefix, T tau, std::
             error_est_C = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             /* test
@@ -459,8 +459,8 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
-            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs);
+            if(!decrease_method) tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            else tolerance_met = halving_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -511,8 +511,8 @@ std::vector<size_t> retrieve_C_SZ3(std::string rdata_file_prefix, T tau, std::ve
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
-            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
+            if(!decrease_method) tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            else tolerance_met = halving_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test
@@ -580,7 +580,7 @@ std::vector<size_t> retrieve_C_PMGARD(std::string rdata_file_prefix, T tau, std:
             error_est_C = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -630,7 +630,7 @@ std::vector<size_t> retrieve_C_PMGARD(std::string rdata_file_prefix, T tau, std:
             error_est_C = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             /* test
@@ -697,8 +697,8 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
-            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs);
+            if(!decrease_method) tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            else tolerance_met = halving_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -749,8 +749,8 @@ std::vector<size_t> retrieve_C_GE(std::string rdata_file_prefix, T tau, std::vec
             error_est_C = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
-            else tolerance_met = halfing_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
+            if(!decrease_method) tolerance_met = halving_error_C_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            else tolerance_met = halving_error_C_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test

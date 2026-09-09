@@ -34,7 +34,7 @@ std::vector<double> error_est_mu;
 int iter = 0;
 
 template<class T>
-bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs){
+bool halving_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs){
 	T eb_P = ebs[0];
 	T eb_D = ebs[1];
 	T R = 287.1;
@@ -98,7 +98,7 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
 }
 
 template<class T>
-bool halfing_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs){
+bool halving_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs){
 	T eb_P = ebs[0];
 	T eb_D = ebs[1];
 	T R = 287.1;
@@ -187,7 +187,7 @@ bool halfing_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau
 }
 
 template<class T>
-bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
+bool halving_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
 	T eb_P = ebs[0];
 	T eb_D = ebs[1];
 	T R = 287.1;
@@ -251,7 +251,7 @@ bool halfing_error_mu_uniform(const T * P, const T * D, size_t n, const T tau, s
 }
 
 template<class T>
-bool halfing_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
+bool halving_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau, std::vector<T>& ebs, std::vector<std::vector<int>> weights){
 	T eb_P = ebs[0];
 	T eb_D = ebs[1];
 	T R = 287.1;
@@ -392,7 +392,7 @@ std::vector<size_t> retrieve_mu_Dummy(std::string rdata_file_prefix, T tau, std:
             error_est_mu = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -440,7 +440,7 @@ std::vector<size_t> retrieve_mu_Dummy(std::string rdata_file_prefix, T tau, std:
             error_est_mu = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             /* test
@@ -506,8 +506,8 @@ std::vector<size_t> retrieve_mu_SZ3(std::string rdata_file_prefix, T tau, std::v
             error_est_mu = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
-            else tolerance_met = halfing_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs);
+            if(!decrease_method) tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            else tolerance_met = halving_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -556,8 +556,8 @@ std::vector<size_t> retrieve_mu_SZ3(std::string rdata_file_prefix, T tau, std::v
             error_est_mu = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
-            else tolerance_met = halfing_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
+            if(!decrease_method) tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            else tolerance_met = halving_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test
@@ -624,7 +624,7 @@ std::vector<size_t> retrieve_mu_PMGARD(std::string rdata_file_prefix, T tau, std
             error_est_mu = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -674,7 +674,7 @@ std::vector<size_t> retrieve_mu_PMGARD(std::string rdata_file_prefix, T tau, std
             error_est_mu = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             MDR::print_vec(ebs);
-            tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             MDR::print_vec(ebs);
             /* test
@@ -740,8 +740,8 @@ std::vector<size_t> retrieve_mu_GE(std::string rdata_file_prefix, T tau, std::ve
             error_est_mu = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
-            else tolerance_met = halfing_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs);
+            if(!decrease_method) tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs);
+            else tolerance_met = halving_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
@@ -790,8 +790,8 @@ std::vector<size_t> retrieve_mu_GE(std::string rdata_file_prefix, T tau, std::ve
             error_est_mu = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
             // MDR::print_vec(ebs);
-            if(!decrease_method) tolerance_met = halfing_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
-            else tolerance_met = halfing_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
+            if(!decrease_method) tolerance_met = halving_error_mu_uniform(P_dec, D_dec, num_elements, tau, ebs, weights);
+            else tolerance_met = halving_error_mu_coordinate(P_dec, D_dec, num_elements, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
             // MDR::print_vec(ebs);
             /* test

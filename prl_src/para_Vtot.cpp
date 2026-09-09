@@ -41,7 +41,7 @@ int iter = 0;
 double local_elapsed_time = 0;
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs){
+bool halving_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs){
 	double eb_Vx = ebs[0];
 	double eb_Vy = ebs[1];
 	double eb_Vz = ebs[2];
@@ -111,7 +111,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 }
 
 template<class T>
-bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs){
+bool halving_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs){
 	double eb_Vx = ebs[0];
 	double eb_Vy = ebs[1];
 	double eb_Vz = ebs[2];
@@ -208,7 +208,7 @@ bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 }
 
 template<class T>
-bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
+bool halving_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
 	double eb_Vx = ebs[0];
 	double eb_Vy = ebs[1];
 	double eb_Vz = ebs[2];
@@ -285,7 +285,7 @@ bool halfing_error_V_TOT_uniform(const T * Vx, const T * Vy, const T * Vz, size_
 }
 
 template<class T>
-bool halfing_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
+bool halving_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, size_t n, const double tau, std::vector<double>& ebs, std::vector<std::vector<int>> weights){
 	double eb_Vx = ebs[0];
 	double eb_Vy = ebs[1];
 	double eb_Vz = ebs[2];
@@ -473,7 +473,7 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, double t
 			error_est_V_TOT = std::vector<double>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
 			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			/* test
@@ -541,7 +541,7 @@ std::vector<size_t> retrieve_V_TOT_Dummy(std::string rdata_file_prefix, double t
 			error_est_V_TOT = std::vector<double>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
 			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			/* test
@@ -617,8 +617,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, double tau
 			error_est_V_TOT = std::vector<double>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			if(!decrease_method) tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			else tolerance_met = halving_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -689,8 +689,8 @@ std::vector<size_t> retrieve_V_TOT_SZ3(std::string rdata_file_prefix, double tau
 			error_est_V_TOT = std::vector<double>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			else tolerance_met = halving_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -766,7 +766,7 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, double 
 			error_est_V_TOT = std::vector<double>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
 			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			/* test
@@ -837,7 +837,7 @@ std::vector<size_t> retrieve_V_TOT_PMGARD(std::string rdata_file_prefix, double 
 			error_est_V_TOT = std::vector<double>(num_elements);
 			std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			MDR::print_vec(ebs);
-			tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
 			std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			MDR::print_vec(ebs);
 			/* test
@@ -911,8 +911,8 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, double tau,
 			error_est_V_TOT = std::vector<double>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			if(!decrease_method) tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			else tolerance_met = halving_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -983,8 +983,8 @@ std::vector<size_t> retrieve_V_TOT_GE(std::string rdata_file_prefix, double tau,
 			error_est_V_TOT = std::vector<double>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			else tolerance_met = halving_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -1061,8 +1061,8 @@ std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, double ta
 			error_est_V_TOT = std::vector<double>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			if(!decrease_method) tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
+			else tolerance_met = halving_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test
@@ -1133,8 +1133,8 @@ std::vector<size_t> retrieve_V_TOT_HPEZ(std::string rdata_file_prefix, double ta
 			error_est_V_TOT = std::vector<double>(num_elements);
 			// std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
-			if(!decrease_method) tolerance_met = halfing_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
-			else tolerance_met = halfing_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			if(!decrease_method) tolerance_met = halving_error_V_TOT_uniform(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
+			else tolerance_met = halving_error_V_TOT_coordinate(Vx_dec, Vy_dec, Vz_dec, num_elements, tau, ebs, weights);
 			// std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
 			// MDR::print_vec(ebs);
 			/* test

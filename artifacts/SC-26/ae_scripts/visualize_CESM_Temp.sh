@@ -86,14 +86,14 @@ echo "Method#4, SZ3-R, ErrorBound=$error_bound, $bitrate, $PSNR, $time" >> $outp
 
 
 # 8. CoeffDecom psnr mode
-./build/test/two_modes_refactor $data_file "-d" 3 60 3 26 1800 3600 $refactor_file "-XOR" "-PSNR" "-CP" > $tmp_file
+./build/test/test_proaicd_refactor $data_file "-d" 3 60 3 26 1800 3600 $refactor_file "-XOR" "-PSNR" "-CP" > $tmp_file
 # time=$(grep "Refactor_time" $tmp_file | head -n 1)
 # echo "Method#8, CoeffDecom-PSNR, $time" >> $output_file
 
 reconstructed_file="${data_dict_path}/refactor/${variable}_refactored/TWO_T.dat"
 error_bound="2e-3"
 
-./build/test/two_modes_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-XOR" "-DP" "-CP" $reconstructed_file > $tmp_file
+./build/test/test_proaicd_reconstructor $data_file "-d" 1 $error_bound $refactor_file "-XOR" "-DP" "-CP" $reconstructed_file > $tmp_file
 PSNR=$(grep "PSNR" $tmp_file | head -n 1)
 bitrate=$(grep "Bitrate" $tmp_file | head -n 1)
 time=$(grep "Reconstruct_time" $tmp_file | head -n 1)

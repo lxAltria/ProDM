@@ -4,8 +4,8 @@
 #
 # Requirements:
 #  - ProDM built via build_script.sh (all PRODM_WITH_* options ON; the GE QoI
-#    tools qoi_{T,C,Mach,PT,mu}_d64 are built under build/app/GE/sequential
-#    and refactor_d64 / qoi_Vtot_d64 under build/test)
+#    tools refactor_d64 and qoi_{Vtot,T,C,Mach,PT,mu}_d64 are built under
+#    build/app/GE/sequential)
 #  - GE data under ${DATA_DIR}/data (VelocityX/Y/Z.dat, Pressure.dat,
 #    Density.dat, block_sizes.dat); the refactor directory is created
 #    automatically under ${DATA_DIR}/refactor
@@ -21,16 +21,10 @@ build_dir=${PRODM_DIR}/build
 DATA_DIR=${DATA_DIR:-${build_dir}/app/GE}
 RESULT_DIR=${RESULT_DIR:-${build_dir}/Result}
 
-refactor_cmd=${build_dir}/test/refactor_d64
+refactor_cmd=${build_dir}/app/GE/sequential/refactor_d64
 
-# qoi_Vtot_d64 is shared with the example workflow and lives under test/;
-# the GE-specific QoI tools live under app/GE/sequential/
 qoi_cmd() {
-    if [ "$1" = "Vtot" ]; then
-        echo "${build_dir}/test/qoi_Vtot_d64"
-    else
-        echo "${build_dir}/app/GE/sequential/qoi_$1_d64"
-    fi
+    echo "${build_dir}/app/GE/sequential/qoi_$1_d64"
 }
 
 data="GE"
