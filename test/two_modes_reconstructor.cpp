@@ -80,19 +80,6 @@ void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& toleran
     evaluate(data, tolerance, reconstructor);
 }
 
-// // Per level + CP
-// template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
-// void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){
-//     auto reconstructor = MDR::PartialOrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
-//     // reconstructor.print();
-//     reconstructor.load_metadata();
-//     T value_range = MDR::compute_value_range(data);
-//     for(int i=0; i<tolerance.size(); i++){
-//         tolerance[i] *= value_range;
-//     }
-//     evaluate(data, tolerance, reconstructor);
-// }
-
 // Per Layer + CP
 template <class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorEstimator, class SizeInterpreter, class Retriever>
 void init_cp_reconstructor_new(std::vector<T>& data, vector<double>& tolerance, Decomposer decomposer, Interleaver interleaver, Encoder encoder, Compressor compressor, ErrorEstimator estimator, SizeInterpreter interpreter, Retriever retriever){

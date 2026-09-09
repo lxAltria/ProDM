@@ -12,7 +12,7 @@ export CXX=${CXX:-g++}
 # Pinned dependency versions (tested together; QoZ headers must match SZ3's)
 SZ2_COMMIT=308bd06f0040ec0d5c22fb3fcb0428c306ba4df1
 SZ3_COMMIT=90c66bed1c04e701442ecb104b912548fcfabee9
-QOZ_COMMIT=17f124ef9a341f4bd661c20e6f0a3e80b19c43ef
+QOZ_COMMIT=5a11112e324c9051f9a1cc5797c648d351aaede0
 MGARD_COMMIT=7ba6738d429a70da8bd1d345ac7aad702366f16b
 
 # clone (if needed) and check out the pinned commit

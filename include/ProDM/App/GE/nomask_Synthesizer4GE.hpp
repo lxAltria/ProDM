@@ -153,13 +153,6 @@ PDR::WeightedApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Wr
 }
 
 template <class T, class Approximator, class Encoder, class Compressor, class Writer>
-PDR::TestApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer> generateTestWBPRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer, bool negabinary){
-    auto refactor = PDR::TestApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
-    refactor.negabinary = negabinary;
-    return refactor;
-}
-
-template <class T, class Approximator, class Encoder, class Compressor, class Writer>
 PDR::ApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer> generateBPRefactor(Approximator approximator, Encoder encoder, Compressor compressor, Writer writer, bool negabinary){
     auto refactor = PDR::ApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
     refactor.negabinary = negabinary;

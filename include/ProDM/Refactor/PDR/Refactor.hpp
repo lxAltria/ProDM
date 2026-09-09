@@ -4,6 +4,5 @@
 #include "ApproximationBasedRefactor.hpp"
 #include "WeightedApproximationBasedRefactor.hpp"
 #include "GERefactor.hpp"
-#include "TestApproximationBasedRefactor.hpp"
 
 #endif
