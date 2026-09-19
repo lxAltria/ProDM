@@ -1,11 +1,13 @@
-#ifndef _MDR_ZSTD_HPP
-#define _MDR_ZSTD_HPP
+#ifndef PRODM_COMPRESSOR_ZSTD_HPP
+#define PRODM_COMPRESSOR_ZSTD_HPP
 
 #include "zstd.h"
 #include <cstdlib>
 #include <iostream>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace ZSTD{
         #define ZSTD_LEVEL 3 //default setting of level is 3
         // ZSTD lossless compressor

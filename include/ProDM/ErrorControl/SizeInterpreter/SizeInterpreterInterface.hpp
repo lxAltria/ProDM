@@ -1,10 +1,12 @@
-#ifndef _MDR_SIZE_INTERPRETER_INTERFACE_HPP
-#define _MDR_SIZE_INTERPRETER_INTERFACE_HPP
+#ifndef PRODM_ERRORCONTROL_SIZEINTERPRETER_SIZEINTERPRETERINTERFACE_HPP
+#define PRODM_ERRORCONTROL_SIZEINTERPRETER_SIZEINTERPRETERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
 
         // level bit-plane reorganizer: EBCOT-like algorithm for multilevel bit-plane truncation

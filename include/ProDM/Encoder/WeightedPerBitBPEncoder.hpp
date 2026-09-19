@@ -1,5 +1,5 @@
-#ifndef _MDR_WEIGHTED_PERBIT_BP_ENCODER_HPP
-#define _MDR_WEIGHTED_PERBIT_BP_ENCODER_HPP
+#ifndef PRODM_ENCODER_WEIGHTEDPERBITBPENCODER_HPP
+#define PRODM_ENCODER_WEIGHTEDPERBITBPENCODER_HPP
 
 #include <cstdlib>
 
@@ -12,7 +12,9 @@
 #include "BitplaneEncoderInterface.hpp"
 #include "PerBitBPEncoder.hpp"
 #include <bitset>
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
     #define PER_BIT_BLOCK_SIZE 1
     // per bit bitplane encoder that encodes data by bit using T_stream type buffer
@@ -190,7 +192,7 @@ namespace MDR {
 
         // weighted encoding
         std::vector<uint8_t *> encode_weighted(T_data const * data, int32_t n, int32_t exp, uint8_t num_bitplanes, std::vector<uint32_t>& stream_sizes, std::vector<double>& level_errors) const {
-            // MGARD::writefile("refactor_coeff.dat", data, n);
+            // ProDM::writefile("refactor_coeff.dat", data, n);
             // if(n > 512*512*100) exit(0);
             // compute exp shift
             exp += num_weight_bitplanes;
@@ -611,7 +613,7 @@ namespace MDR {
                     *(data_pos++) = sign ? -cur_data : cur_data;
                 }
             }
-            // MGARD::writefile("reconstruct_coeff.dat", data, n);
+            // ProDM::writefile("reconstruct_coeff.dat", data, n);
             // if(n > 512*512*100) exit(0);
             return data;
         }

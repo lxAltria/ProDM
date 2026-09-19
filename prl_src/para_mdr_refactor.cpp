@@ -35,7 +35,7 @@ void test(string filename, const vector<uint32_t>& dims, int target_level, int n
     auto refactor = MDR::ComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorCollector, Writer>(decomposer, interleaver, encoder, compressor, collector, writer);
     refactor.negabinary = negabinary;
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     evaluate(data, dims, target_level, num_bitplanes, refactor);
 }
 
@@ -94,20 +94,20 @@ int main(int argc, char ** argv){
 
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    // auto interleaver = MDR::SFCInterleaver<T>();
-    // auto interleaver = MDR::BlockedInterleaver<T>();
-    // auto encoder = MDR::GroupedBPEncoder<T, T_stream>();
-    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+    // auto interleaver = ProDM::SFCInterleaver<T>();
+    // auto interleaver = ProDM::BlockedInterleaver<T>();
+    // auto encoder = ProDM::GroupedBPEncoder<T, T_stream>();
+    // auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
     // negabinary = true;
-    auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+    auto encoder = ProDM::PerBitBPEncoder_old<T, T_stream>();
     negabinary = false;
-    // auto compressor = MDR::DefaultLevelCompressor();
-    auto compressor = MDR::AdaptiveLevelCompressor(64);
-    // auto compressor = MDR::NullLevelCompressor();
-    auto collector = MDR::SquaredErrorCollector<T>();
-    auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
-    // auto writer = MDR::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
+    // auto compressor = ProDM::DefaultLevelCompressor();
+    auto compressor = ProDM::AdaptiveLevelCompressor(64);
+    // auto compressor = ProDM::NullLevelCompressor();
+    auto collector = ProDM::SquaredErrorCollector<T>();
+    auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
+    // auto writer = ProDM::HPSSFileWriter(metadata_file, files, 2048, 512 * 1024 * 1024);
 
     test<T>(filename, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
     MPI_Finalize();

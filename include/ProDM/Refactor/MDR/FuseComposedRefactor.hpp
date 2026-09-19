@@ -1,5 +1,5 @@
-#ifndef _MDR_FUSE_COMPOSED_REFACTOR_HPP
-#define _MDR_FUSE_COMPOSED_REFACTOR_HPP
+#ifndef PRODM_REFACTOR_MDR_FUSECOMPOSEDREFACTOR_HPP
+#define PRODM_REFACTOR_MDR_FUSECOMPOSEDREFACTOR_HPP
 
 #include <cstdlib>
 
@@ -16,7 +16,9 @@
 #include "ProDM/Writer/Writer.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
     class FuseComposedRefactor : public concepts::RefactorInterface<T> {
@@ -104,7 +106,7 @@ namespace MDR {
             //     std::cout << data[i] << " ";
             // }
             // std::cout << std::endl;
-            // MGARD::writefile("decomposed_coeff.dat", data.data(), data.size());
+            // ProDM::writefile("decomposed_coeff.dat", data.data(), data.size());
             // timer.end();
             // timer.print("Decompose");
 
@@ -132,7 +134,7 @@ namespace MDR {
                 // compute max coefficient as level error bound
                 T level_max_error = compute_max_abs_value(level_buffers[i].data(), level_buffers[i].size());
                 // std::cout << "\nlevel " << i << " max error = " << level_max_error << std::endl;
-                // MGARD::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
+                // ProDM::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);
                 else level_error_bounds.push_back(level_max_error);
                 // timer.end();

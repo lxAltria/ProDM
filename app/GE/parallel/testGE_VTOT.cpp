@@ -16,6 +16,7 @@ const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ
 const int n_vars = 5;
 
 using namespace MDR;
+using namespace ProDM;
 using namespace QoI;
 
 std::vector<double> P_ori;
@@ -122,9 +123,9 @@ int main(int argc, char ** argv){
     // read_file
     size_t num_elements = 0;
 	std::string filename = data_file_prefix + "block_" + std::to_string(rank) + "/";
-	Vx_ori = MGARD::readfile<T>((filename + var_name_out[0] + ".dat").c_str(), num_elements);
-    Vy_ori = MGARD::readfile<T>((filename + var_name_out[1] + ".dat").c_str(), num_elements);
-    Vz_ori = MGARD::readfile<T>((filename + var_name_out[2] + ".dat").c_str(), num_elements);
+	Vx_ori = ProDM::readfile<T>((filename + var_name_out[0] + ".dat").c_str(), num_elements);
+    Vy_ori = ProDM::readfile<T>((filename + var_name_out[1] + ".dat").c_str(), num_elements);
+    Vz_ori = ProDM::readfile<T>((filename + var_name_out[2] + ".dat").c_str(), num_elements);
 
     std::vector<double> ebs;
     ebs.push_back(compute_value_range(Vx_ori));
@@ -155,7 +156,7 @@ int main(int argc, char ** argv){
 
     std::string mask_file = rdata_file_prefix + "block_" + std::to_string(rank) + "_refactored/mask.bin";
     size_t num_valid_data = 0;
-    auto mask = MGARD::readfile<unsigned char>(mask_file.c_str(), num_valid_data);
+    auto mask = ProDM::readfile<unsigned char>(mask_file.c_str(), num_valid_data);
 
     std::vector<MDR::ComposedReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, PerBitBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
     
@@ -247,7 +248,7 @@ int main(int argc, char ** argv){
             std::string rdir_prefix = data_file_prefix + "block_" + std::to_string(rank) + "_refactored/" + var_name_out[i] + "/";
             std::string file_level = rdir_prefix + "level_" + std::to_string(k) + ".bin";
             size_t num_char = 0;
-            auto level_data = MGARD::readfile<unsigned char>(file_level.c_str(), num_char);
+            auto level_data = ProDM::readfile<unsigned char>(file_level.c_str(), num_char);
             MPI_File file;
             std::string filename = data_file_prefix + "retrieved/" + var_name_out[i] + "_aggregated_level_" + std::to_string(k) + ".dat";
             MPI_File_open(MPI_COMM_WORLD, filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);

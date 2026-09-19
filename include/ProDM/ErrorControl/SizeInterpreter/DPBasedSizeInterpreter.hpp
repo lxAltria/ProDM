@@ -1,5 +1,5 @@
-#ifndef _MDR_DP_BASED_SIZE_INTERPRETER_HPP
-#define _MDR_DP_BASED_SIZE_INTERPRETER_HPP
+#ifndef PRODM_ERRORCONTROL_SIZEINTERPRETER_DPBASEDSIZEINTERPRETER_HPP
+#define PRODM_ERRORCONTROL_SIZEINTERPRETER_DPBASEDSIZEINTERPRETER_HPP
 
 #include <vector>
 
@@ -11,7 +11,9 @@
 
 // inorder and round-robin size interpreter
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // greedy bit-plane retrieval with sign exculsion (excluding the first component)
     template<class ErrorEstimator>
     class SignExcludeDPBasedSizeInterpreter : public concepts::SizeInterpreterInterface {

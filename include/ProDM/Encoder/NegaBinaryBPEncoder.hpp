@@ -1,5 +1,5 @@
-#ifndef _MDR_NEGABINARY_BP_ENCODER_HPP
-#define _MDR_NEGABINARY_BP_ENCODER_HPP
+#ifndef PRODM_ENCODER_NEGABINARYBPENCODER_HPP
+#define PRODM_ENCODER_NEGABINARYBPENCODER_HPP
 
 #include <cstdlib>
 
@@ -11,7 +11,9 @@
 
 #include "BitplaneEncoderInterface.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // general bitplane encoder that encodes data by block using T_stream type buffer
     template<class T_data, class T_stream>
     class NegaBinaryBPEncoder : public concepts::BitplaneEncoderInterface<T_data> {

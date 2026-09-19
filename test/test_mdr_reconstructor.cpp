@@ -41,9 +41,9 @@ void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor re
         auto dims = reconstructor.get_dimensions();
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
-        MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        ProDM::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
-        if(write_output) MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
+        if(write_output) ProDM::writefile(output_path.c_str(), reconstructed_data, data.size());
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -56,7 +56,7 @@ void test(string filename, vector<double>& tolerance, Decomposer decomposer, Int
     reconstructor.load_metadata();
 
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
     // tolerances are relative; evaluate() scales them by the value range
@@ -67,22 +67,22 @@ template <class T, class T_stream>
 void launch_reconstructor(string filename, vector<double>& tolerance, int encoder_option, string metadata_file, const vector<string>& files){
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
-    // auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+    // auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
 
-    // auto compressor = MDR::DefaultLevelCompressor();
-    auto compressor = MDR::AdaptiveLevelCompressor(64);
-    // auto compressor = MDR::NullLevelCompressor();
+    // auto compressor = ProDM::DefaultLevelCompressor();
+    auto compressor = ProDM::AdaptiveLevelCompressor(64);
+    // auto compressor = ProDM::NullLevelCompressor();
 
-    auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    auto estimator = MDR::MaxErrorEstimatorHB<T>();
-    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
+    auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+    auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
+    // auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
     if(encoder_option == 0){
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
         test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
     } else {
-        auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+        auto encoder = ProDM::PerBitBPEncoder_old<T, T_stream>();
         test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
     }
 }
@@ -119,7 +119,7 @@ int main(int argc, char ** argv){
     {
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
-        auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        auto metadata = ProDM::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
         if(num_bytes == 0){
             std::cerr << "Cannot read " << metadata_file << "; run the refactor first" << std::endl;
             return -1;

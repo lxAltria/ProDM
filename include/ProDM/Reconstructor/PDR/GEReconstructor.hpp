@@ -1,5 +1,5 @@
-#ifndef _PDR_GE_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
-#define _PDR_GE_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
+#ifndef PRODM_RECONSTRUCTOR_PDR_GERECONSTRUCTOR_HPP
+#define PRODM_RECONSTRUCTOR_PDR_GERECONSTRUCTOR_HPP
 
 #include <cstdlib>
 
@@ -23,10 +23,9 @@
 #include "ProDM/Utils/RefactorUtils.hpp"
 #include "ProDM/Utils/WeightUtils.hpp"
 
-using namespace MDR;
+#include "ProDM/Namespace.hpp"
 
-namespace PDR
-{
+namespace ProDM::PDR {
     // an approximation-based scientific data reconstructor: inverse operator of approximation-based refactor
     template <class T, class Approximator, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator, class Retriever>
     class GEReconstructor : public concepts::ReconstructorInterface<T>
@@ -200,7 +199,7 @@ namespace PDR
                 free(tmp_data);
             }
 
-            if (compressed_weights.size() != MDR::extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
+            if (compressed_weights.size() != ProDM::extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
                 // perror("From GEReconstructor: Error: byteLength != weight_size\n");
             }
             {
@@ -224,7 +223,7 @@ namespace PDR
             }
             // std::cout << "block_path: " << block_path << std::endl;
             size_t num_blocks = 0;
-            auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
+            auto block_sizes = ProDM::readfile<int>(block_path.c_str(), num_blocks);
             int_weights = fill_block_weight_GE(block_sizes, block_weights);
             // write_weight_dat(block_size);
             // write_weight_dat(block_size);

@@ -1,5 +1,5 @@
-#ifndef _PDR_SZ2_APPROXIMATOR_HPP
-#define _PDR_SZ2_APPROXIMATOR_HPP
+#ifndef PRODM_DECOMPOSER_APPROXIMATION_SZ2APPROXIMATOR_HPP
+#define PRODM_DECOMPOSER_APPROXIMATION_SZ2APPROXIMATOR_HPP
 
 #include <cstdlib>
 
@@ -15,7 +15,9 @@
 #include "sz/sz_api.h"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     // SZ approximator with SZ2 prediction
     template<class T>
     class SZ2Approximator : public concepts::ApproximatorInterface<T> {
@@ -55,7 +57,7 @@ namespace PDR {
             }
             cmpData = ::SZ_compress(datatype, data, &cmpSize, r5, r4, r3, r2, r1);
             if(filename.size()) approximator_file_name = filename;
-            MGARD::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
+            ProDM::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
             approximator_file_size = cmpSize;
             // std::cout << "Approximator size = " << approximator_file_size << std::endl;
             // std::cout << "num_elements = " << num_elements << std::endl;
@@ -75,7 +77,7 @@ namespace PDR {
         void reconstruct_approximate(T * data, const std::vector<uint32_t>& dimensions, std::string filename=std::string(""), std::vector<uint32_t> strides=std::vector<uint32_t>()) {
             if(filename.size()) approximator_file_name = filename;
             size_t num = 0;
-            auto cmpData = MGARD::readfile<unsigned char>(approximator_file_name.c_str(), num);
+            auto cmpData = ProDM::readfile<unsigned char>(approximator_file_name.c_str(), num);
             approximator_file_size = num;
             int datatype = std::is_same<T, double>::value ? SZ_DOUBLE : SZ_FLOAT;
             size_t r5 = 0;

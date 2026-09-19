@@ -1,5 +1,5 @@
-#ifndef _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_HPP
-#define _MDR_ORDERED_COEFFICIENT_PREDICTION_REFACTOR_HPP
+#ifndef PRODM_REFACTOR_MDR_ORDEREDCPREFACTOR_HPP
+#define PRODM_REFACTOR_MDR_ORDEREDCPREFACTOR_HPP
 
 #include <cstdlib>
 
@@ -22,7 +22,9 @@
 #include "ProDM/ErrorControl/SizeInterpreter/SizeInterpreter.hpp"
 #include <queue>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class ErrorCollector, class Writer>
     class OrderedCPRefactor : public concepts::RefactorInterface<T> {
@@ -128,8 +130,8 @@ namespace MDR {
                     else {
                         double tmp_max_region_error = compute_region_max_error(level_errors, start_level, coeff_target_level + 1);
                         if(max_region_error < tmp_max_region_error) max_region_error = tmp_max_region_error;
-                        auto coeff_estimator = MDR::MaxErrorEstimatorHB<T>();
-                        auto coeff_size_interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(coeff_estimator);
+                        auto coeff_estimator = ProDM::MaxErrorEstimatorHB<T>();
+                        auto coeff_size_interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(coeff_estimator);
                         std::vector<double> tmp_tolerances = {5e-1, 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 5e-8, 1e-8, 5e-9, 1e-9, 5e-10, 1e-10, 5e-11, 1e-11, 0};
                         std::vector<uint8_t> tmp_index(level_sizes.size(), 0);
                         for(int j=0; j<tmp_tolerances.size(); j++){
@@ -156,7 +158,7 @@ namespace MDR {
                 std::vector<double> combined_coeff_error_perstep = combine_coeff_bitplanes_after_max_order(coefficient_error_perstep, coefficient_order);
                 // combined_coeff_error_perstep.insert(combined_coeff_error_perstep.begin(), max_region_error);
                 auto overall_estimator = MDR::MaxErrorEstimatorHBCubic<T>(dims.size());
-                auto overall_interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(overall_estimator);
+                auto overall_interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(overall_estimator);
                 std::vector<double> tmp_tolerances = {5e-1, 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 5e-8, 1e-8, 5e-9, 1e-9, 5e-10, 1e-10, 5e-11, 1e-11, 0};
                 std::vector<uint8_t> tmp_index(target_level, 0);
                 uint16_t coeff_index = 0;
@@ -187,7 +189,7 @@ namespace MDR {
                         if(max_region_error < tmp_max_region_error) max_region_error = tmp_max_region_error;
                         tmp_order = get_chunks_order_greedy_coefficient(level_errors, start_level, coeff_target_level + 1, tmp_error_perstep);
                         // string path = "/pscratch/xli281_uksr/wli/JHTDB/JHTDB0/refactor/VelocityX_refactored/ORDCP_error_perstep" + to_string(i + 1) + ".dat";
-                        // MGARD::writefile<double>(path.c_str(), tmp_error_perstep.data(), tmp_error_perstep.size());
+                        // ProDM::writefile<double>(path.c_str(), tmp_error_perstep.data(), tmp_error_perstep.size());
                         tmp_error_perstep.insert(tmp_error_perstep.begin(), tmp_max_region_error);
                         start_level += (coeff_target_level + 1);
                     }
@@ -204,7 +206,7 @@ namespace MDR {
                 std::vector<double> combined_coeff_error_perstep = combine_coeff_bitplanes_after_max_order(coefficient_error_perstep, coefficient_order);
                 // combined_coeff_error_perstep.insert(combined_coeff_error_perstep.begin(), max_region_error);
                 auto overall_estimator = MDR::MaxErrorEstimatorHBCubic<T>(dims.size());
-                auto overall_interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(overall_estimator);
+                auto overall_interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(overall_estimator);
                 std::vector<double> tmp_tolerances = {5e-1, 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 5e-8, 1e-8, 5e-9, 1e-9, 5e-10, 1e-10, 5e-11, 1e-11, 0};
                 // std::vector<double> tmp_tolerances = {5e-1, 1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 0};
                 std::vector<uint8_t> tmp_index(target_level, 0);
@@ -344,7 +346,7 @@ namespace MDR {
             //     }
             //     std::cout << std::endl;
             // }
-            auto error_estimator = MDR::MaxErrorEstimatorHB<T>();
+            auto error_estimator = ProDM::MaxErrorEstimatorHB<T>();
             std::vector<uint8_t> index(level_sizes.size(), 0);
             int end_level = start_level + num_levels;
             double accumulated_error = 0;
@@ -526,7 +528,7 @@ namespace MDR {
             //     std::cout << level_errors[i].size() << " ";
             // }
             // std:cout << "\n";
-            // auto error_estimator = MDR::MaxErrorEstimatorHB<T>();
+            // auto error_estimator = ProDM::MaxErrorEstimatorHB<T>();
             std::vector<uint8_t> index(level_sizes.size(), 0);
             int num_levels = coefficient_start_level + 1;
             // std::cout << "num_levels = " << num_levels << std::endl;
@@ -632,7 +634,7 @@ namespace MDR {
         // std::vector<uint8_t> get_chunks_order_overall(const std::vector<std::vector<double>>& level_errors, const std::vector<double>& coefficient_error_perstep, 
         //                                               const std::vector<uint8_t>& coefficient_order, const uint8_t coefficient_start_level, std::vector<double>& error_perstep){
         //     auto error_estimator = MDR::MaxErrorEstimatorHBCubic<T>(dimensions.size());
-        //     // auto error_estimator = MDR::MaxErrorEstimatorHB<T>();
+        //     // auto error_estimator = ProDM::MaxErrorEstimatorHB<T>();
         //     std::vector<uint8_t> index(level_sizes.size(), 0);
         //     int num_levels = coefficient_start_level;
         //     int idx_coefficient = 0;
@@ -765,8 +767,8 @@ namespace MDR {
             // decomposed_buffer_dims = decomposer.get_level_buffer_dims();
             
             auto coeff_decomposer = MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>(0);
-            auto estimator = MDR::MaxErrorEstimatorHB<T>();
-            auto coeff_interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+            auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+            auto coeff_interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
             uint32_t coeff_stride = 15;
             uint32_t coeff_block_size = 9;
 
@@ -782,14 +784,14 @@ namespace MDR {
             }
 
             // Tune
-            // MDR::Timer tuner_timer;
+            // ProDM::Timer tuner_timer;
             // tuner_timer.start();
             if(!coeff_interp_directions.size()){
                 // std::cout << "Tuning" << std::endl;
                 for(int i=target_level; i<decomposed_buffers.size(); i++){
                     auto tuner = MDR::CoeffProfilingSamplingTuner<T, MDR::MGARDHierarchical_Coeff_Decomposer_Interleaver<T>, 
-                                                     Encoder, Compressor, MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, 
-                                                     MDR::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, coeff_interpreter);
+                                                     Encoder, Compressor, ProDM::SignExcludeBFSBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, 
+                                                     ProDM::MaxErrorEstimatorHB<T>>(coeff_decomposer, encoder, compressor, coeff_interpreter);
                     tuner.tune(decomposed_buffers[i].data(), decomposed_buffer_dims[i-target_level+1], coeff_target_level, num_bitplanes, coeff_stride, coeff_block_size);
                     coeff_interp_directions.push_back(tuner.get_best_direction());
                     // coeff_interp_directions.push_back(2);
@@ -830,7 +832,7 @@ namespace MDR {
             //     std::cout << data[i] << " ";
             // }
             // std::cout << std::endl;
-            // MGARD::writefile("decomposed_coeff.dat", data.data(), data.size());
+            // ProDM::writefile("decomposed_coeff.dat", data.data(), data.size());
             // timer.end();
             // timer.print("Decompose");
 
@@ -856,7 +858,7 @@ namespace MDR {
                 level_elements.push_back(level_buffers[i].size());
                 T level_max_error = compute_max_abs_value(level_buffers[i].data(), level_buffers[i].size());
                 // std::cout << "\nlevel " << i << " max error = " << level_max_error << std::endl;
-                // MGARD::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
+                // ProDM::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);
                 else level_error_bounds.push_back(level_max_error);
                 // timer.end();

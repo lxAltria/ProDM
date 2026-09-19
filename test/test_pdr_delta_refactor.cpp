@@ -34,7 +34,7 @@ template <class T, class Approximator>
 void test(string filename, string refactor_dict, const vector<uint32_t>& dims, Approximator approximator){
     auto refactor = PDR::ApproximationBasedDeltaRefactor<T, Approximator>(approximator, refactor_dict);
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     evaluate(data, dims, refactor);
 }
 

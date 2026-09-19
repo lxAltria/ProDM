@@ -1,9 +1,11 @@
-#ifndef _PDR_REFACTOR_INTERFACE_HPP
-#define _PDR_REFACTOR_INTERFACE_HPP
+#ifndef PRODM_REFACTOR_PDR_REFACTORINTERFACE_HPP
+#define PRODM_REFACTOR_PDR_REFACTORINTERFACE_HPP
 #include <cstdint>
 #include <vector>
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     namespace concepts {
 
         // refactor: a general interface for scnetific data refactor

@@ -1,5 +1,5 @@
-#ifndef _MDR_BASIC_SIZE_INTERPRETER_HPP
-#define _MDR_BASIC_SIZE_INTERPRETER_HPP
+#ifndef PRODM_ERRORCONTROL_SIZEINTERPRETER_BASICSIZEINTERPRETER_HPP
+#define PRODM_ERRORCONTROL_SIZEINTERPRETER_BASICSIZEINTERPRETER_HPP
 
 #include <vector>
 
@@ -9,7 +9,9 @@
 
 // inorder and round-robin size interpreter
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // direct in-order bit-plane retrieval
     template<class ErrorEstimator>
     class InorderSizeInterpreter : public concepts::SizeInterpreterInterface {

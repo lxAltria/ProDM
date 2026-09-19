@@ -1,5 +1,5 @@
-#ifndef _MDR_ERROR_COLLECTOR_HPP
-#define _MDR_ERROR_COLLECTOR_HPP
+#ifndef PRODM_ERRORCONTROL_COLLECTOR_ERRORCOLLECTOR_HPP
+#define PRODM_ERRORCONTROL_COLLECTOR_ERRORCOLLECTOR_HPP
 
 #include "MaxErrorCollector.hpp"
 #include "SquaredErrorCollector.hpp"

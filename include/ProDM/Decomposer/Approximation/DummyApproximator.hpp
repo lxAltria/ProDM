@@ -1,5 +1,5 @@
-#ifndef _PDR_DUMMY_APPROXIMATOR_HPP
-#define _PDR_DUMMY_APPROXIMATOR_HPP
+#ifndef PRODM_DECOMPOSER_APPROXIMATION_DUMMYAPPROXIMATOR_HPP
+#define PRODM_DECOMPOSER_APPROXIMATION_DUMMYAPPROXIMATOR_HPP
 
 #include <string>
 
@@ -9,7 +9,9 @@
 
 #include "ApproximatorInterface.hpp"
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     // Dummy approximator with 0 prediction
     template<class T>
     class DummyApproximator : public concepts::ApproximatorInterface<T> {

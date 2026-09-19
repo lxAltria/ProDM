@@ -1,5 +1,5 @@
-#ifndef _MDR_ORDERED_FILE_RETRIEVER_HPP
-#define _MDR_ORDERED_FILE_RETRIEVER_HPP
+#ifndef PRODM_RETRIEVER_ORDEREDFILERETRIEVER_HPP
+#define PRODM_RETRIEVER_ORDEREDFILERETRIEVER_HPP
 
 #include <string>
 
@@ -11,7 +11,9 @@
 #include <cstdint>
 #include <iostream>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
     // Data retriever for files
     class OrderedFileRetriever : public concepts::RetrieverInterface {
@@ -127,6 +129,6 @@ namespace MDR {
         mutable size_t metadata_size;
     };
 
-} // namespace MDR
+} // namespace ProDM
 
 #endif

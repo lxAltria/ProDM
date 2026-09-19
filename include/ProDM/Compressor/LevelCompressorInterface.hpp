@@ -1,10 +1,12 @@
-#ifndef _MDR_LEVEL_COMPRESSOR_INTERFACE_HPP
-#define _MDR_LEVEL_COMPRESSOR_INTERFACE_HPP
+#ifndef PRODM_COMPRESSOR_LEVELCOMPRESSORINTERFACE_HPP
+#define PRODM_COMPRESSOR_LEVELCOMPRESSORINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
 
         // interface for lossless compressor 

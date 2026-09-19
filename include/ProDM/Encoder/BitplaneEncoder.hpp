@@ -1,5 +1,5 @@
-#ifndef _MDR_ENCODER_HPP
-#define _MDR_ENCODER_HPP
+#ifndef PRODM_ENCODER_BITPLANEENCODER_HPP
+#define PRODM_ENCODER_BITPLANEENCODER_HPP
 
 #include "GroupedBPEncoder.hpp"
 #include "PerBitBPEncoder.hpp"

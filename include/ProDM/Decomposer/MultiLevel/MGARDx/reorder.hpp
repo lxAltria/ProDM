@@ -1,9 +1,11 @@
-#ifndef _MGARD_REORDER_HPP
-#define _MGARD_REORDER_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_MGARDX_REORDER_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_MGARDX_REORDER_HPP
 
 #include <vector>
 
-namespace MGARD{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MGARDx {
 
 using namespace std;
 

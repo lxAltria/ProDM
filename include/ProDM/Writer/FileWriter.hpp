@@ -1,5 +1,5 @@
-#ifndef _MDR_FILE_WRITER_HPP
-#define _MDR_FILE_WRITER_HPP
+#ifndef PRODM_WRITER_FILEWRITER_HPP
+#define PRODM_WRITER_FILEWRITER_HPP
 
 #include <cstdlib>
 
@@ -13,7 +13,9 @@
 #include <sstream>
 #include <string>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // A writer that writes the concatenated level components
     class ConcatLevelFileWriter : public concepts::WriterInterface {
     public:

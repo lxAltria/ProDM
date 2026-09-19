@@ -1,10 +1,12 @@
-#ifndef _MDR_ERROR_COLLECTOR_INTERFACE_HPP
-#define _MDR_ERROR_COLLECTOR_INTERFACE_HPP
+#ifndef PRODM_ERRORCONTROL_COLLECTOR_ERRORCOLLECTORINTERFACE_HPP
+#define PRODM_ERRORCONTROL_COLLECTOR_ERRORCOLLECTORINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
 
         // Error estimator: estimate impact of level errors on the final error

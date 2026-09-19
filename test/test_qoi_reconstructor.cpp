@@ -16,6 +16,7 @@
 #define QoI_Vtot2 1
 
 using namespace std;
+using namespace ProDM;
 
 const vector<string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
 
@@ -485,7 +486,7 @@ void launch_reconstructor(const string& data_dir, const string& refactor_dir, co
     vector<vector<T>> vars_ori(n_variable);
     for(int i=0; i<n_variable; i++){
         string filename = data_dir + "/" + var_list[i] + suffix;
-        vars_ori[i] = MGARD::readfile<T>(filename.c_str(), num_elements);
+        vars_ori[i] = ProDM::readfile<T>(filename.c_str(), num_elements);
         if(num_elements == 0){
             cerr << "Cannot read " << filename << endl;
             exit(-1);
@@ -508,7 +509,7 @@ void launch_reconstructor(const string& data_dir, const string& refactor_dir, co
 
     string mask_file = refactor_dir + "/mask.bin";
     uint32_t mask_file_size = 0;
-    auto mask = MDR::readmask(mask_file.c_str(), mask_file_size);
+    auto mask = ProDM::readmask(mask_file.c_str(), mask_file_size);
     if(mask.size() != num_elements){
         cerr << "Mask " << mask_file << " has " << mask.size() << " elements, expected " << num_elements << "; run the refactor first" << endl;
         exit(-1);
@@ -520,17 +521,17 @@ void launch_reconstructor(const string& data_dir, const string& refactor_dir, co
     vector<T> error_est_QoI(num_elements);
 
     if(mode == BP){
-        vector<PDR::ApproximationBasedReconstructor<T, PDR::HPEZApproximator<T>, MDR::NegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>> reconstructors;
+        vector<PDR::ApproximationBasedReconstructor<T, PDR::HPEZApproximator<T>, ProDM::NegaBinaryBPEncoder<T, T_stream>, ProDM::AdaptiveLevelCompressor, ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, ProDM::MaxErrorEstimatorHB<T>, ProDM::ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             string rdir_prefix = refactor_dir + "/" + var_list[i] + "_refactored";
             string metadata_file = rdir_prefix + "/metadata.bin";
             vector<string> files = {rdir_prefix + "/level_0.bin"};
             auto approximator = PDR::HPEZApproximator<T>();
-            auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto estimator = MDR::MaxErrorEstimatorHB<T>();
-            auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-            auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+            auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+            auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
+            auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
             reconstructors.push_back(PDR::ApproximationBasedReconstructor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(interpreter), decltype(estimator), decltype(retriever)>(approximator, encoder, compressor, interpreter, retriever));
             reconstructors.back().mask = mask;
             reconstructors.back().load_metadata();
@@ -576,18 +577,18 @@ void launch_reconstructor(const string& data_dir, const string& refactor_dir, co
         }
     }
     else{
-        vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::HPEZApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, T_stream>, MDR::AdaptiveLevelCompressor, MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MDR::MaxErrorEstimatorHB<T>, MDR::ConcatLevelFileRetriever>> reconstructors;
+        vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::HPEZApproximator<T>, ProDM::WeightedNegaBinaryBPEncoder<T, T_stream>, ProDM::AdaptiveLevelCompressor, ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, ProDM::MaxErrorEstimatorHB<T>, ProDM::ConcatLevelFileRetriever>> reconstructors;
         vector<vector<int>> weights(n_variable, vector<int>(num_elements));
         for(int i=0; i<n_variable; i++){
             string rdir_prefix = refactor_dir + "/" + var_list[i] + "_refactored";
             string metadata_file = rdir_prefix + "/metadata.bin";
             vector<string> files = {rdir_prefix + "/level_0.bin"};
             auto approximator = PDR::HPEZApproximator<T>();
-            auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, T_stream>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto estimator = MDR::MaxErrorEstimatorHB<T>();
-            auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-            auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+            auto encoder = ProDM::WeightedNegaBinaryBPEncoder<T, T_stream>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+            auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
+            auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
             reconstructors.push_back(PDR::WeightedApproximationBasedReconstructor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(interpreter), decltype(estimator), decltype(retriever)>(approximator, encoder, compressor, interpreter, retriever));
             reconstructors.back().mask = mask;
             // the weights are stored with the first variable and shared by the others

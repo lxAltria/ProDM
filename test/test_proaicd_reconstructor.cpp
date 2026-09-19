@@ -33,9 +33,9 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         auto dims = reconstructor.get_dimensions();
         size_t retrieved_size = reconstructor.get_retrieved_size();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
-        MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        ProDM::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
-        if(write_output) MGARD::writefile(output_path.c_str(), reconstructed_data, data.size());
+        if(write_output) ProDM::writefile(output_path.c_str(), reconstructed_data, data.size());
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
     }
@@ -47,7 +47,7 @@ void init_fuse_composed_reconstructor(std::vector<T>& data, vector<double>& tole
     auto reconstructor = MDR::FuseComposedReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     // reconstructor.print();
     reconstructor.load_metadata();
-    T value_range = MDR::compute_value_range(data);
+    T value_range = ProDM::compute_value_range(data);
     for(int i=0; i<tolerance.size(); i++){
         tolerance[i] *= value_range;
     }
@@ -60,7 +60,7 @@ void init_composed_reconstructor_new(std::vector<T>& data, vector<double>& toler
     auto reconstructor = MDR::ComposedReconstructor_new<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     // reconstructor.print();
     reconstructor.load_metadata();
-    T value_range = MDR::compute_value_range(data);
+    T value_range = ProDM::compute_value_range(data);
     for(int i=0; i<tolerance.size(); i++){
         tolerance[i] *= value_range;
     }
@@ -73,7 +73,7 @@ void init_ordered_cp_reconstructor(std::vector<T>& data, vector<double>& toleran
     auto reconstructor = MDR::OrderedCPReconstructor<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     reconstructor.print();
     reconstructor.load_metadata();
-    T value_range = MDR::compute_value_range(data);
+    T value_range = ProDM::compute_value_range(data);
     for(int i=0; i<tolerance.size(); i++){
         tolerance[i] *= value_range;
     }
@@ -86,7 +86,7 @@ void init_cp_reconstructor_new(std::vector<T>& data, vector<double>& tolerance, 
     auto reconstructor = MDR::CPReconstructor_new<T, Decomposer, Interleaver, Encoder, Compressor, SizeInterpreter, ErrorEstimator, Retriever>(decomposer, interleaver, encoder, compressor, interpreter, retriever);
     // reconstructor.print();
     reconstructor.load_metadata();
-    T value_range = MDR::compute_value_range(data);
+    T value_range = ProDM::compute_value_range(data);
     for(int i=0; i<tolerance.size(); i++){
         tolerance[i] *= value_range;
     }
@@ -101,7 +101,7 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
     {
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
-        auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        auto metadata = ProDM::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
         if(num_bytes == 0){
             std::cerr << "Cannot read " << metadata_file << "; run the refactor first" << std::endl;
             exit(-1);
@@ -130,88 +130,88 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
         using T = float;
         using T_stream = uint32_t;
         size_t num_elements = 0;
-        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
         if (!interpolation_type){ // Per level
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
             auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto retriever = MDR::OrderedFileRetriever(metadata_file, data_file);
-                // auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::OrderedFileRetriever(metadata_file, data_file);
+                // auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
             } else { // no CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
@@ -219,83 +219,83 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
         } else { // Per Layer
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
             auto estimator = MDR::MaxErrorEstimatorHBCubic_new<T>(1);
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
             } else { // no CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
@@ -305,88 +305,88 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
         using T = double;
         using T_stream = uint64_t;
         size_t num_elements = 0;
-        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
         if (!interpolation_type){ // Per level
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
             auto estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto retriever = MDR::OrderedFileRetriever(metadata_file, data_file);
-                // auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::OrderedFileRetriever(metadata_file, data_file);
+                // auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_ordered_cp_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
             } else { // no CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(estimator);
                         init_fuse_composed_reconstructor(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
@@ -394,83 +394,83 @@ void overall_reconstructing_initiator(std::string filename, std::string refactor
         } else { // Per Layer
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
             auto estimator = MDR::MaxErrorEstimatorHBCubic_new<T>(1);
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_cp_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }
             } else { // no CP
-                auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
+                auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     if(!strcmp(interpreter_option.c_str(), "-BFS")){
-                        auto interpreter = MDR::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeBFSBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-DP")){
-                        auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     } else if (!strcmp(interpreter_option.c_str(), "-Greedy")){
-                        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
+                        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(estimator);
                         init_composed_reconstructor_new(data, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
                     }
                 }

@@ -43,7 +43,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
         auto dims = reconstructor.get_dimensions();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
-        MGARD::print_statistics(data.data(), reconstructed_data, data.size());
+        ProDM::print_statistics(data.data(), reconstructed_data, data.size());
         cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
         cout << endl;
     }
@@ -56,7 +56,7 @@ void test(string filename, string refactor_dict, const vector<double>& tolerance
     reconstructor.load_metadata();
 
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
     evaluate(data, tolerance, reconstructor);

@@ -1,5 +1,5 @@
-#ifndef _MDR_COEFFICIENT_PROFILING_SAMPLING_TUNER_HPP
-#define _MDR_COEFFICIENT_PROFILING_SAMPLING_TUNER_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_TUNER_COEFFPROFILINGSAMPLINGTUNER_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_TUNER_COEFFPROFILINGSAMPLINGTUNER_HPP
 
 #include <cstdlib>
 
@@ -20,7 +20,9 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/sample.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 
-namespace MDR{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     template<class T, class Decomposer, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator>
     class CoeffProfilingSamplingTuner : public concepts::TunerInterface<T> {
     public:
@@ -48,9 +50,9 @@ namespace MDR{
             // Timer timer;
             // timer.start();
             std::vector<std::vector<size_t>> starts;
-            MGARD::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 1);
-            MGARD::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
-            // MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
+            ProDM::MGARDx::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 1);
+            ProDM::MGARDx::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
+            // ProDM::MGARDx::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
             // std::vector<double> ebs = {1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
             std::vector<double> ebs = {1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7};

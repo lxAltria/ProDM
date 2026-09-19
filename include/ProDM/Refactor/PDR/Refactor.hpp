@@ -1,5 +1,5 @@
-#ifndef _PDR_REFACTOR_HPP
-#define _PDR_REFACTOR_HPP
+#ifndef PRODM_REFACTOR_PDR_REFACTOR_HPP
+#define PRODM_REFACTOR_PDR_REFACTOR_HPP
 
 #include "ApproximationBasedRefactor.hpp"
 #include "WeightedApproximationBasedRefactor.hpp"

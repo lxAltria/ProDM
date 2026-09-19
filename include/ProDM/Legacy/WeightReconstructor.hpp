@@ -1,5 +1,5 @@
-#ifndef _MDR_WEIGHT_RECONSTRUCTOR_HPP
-#define _MDR_WEIGHT_RECONSTRUCTOR_HPP
+#ifndef PRODM_LEGACY_WEIGHTRECONSTRUCTOR_HPP
+#define PRODM_LEGACY_WEIGHTRECONSTRUCTOR_HPP
 
 #include <cstdlib>
 
@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "ReconstructorInterface.hpp"
+#include "ProDM/Reconstructor/MDR/ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"
 #include "ProDM/Encoder/BitplaneEncoder.hpp"
@@ -22,10 +22,13 @@
 #include <cstdio>
 #include "ProDM/Utils/WeightUtils.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::Legacy {
+using namespace ProDM::MDR;   // legacy code written against the multilevel pipeline
     // a decomposition-based scientific data reconstructor: inverse operator of weight refactor
     template<class T, class Decomposer, class InterleaverT, class InterleaverInt, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator, class Retriever>
-    class WeightReconstructor : public concepts::ReconstructorInterface<T> {
+    class WeightReconstructor : public MDR::concepts::ReconstructorInterface<T> {
     public:
         WeightReconstructor(Decomposer decomposer, InterleaverT interleaver, InterleaverInt weight_interleaver, Encoder encoder, Compressor compressor, SizeInterpreter interpreter, Retriever retriever)
             : decomposer(decomposer), interleaver(interleaver), weight_interleaver(weight_interleaver), encoder(encoder), compressor(compressor), interpreter(interpreter), retriever(retriever){}
@@ -236,7 +239,7 @@ namespace MDR {
                 free(tmp_data);
             }
 
-            if (compressed_weights.size() != MDR::extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
+            if (compressed_weights.size() != ProDM::extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
                 // perror("From WeightedApproximationBasedReconstructor: Error: byteLength != weight_size\n");
             }
             if(dimensions.size() == 1){

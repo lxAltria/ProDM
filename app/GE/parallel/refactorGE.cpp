@@ -21,7 +21,8 @@ const std::vector<std::string> var_name{"U_aver", "V_aver", "W_aver", "Pressure"
 const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;
 
-using namespace MDR; 
+using namespace MDR;
+using namespace ProDM; 
 
 template <class T>
 void print_info(int p, const std::string& name, const std::vector<T>& vec){
@@ -43,11 +44,11 @@ MDR::ComposedRefactor<T, Decomposer, Interleaver, Encoder, Compressor, ErrorColl
 template<class Type>
 void refactor_singleZone(const std::string data_prefix_path, int rank, int num_elements, std::vector<Type>& velocityX_vec, std::vector<Type>& velocityY_vec, std::vector<Type>& velocityZ_vec, std::vector<Type>& pressure_vec, std::vector<Type>& density_vec){
     std::string filename = data_prefix_path + "/data/sol_4114800_aver_b" + std::to_string(rank) + ".bp/";
-    MGARD::writefile((filename + var_name_out[0] + ".dat").c_str(), velocityX_vec.data(), velocityX_vec.size());
-    MGARD::writefile((filename + var_name_out[1] + ".dat").c_str(), velocityY_vec.data(), velocityX_vec.size());
-    MGARD::writefile((filename + var_name_out[2] + ".dat").c_str(), velocityZ_vec.data(), velocityX_vec.size());
-    MGARD::writefile((filename + var_name_out[3] + ".dat").c_str(), pressure_vec.data(), velocityX_vec.size());
-    MGARD::writefile((filename + var_name_out[4] + ".dat").c_str(), density_vec.data(), velocityX_vec.size());
+    ProDM::writefile((filename + var_name_out[0] + ".dat").c_str(), velocityX_vec.data(), velocityX_vec.size());
+    ProDM::writefile((filename + var_name_out[1] + ".dat").c_str(), velocityY_vec.data(), velocityX_vec.size());
+    ProDM::writefile((filename + var_name_out[2] + ".dat").c_str(), velocityZ_vec.data(), velocityX_vec.size());
+    ProDM::writefile((filename + var_name_out[3] + ".dat").c_str(), pressure_vec.data(), velocityX_vec.size());
+    ProDM::writefile((filename + var_name_out[4] + ".dat").c_str(), density_vec.data(), velocityX_vec.size());
     std::vector<uint32_t> dims;
     dims.push_back(num_elements);
     // compute masks
@@ -60,7 +61,7 @@ void refactor_singleZone(const std::string data_prefix_path, int rank, int num_e
         }
     }
     std::string mask_file = data_prefix_path + "/refactor/block_" + std::to_string(rank) + "_refactored/mask.bin";
-    MGARD::writefile(mask_file.c_str(), mask.data(), mask.size());
+    ProDM::writefile(mask_file.c_str(), mask.data(), mask.size());
     std::vector<std::vector<Type>> vars_vec = {velocityX_vec, velocityY_vec, velocityZ_vec, pressure_vec, density_vec};
     std::vector<uint32_t> dims_masked;
     dims_masked.push_back(num_valid_data);

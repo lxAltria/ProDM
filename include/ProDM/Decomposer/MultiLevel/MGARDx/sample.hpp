@@ -1,10 +1,12 @@
-#ifndef _MGARD_SAMPLE_HPP
-#define _MGARD_SAMPLE_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_MGARDX_SAMPLE_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_MGARDX_SAMPLE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MGARD{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MGARDx {
 
 using namespace std;
 

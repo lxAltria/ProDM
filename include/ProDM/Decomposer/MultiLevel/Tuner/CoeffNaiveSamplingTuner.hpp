@@ -1,5 +1,5 @@
-#ifndef _MDR_COEFFICIENT_NAIVE_SAMPLING_TUNER_HPP
-#define _MDR_COEFFICIENT_NAIVE_SAMPLING_TUNER_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_TUNER_COEFFNAIVESAMPLINGTUNER_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_TUNER_COEFFNAIVESAMPLINGTUNER_HPP
 
 #include <cstdlib>
 
@@ -20,7 +20,9 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/sample.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 
-namespace MDR{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     template<class T, class Decomposer, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator>
     class CoeffNaiveSamplingTuner : public concepts::TunerInterface<T> {
     public:
@@ -47,7 +49,7 @@ namespace MDR{
             }
             // Timer timer;
             // timer.start();
-            MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
+            ProDM::MGARDx::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
             std::vector<double> ebs = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5};
             T value_range = compute_value_range(data_, num_elements);

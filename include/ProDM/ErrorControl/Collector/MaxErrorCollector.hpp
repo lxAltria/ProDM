@@ -1,5 +1,5 @@
-#ifndef _MDR_MAX_ERROR_COLLECTOR_HPP
-#define _MDR_MAX_ERROR_COLLECTOR_HPP
+#ifndef PRODM_ERRORCONTROL_COLLECTOR_MAXERRORCOLLECTOR_HPP
+#define PRODM_ERRORCONTROL_COLLECTOR_MAXERRORCOLLECTOR_HPP
 
 #include <vector>
 
@@ -7,7 +7,9 @@
 
 #include "ErrorCollectorInterface.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // max error collector: computing according to bit-plane definition
     template<class T>
     class MaxErrorCollector : public concepts::ErrorCollectorInterface<T> {

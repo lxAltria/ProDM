@@ -71,7 +71,7 @@ void evaluate(const vector<T>& data, vector<double>& tolerance, Reconstructor re
         metadata_size = reconstructor.get_metadata_size();
         local_retrieved_size = static_cast<unsigned long long>(reconstructor.get_retrieved_size());
         // cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
-        // MGARD::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
+        // ProDM::print_statistics(data.data(), reconstructed_data, data.size(), retrieved_size);
         // std::cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
         // COMP_UTILS::evaluate_gradients(data.data(), reconstructed_data, dims[0], dims[1], dims[2]);
         // COMP_UTILS::evaluate_average(data.data(), reconstructed_data, dims[0], dims[1], dims[2], 0);
@@ -85,7 +85,7 @@ void test(string filename, vector<double>& tolerance, Decomposer decomposer, Int
     reconstructor.load_metadata();
 
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     local_num_element = static_cast<unsigned long long>(num_elements);
     // std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
@@ -135,7 +135,7 @@ int main(int argc, char ** argv){
     {
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
-        auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        auto metadata = ProDM::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
         assert(num_bytes > num_dims * sizeof(uint32_t) + 2);
         num_dims = metadata[0];
         num_levels = metadata[num_dims * sizeof(uint32_t) + 1];
@@ -154,18 +154,18 @@ int main(int argc, char ** argv){
     using T_stream = uint64_t;
     auto decomposer = MDR::MGARDHierarchicalDecomposer<T>();
     auto interleaver = MDR::DirectInterleaver<T>();
-    // auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-    // auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
-    auto encoder = MDR::PerBitBPEncoder_old<T, T_stream>();
+    // auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
+    // auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = ProDM::PerBitBPEncoder_old<T, T_stream>();
 
-    // auto compressor = MDR::DefaultLevelCompressor();
-    auto compressor = MDR::AdaptiveLevelCompressor(64);
-    // auto compressor = MDR::NullLevelCompressor();
+    // auto compressor = ProDM::DefaultLevelCompressor();
+    auto compressor = ProDM::AdaptiveLevelCompressor(64);
+    // auto compressor = ProDM::NullLevelCompressor();
 
-    auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-    auto estimator = MDR::MaxErrorEstimatorHB<T>();
-    auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
-    // auto interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+    auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
+    auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+    auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
+    // auto interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
     test<T>(filename, tolerance, decomposer, interleaver, encoder, compressor, estimator, interpreter, retriever);
 
     double global_reconstruct_time = 0;
@@ -204,13 +204,13 @@ int main(int argc, char ** argv){
     }
     MPI_File retrieved_file;
     size_t metadata_num_char = 0;
-    auto metadata_data = MGARD::readfile<unsigned char>(metadata_file.c_str(), metadata_num_char);
+    auto metadata_data = ProDM::readfile<unsigned char>(metadata_file.c_str(), metadata_num_char);
     MPI_File_open(MPI_COMM_WORLD, wdata_file.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &retrieved_file);
     MPI_File_write_at(retrieved_file, retrieved_offset, metadata_data.data(), metadata_data.size(), MPI_UNSIGNED_CHAR, MPI_STATUS_IGNORE);
     retrieved_offset += metadata_size;
     for(int i=0; i<offsets.size(); i++){
         size_t num_char = 0;
-        auto level_data = MGARD::readfile<unsigned char>(files[i].c_str(), num_char);
+        auto level_data = ProDM::readfile<unsigned char>(files[i].c_str(), num_char);
         MPI_File_write_at(retrieved_file, retrieved_offset, level_data.data(), offsets[i], MPI_UNSIGNED_CHAR, MPI_STATUS_IGNORE);
         retrieved_offset += offsets[i];
     }

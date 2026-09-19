@@ -1,5 +1,5 @@
-#ifndef _MDR_NULL_LEVEL_COMPRESSOR_HPP
-#define _MDR_NULL_LEVEL_COMPRESSOR_HPP
+#ifndef PRODM_COMPRESSOR_NULLLEVELCOMPRESSOR_HPP
+#define PRODM_COMPRESSOR_NULLLEVELCOMPRESSOR_HPP
 
 #include <vector>
 
@@ -7,7 +7,9 @@
 
 #include "LevelCompressorInterface.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // Null lossless compressor
     class NullLevelCompressor : public concepts::LevelCompressorInterface {
     public:

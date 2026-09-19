@@ -1,5 +1,5 @@
-#ifndef _MGARD_REPOSITION_RECOMPOSE_NEW_HPP
-#define _MGARD_REPOSITION_RECOMPOSE_NEW_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_MGARDX_REPOSITION_RECOMPOSE_NEW_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_MGARDX_REPOSITION_RECOMPOSE_NEW_HPP
 
 #include <vector>
 #include <cstdlib>
@@ -9,7 +9,9 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "correction.hpp"
 
-namespace MGARD{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MGARDx {
 
 using namespace std;
 

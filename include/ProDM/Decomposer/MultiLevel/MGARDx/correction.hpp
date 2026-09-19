@@ -1,9 +1,11 @@
-#ifndef _MGARD_CORRECTION_HPP
-#define _MGARD_CORRECTION_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_MGARDX_CORRECTION_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_MGARDX_CORRECTION_HPP
 
 #include <vector>
 
-namespace MGARD{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MGARDx {
 
 using namespace std;
 

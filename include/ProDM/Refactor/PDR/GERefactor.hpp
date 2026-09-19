@@ -1,5 +1,5 @@
-#ifndef _PDR_GE_WEIGHTED_APPROXIMATION_BASED_REFACTOR_HPP
-#define _PDR_GE_WEIGHTED_APPROXIMATION_BASED_REFACTOR_HPP
+#ifndef PRODM_REFACTOR_PDR_GEREFACTOR_HPP
+#define PRODM_REFACTOR_PDR_GEREFACTOR_HPP
 
 #include <cstdlib>
 
@@ -19,9 +19,10 @@
 #include "ProDM/Utils/RefactorUtils.hpp"
 #include "ProDM/Utils/WeightUtils.hpp"
 
-using namespace MDR;
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
 
     // an approximation-based scientific data refactor: compose an approximation algorithm, encoder, and lossless compressor
     template<class T, class Approximator, class Encoder, class Compressor, class Writer>
@@ -173,7 +174,7 @@ namespace PDR {
                     block_path = tmp_path.substr(0, pos+1) + "block_sizes.dat";
                 }
                 size_t num_blocks = 0;
-                auto block_sizes = MGARD::readfile<int>(block_path.c_str(), num_blocks);
+                auto block_sizes = ProDM::readfile<int>(block_path.c_str(), num_blocks);
                 assigen_block_value_GE(block_sizes, weights.data());
                 int_weights = normalize_weights(weights, max_weight);
                 block_weights = get_block_weight_GE(block_sizes, int_weights);
@@ -191,7 +192,7 @@ namespace PDR {
                 }
                 // std::cout << "bit_count = " << static_cast<size_t>(bit_count) << " byte_count = " << static_cast<size_t>(byte_count) << " remainder_bit = " << static_cast<size_t>(remainder_bit) << " byteLength = " << byteLength << " block_weights.size() = " << block_weights.size() << std::endl;
                 compressed_weights.resize(byteLength);
-                if (byteLength != MDR::save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
+                if (byteLength != ProDM::save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
                     // perror("From GERefactor: Error: byteLength != weight_size\n");
                 }
                 ZSTD_weight_size = ZSTD::compress(compressed_weights.data(), byteLength, &ZSTD_weights);

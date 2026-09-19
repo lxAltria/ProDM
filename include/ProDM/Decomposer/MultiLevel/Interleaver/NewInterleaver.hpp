@@ -1,5 +1,5 @@
-#ifndef _MDR_DIRECT_INTERLEAVER_NEW_HPP
-#define _MDR_DIRECT_INTERLEAVER_NEW_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_INTERLEAVER_NEWINTERLEAVER_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_INTERLEAVER_NEWINTERLEAVER_HPP
 
 #include <cstdlib>
 
@@ -10,7 +10,9 @@
 #include "InterleaverInterface.hpp"
 #include <cassert>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     // direct interleaver with in-order recording
     template<class T>
     class DirectInterleaver_new : public concepts::InterleaverInterface<T> {

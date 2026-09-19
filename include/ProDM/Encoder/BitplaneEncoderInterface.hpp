@@ -1,11 +1,13 @@
-#ifndef _MDR_BITPLANE_ENCODER_INTERFACE_HPP
-#define _MDR_BITPLANE_ENCODER_INTERFACE_HPP
+#ifndef PRODM_ENCODER_BITPLANEENCODERINTERFACE_HPP
+#define PRODM_ENCODER_BITPLANEENCODERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 #include <cassert>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
         #define UINT8_BITS 8 
         // concept of encoder which encodes T_data type data into bitstreams

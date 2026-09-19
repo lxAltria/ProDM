@@ -17,6 +17,8 @@
 #define MGARD_Cmp 6
 #define HPEZ_Vtot2 7
 using namespace MDR;
+using namespace ProDM;
+using namespace ProDM::Legacy;
 
 int main(int argc, char** argv){
 

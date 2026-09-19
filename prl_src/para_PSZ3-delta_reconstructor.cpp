@@ -82,7 +82,7 @@ size_t PSZ3_delta_reconstructor(string refactor_dict, const vector<T>& data, dou
         for(int i=0; i<=file_ind; i++){
             string filename = refactor_dict + "/SZ3_delta_eb_" + std::to_string(i) + ".bin";
             size_t n = 0;
-            auto cmpData = MGARD::readfile<char>(filename.c_str(), n);
+            auto cmpData = ProDM::readfile<char>(filename.c_str(), n);
             retrieved_size += n;
             SZ3_decompress(cmpData.data(), n, tmp_reconstructed_data);
             int index = 0;
@@ -117,7 +117,7 @@ void evaluate(string refactor_dict, string wdata_file, const vector<T>& data, st
         // err = clock_gettime(CLOCK_REALTIME, &end);
         // cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
         // cout << "Retrieved data size = " << retrieved_size << endl;
-        // MGARD::print_statistics(data.data(), reconstructed_data.data(), data.size());
+        // ProDM::print_statistics(data.data(), reconstructed_data.data(), data.size());
         // cout << "Bitrate = " << (retrieved_size * 8.0) / data.size() << std::endl;
         // cout << endl;
     }
@@ -163,7 +163,7 @@ void evaluate(string refactor_dict, string wdata_file, const vector<T>& data, st
     for(int i=0; i<=file_ind; i++){
         string filename = refactor_dict + "/SZ3_delta_eb_" + std::to_string(i) + ".bin";
         size_t num_char = 0;
-        auto level_data = MGARD::readfile<unsigned char>(filename.c_str(), num_char);
+        auto level_data = ProDM::readfile<unsigned char>(filename.c_str(), num_char);
         MPI_File_write_at(retrieved_file, retrieved_offset, level_data.data(), num_char, MPI_UNSIGNED_CHAR, MPI_STATUS_IGNORE);
         retrieved_offset += num_char;
     }
@@ -173,7 +173,7 @@ void evaluate(string refactor_dict, string wdata_file, const vector<T>& data, st
 template <class T>
 void test(string filename, string refactor_dict, string wdata_file, vector<double>& tolerance){
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     // std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
     evaluate(refactor_dict, wdata_file, data, tolerance);

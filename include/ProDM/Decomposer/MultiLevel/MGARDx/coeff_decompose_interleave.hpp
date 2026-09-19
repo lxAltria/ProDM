@@ -1,5 +1,5 @@
-#ifndef _MGARD_COEFF_DECOMPOSE_INTERLEAVE_HPP
-#define _MGARD_COEFF_DECOMPOSE_INTERLEAVE_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_MGARDX_COEFF_DECOMPOSE_INTERLEAVE_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_MGARDX_COEFF_DECOMPOSE_INTERLEAVE_HPP
 
 #include <vector>
 #include <cstdlib>
@@ -9,7 +9,9 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "correction.hpp"
 
-namespace MGARD{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MGARDx {
 
 using namespace std;
 

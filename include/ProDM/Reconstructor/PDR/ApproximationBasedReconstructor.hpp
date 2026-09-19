@@ -1,5 +1,5 @@
-#ifndef _PDR_COMPOSED_RECONSTRUCTOR_HPP
-#define _PDR_COMPOSED_RECONSTRUCTOR_HPP
+#ifndef PRODM_RECONSTRUCTOR_PDR_APPROXIMATIONBASEDRECONSTRUCTOR_HPP
+#define PRODM_RECONSTRUCTOR_PDR_APPROXIMATIONBASEDRECONSTRUCTOR_HPP
 
 #include <cstdlib>
 
@@ -21,10 +21,9 @@
 #include "ProDM/Compressor/LevelCompressor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 
-using namespace MDR;
+#include "ProDM/Namespace.hpp"
 
-namespace PDR
-{
+namespace ProDM::PDR {
     // an approximation-based scientific data reconstructor: inverse operator of approximation-based refactor
     template <class T, class Approximator, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator, class Retriever>
     class ApproximationBasedReconstructor : public concepts::ReconstructorInterface<T>

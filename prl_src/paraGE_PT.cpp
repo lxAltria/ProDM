@@ -18,6 +18,8 @@
 #define PMGARD 2
 #define GE 3
 using namespace MDR;
+using namespace ProDM;
+using namespace ProDM::Legacy;
 
 const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 
@@ -885,7 +887,7 @@ std::vector<size_t> retrieve_PT_Dummy(std::string rdata_file_prefix, T tau, std:
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
     std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
-        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::DummyApproximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::DummyApproximator<T>, ProDM::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
             std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -917,25 +919,25 @@ std::vector<size_t> retrieve_PT_Dummy(std::string rdata_file_prefix, T tau, std:
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
             max_act_error = print_max_abs(names[1] + " error", error_PT);
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
         }
     }
     else{
-        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::DummyApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::DummyApproximator<T>, ProDM::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -972,18 +974,18 @@ std::vector<size_t> retrieve_PT_Dummy(std::string rdata_file_prefix, T tau, std:
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             /* test
             std::string filename = "./Result/Temp_err.dat";
             std::ofstream outfile1(filename, std::ios::binary);
@@ -1013,7 +1015,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
 	std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
 	std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
-        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, ProDM::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
             std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1046,19 +1048,19 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            // ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             if(!decrease_method) tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
             else tolerance_met = halving_error_PT_coordinate(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
             max_act_error = print_max_abs(names[1] + " error", error_PT);
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
@@ -1066,7 +1068,7 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
         local_elapsed_time += MPI_Wtime();
     }
     else{
-        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::WeightedApproximationBasedReconstructor<T, PDR::SZ3Approximator<T>, ProDM::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -1113,19 +1115,19 @@ std::vector<size_t> retrieve_PT_SZ3(std::string rdata_file_prefix, T tau, std::v
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            // ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             if(!decrease_method) tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             else tolerance_met = halving_error_PT_coordinate(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             /* test
             std::string filename = "./Result/Temp_err.dat";
             std::ofstream outfile1(filename, std::ios::binary);
@@ -1203,25 +1205,25 @@ std::vector<size_t> retrieve_PT_PMGARD(std::string rdata_file_prefix, T tau, std
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
             max_act_error = print_max_abs(names[1] + " error", error_PT);
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
         }
     }
     else{
-        std::vector<MDR::WeightReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, DirectInterleaver<int>, WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<ProDM::Legacy::WeightReconstructor<T, MGARDHierarchicalDecomposer<T>, DirectInterleaver<T>, DirectInterleaver<int>, WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -1274,18 +1276,18 @@ std::vector<size_t> retrieve_PT_PMGARD(std::string rdata_file_prefix, T tau, std
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            MDR::print_vec(ebs);
+            ProDM::print_vec(ebs);
             /* test
             std::string filename = "./Result/Temp_err.dat";
             std::ofstream outfile1(filename, std::ios::binary);
@@ -1307,7 +1309,7 @@ std::vector<size_t> retrieve_PT_PMGARD(std::string rdata_file_prefix, T tau, std
     return total_retrieved_size;
 }
 
-std::vector<PDR::GEReconstructor<T, PDR::GEApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> ge_reconstructors;
+std::vector<PDR::GEReconstructor<T, PDR::GEApproximator<T>, ProDM::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> ge_reconstructors;
 
 template<class T>
 std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::vector<T> ebs, size_t num_elements, const std::vector<unsigned char>& mask, int weighted, T & max_act_error, T & max_est_error, size_t & weight_file_size, bool decrease_method){
@@ -1318,7 +1320,7 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
     std::vector<std::vector<T>> reconstructed_vars(n_variable, std::vector<T>(num_elements));
     std::vector<size_t> total_retrieved_size(n_variable, 0);
     if(!weighted){
-        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::GEApproximator<T>, MDR::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::ApproximationBasedReconstructor<T, PDR::GEApproximator<T>, ProDM::NegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
             std::string metadata_file = rdir_prefix + "_refactored/metadata.bin";
@@ -1351,19 +1353,19 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            // ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             if(!decrease_method) tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
             else tolerance_met = halving_error_PT_coordinate(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             // std::cout << names[1] << " requested error = " << tau << std::endl;
             max_act_error = print_max_abs(names[1] + " error", error_PT);
             max_est_error = print_max_abs(names[1] + " error_est", error_est_PT);   	
@@ -1371,7 +1373,7 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
         local_elapsed_time += MPI_Wtime();
     }
     else{
-        std::vector<PDR::GEReconstructor<T, PDR::GEApproximator<T>, MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
+        std::vector<PDR::GEReconstructor<T, PDR::GEApproximator<T>, ProDM::WeightedNegaBinaryBPEncoder<T, uint32_t>, AdaptiveLevelCompressor, SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>, MaxErrorEstimatorHB<T>, ConcatLevelFileRetriever>> reconstructors;
         std::vector<std::vector<int>> weights(n_variable, std::vector<int>(num_elements, 0));
         for(int i=0; i<n_variable; i++){
             std::string rdir_prefix = rdata_file_prefix + varlist[i];
@@ -1418,19 +1420,19 @@ std::vector<size_t> retrieve_PT_GE(std::string rdata_file_prefix, T tau, std::ve
             Vz_dec = reconstructed_vars[2].data();
             P_dec = reconstructed_vars[3].data();
             D_dec = reconstructed_vars[4].data();
-            // MGARD::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
-            // MGARD::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
-            // MGARD::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
-            // MGARD::print_statistics(P_ori.data(), P_dec, num_elements);
-            // MGARD::print_statistics(D_ori.data(), D_dec, num_elements);
+            // ProDM::print_statistics(Vx_ori.data(), Vx_dec, num_elements);
+            // ProDM::print_statistics(Vy_ori.data(), Vy_dec, num_elements);
+            // ProDM::print_statistics(Vz_ori.data(), Vz_dec, num_elements);
+            // ProDM::print_statistics(P_ori.data(), P_dec, num_elements);
+            // ProDM::print_statistics(D_ori.data(), D_dec, num_elements);
             error_PT = std::vector<T>(num_elements);
             error_est_PT = std::vector<T>(num_elements);
             // std::cout << "iter" << iter << ": The old ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             if(!decrease_method) tolerance_met = halving_error_PT_uniform(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             else tolerance_met = halving_error_PT_coordinate(Vx_dec, Vy_dec, Vz_dec, P_dec, D_dec, num_elements, mask, tau, ebs, weights);
             // std::cout << "iter" << iter << ": The new ebs are:" << std::endl;
-            // MDR::print_vec(ebs);
+            // ProDM::print_vec(ebs);
             /* test
             std::string filename = "./Result/Temp_err.dat";
             std::ofstream outfile1(filename, std::ios::binary);
@@ -1481,11 +1483,11 @@ int main(int argc, char ** argv){
 	std::string wdata_file_prefix = output_path + "/1e" + std::to_string(exp) + "/";
 
     size_t num_elements = 0;
-    P_ori = MGARD::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
-    D_ori = MGARD::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
-    Vx_ori = MGARD::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
-    Vy_ori = MGARD::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
-    Vz_ori = MGARD::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
+    P_ori = ProDM::readfile<T>((data_file_prefix + "Pressure.dat").c_str(), num_elements);
+    D_ori = ProDM::readfile<T>((data_file_prefix + "Density.dat").c_str(), num_elements);
+    Vx_ori = ProDM::readfile<T>((data_file_prefix + "VelocityX.dat").c_str(), num_elements);
+    Vy_ori = ProDM::readfile<T>((data_file_prefix + "VelocityY.dat").c_str(), num_elements);
+    Vz_ori = ProDM::readfile<T>((data_file_prefix + "VelocityZ.dat").c_str(), num_elements);
     std::vector<T> ebs;
     ebs.push_back(compute_global_value_range(Vx_ori)*target_rel_eb);
     ebs.push_back(compute_global_value_range(Vy_ori)*target_rel_eb);
@@ -1599,7 +1601,7 @@ int main(int argc, char ** argv){
         for(int k=0; k<offsets.size(); k++){
             std::string file_level = rdir_prefix + "level_" + std::to_string(k) + ".bin";
             size_t num_char = 0;
-            auto level_data = MGARD::readfile<unsigned char>(file_level.c_str(), num_char);
+            auto level_data = ProDM::readfile<unsigned char>(file_level.c_str(), num_char);
             MPI_File file;
             std::string filename = wdata_file_prefix + var_name_out[i] + "_aggregated_level_" + std::to_string(k) + ".dat";
             MPI_File_open(MPI_COMM_WORLD, filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
@@ -1611,8 +1613,8 @@ int main(int argc, char ** argv){
 		std::string metadata_path = rdir_prefix + "metadata.bin";
 		size_t approximator_num_char = 0;
 		size_t metadata_num_char = 0;
-		auto approximator_data = MGARD::readfile<char>(approximator_path.c_str(), approximator_num_char);
-		auto metadata_data = MGARD::readfile<unsigned char>(metadata_path.c_str(), metadata_num_char);
+		auto approximator_data = ProDM::readfile<char>(approximator_path.c_str(), approximator_num_char);
+		auto metadata_data = ProDM::readfile<unsigned char>(metadata_path.c_str(), metadata_num_char);
 		MPI_File approximator_file;
 		MPI_File metadata_file;
 		std::string approximator_filename = wdata_file_prefix + var_name_out[i] + "_aggregated_approximator.dat";
@@ -1640,7 +1642,7 @@ int main(int argc, char ** argv){
 			}
 			std::string weight_path = rdir_prefix + "weight.bin";
 			size_t weight_num_char = 0;
-			auto weight_data = MGARD::readfile<unsigned char> (weight_path.c_str(), weight_num_char);
+			auto weight_data = ProDM::readfile<unsigned char> (weight_path.c_str(), weight_num_char);
 			MPI_File weight_file;
 			std::string weight_filename = wdata_file_prefix + var_name_out[i] + "_aggregated_weight.bin";
 			MPI_File_open(MPI_COMM_WORLD, weight_filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &weight_file);
@@ -1663,7 +1665,7 @@ int main(int argc, char ** argv){
 				}
 			}
 			size_t mask_num_char = 0;
-			auto mask_data = MGARD::readfile<unsigned char> (mask_file.c_str(), mask_num_char);
+			auto mask_data = ProDM::readfile<unsigned char> (mask_file.c_str(), mask_num_char);
 			MPI_File mask_file;
 			std::string mask_filename = wdata_file_prefix + "aggregated_mask.bin";
 			MPI_File_open(MPI_COMM_WORLD, mask_filename.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &mask_file);

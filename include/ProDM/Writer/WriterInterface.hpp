@@ -1,10 +1,12 @@
-#ifndef _MDR_WRITER_INTERFACE_HPP
-#define _MDR_WRITER_INTERFACE_HPP
+#ifndef PRODM_WRITER_WRITERINTERFACE_HPP
+#define PRODM_WRITER_WRITERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
 
         // Refactored data writer

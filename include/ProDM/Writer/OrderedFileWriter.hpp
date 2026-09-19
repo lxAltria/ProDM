@@ -1,5 +1,5 @@
-#ifndef _MDR_SERIAL_FILE_WRITER_HPP
-#define _MDR_SERIAL_FILE_WRITER_HPP
+#ifndef PRODM_WRITER_ORDEREDFILEWRITER_HPP
+#define PRODM_WRITER_ORDEREDFILEWRITER_HPP
 
 #include <cstdlib>
 
@@ -12,7 +12,9 @@
 #include "WriterInterface.hpp"
 #include <cstdio>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // A writer that writes the serialized components
     class OrderedFileWriter : public concepts::WriterInterface {
     public:

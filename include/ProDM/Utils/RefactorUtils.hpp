@@ -1,5 +1,5 @@
-#ifndef _MDR_REFACTOR_UTILS_HPP
-#define _MDR_REFACTOR_UTILS_HPP
+#ifndef PRODM_UTILS_REFACTORUTILS_HPP
+#define PRODM_UTILS_REFACTORUTILS_HPP
 
 #include <cassert>
 #include <vector>
@@ -11,7 +11,9 @@
 #include <string>
 #include <iostream>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
     // MDR utility functions
 

@@ -29,7 +29,7 @@ void launch_refactor(const string& data_dir, const string& refactor_dir, int num
     for(int i=0; i<n_variable; i++){
         string filename = data_dir + "/" + var_list[i] + suffix;
         size_t num = 0;
-        vars_vec[i] = MGARD::readfile<T>(filename.c_str(), num);
+        vars_vec[i] = ProDM::readfile<T>(filename.c_str(), num);
         if(num != num_elements){
             cerr << "File " << filename << " has " << num << " elements, but the given dimensions require " << num_elements << endl;
             exit(-1);
@@ -44,7 +44,7 @@ void launch_refactor(const string& data_dir, const string& refactor_dir, int num
         }
     }
     string mask_file = refactor_dir + "/mask.bin";
-    MDR::writemask(mask_file.c_str(), mask.data(), mask.size());
+    ProDM::writemask(mask_file.c_str(), mask.data(), mask.size());
 
     uint8_t target_level = 0;
 
@@ -56,9 +56,9 @@ void launch_refactor(const string& data_dir, const string& refactor_dir, int num
             vector<string> files = {rdir_prefix + "/level_0.bin"};
 
             auto approximator = PDR::HPEZApproximator<T>();
-            auto encoder = MDR::NegaBinaryBPEncoder<T, uint32_t>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+            auto encoder = ProDM::NegaBinaryBPEncoder<T, uint32_t>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
             auto refactor = PDR::ApproximationBasedRefactor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(writer)>(approximator, encoder, compressor, writer);
             refactor.negabinary = true;
             refactor.mask = mask;
@@ -98,9 +98,9 @@ void launch_refactor(const string& data_dir, const string& refactor_dir, int num
             vector<string> files = {rdir_prefix + "/level_0.bin"};
 
             auto approximator = PDR::HPEZApproximator<T>();
-            auto encoder = MDR::WeightedNegaBinaryBPEncoder<T, uint32_t>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+            auto encoder = ProDM::WeightedNegaBinaryBPEncoder<T, uint32_t>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
             auto refactor = PDR::WeightedApproximationBasedRefactor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(writer)>(approximator, encoder, compressor, writer);
             refactor.negabinary = true;
             refactor.mask = mask;

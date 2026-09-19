@@ -1,5 +1,5 @@
-#ifndef _MGARD_DECOMPOSE_INTERLEAVE_NEW_HPP
-#define _MGARD_DECOMPOSE_INTERLEAVE_NEW_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_MGARDX_DECOMPOSE_INTERLEAVE_NEW_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_MGARDX_DECOMPOSE_INTERLEAVE_NEW_HPP
 
 #include <vector>
 #include <cstdlib>
@@ -14,7 +14,9 @@
 #define LAST_LINE 2
 #define LAST_EVEN_LINE 3
 
-namespace MGARD{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MGARDx {
 
 using namespace std;
 

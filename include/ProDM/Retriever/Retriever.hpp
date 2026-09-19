@@ -1,5 +1,5 @@
-#ifndef _MDR_RETRIEVER_HPP
-#define _MDR_RETRIEVER_HPP
+#ifndef PRODM_RETRIEVER_RETRIEVER_HPP
+#define PRODM_RETRIEVER_RETRIEVER_HPP
 
 #include "FileRetriever.hpp"
 #include "OrderedFileRetriever.hpp"

@@ -1,10 +1,12 @@
-#ifndef _MDR_INTERLEAVER_INTERFACE_HPP
-#define _MDR_INTERLEAVER_INTERFACE_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_INTERLEAVER_INTERLEAVERINTERFACE_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_INTERLEAVER_INTERLEAVERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     namespace concepts {
 
         // level data interleaver: interleave level coefficients

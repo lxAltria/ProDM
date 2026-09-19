@@ -1,5 +1,5 @@
-#ifndef _MDR_ADAPTIVE_LEVEL_COMPRESSOR_HPP
-#define _MDR_ADAPTIVE_LEVEL_COMPRESSOR_HPP
+#ifndef PRODM_COMPRESSOR_ADAPTIVELEVELCOMPRESSOR_HPP
+#define PRODM_COMPRESSOR_ADAPTIVELEVELCOMPRESSOR_HPP
 
 #include <cstdlib>
 
@@ -10,7 +10,9 @@
 #include "LevelCompressorInterface.hpp"
 #include "LosslessCompressor.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     #define CR_THRESHOLD 1.05
     // compress all layers
     class AdaptiveLevelCompressor : public concepts::LevelCompressorInterface {

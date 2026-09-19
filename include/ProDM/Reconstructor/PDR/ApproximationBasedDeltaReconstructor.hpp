@@ -1,5 +1,5 @@
-#ifndef _PDR_COMPOSED_DELTA_RECONSTRUCTOR_HPP
-#define _PDR_COMPOSED_DELTA_RECONSTRUCTOR_HPP
+#ifndef PRODM_RECONSTRUCTOR_PDR_APPROXIMATIONBASEDDELTARECONSTRUCTOR_HPP
+#define PRODM_RECONSTRUCTOR_PDR_APPROXIMATIONBASEDDELTARECONSTRUCTOR_HPP
 
 #include <iostream>
 
@@ -10,7 +10,9 @@
 #include "ReconstructorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     // an approximation-based scientific data reconstructor: inverse operator of approximation-based refactor
     template<class T, class Approximator>
     class ApproximationBasedDeltaReconstructor : public concepts::ReconstructorInterface<T> {

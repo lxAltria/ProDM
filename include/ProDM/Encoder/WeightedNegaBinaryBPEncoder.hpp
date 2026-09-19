@@ -1,5 +1,5 @@
-#ifndef _MDR_WEIGHTEDNEGABINARY_BP_ENCODER_HPP
-#define _MDR_WEIGHTEDNEGABINARY_BP_ENCODER_HPP
+#ifndef PRODM_ENCODER_WEIGHTEDNEGABINARYBPENCODER_HPP
+#define PRODM_ENCODER_WEIGHTEDNEGABINARYBPENCODER_HPP
 
 #include <cstdlib>
 
@@ -15,7 +15,9 @@
 #include <string>
 
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     template<typename Type>
     void writefile__(const char *file, Type *data, size_t num_elements) {
     std::ofstream fout(file, std::ios::binary);

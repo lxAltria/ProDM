@@ -1,5 +1,5 @@
-#ifndef _MDR_XORNEGABINARY_BP_ENCODER_HPP
-#define _MDR_XORNEGABINARY_BP_ENCODER_HPP
+#ifndef PRODM_ENCODER_XORNEGABINARYBPENCODER_HPP
+#define PRODM_ENCODER_XORNEGABINARYBPENCODER_HPP
 
 #include <cstdlib>
 
@@ -12,7 +12,9 @@
 #include <cmath>
 #include <algorithm>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
     // =========================================================================
     //  Optimized XORNegaBinaryBPEncoder

@@ -1,5 +1,5 @@
-#ifndef _MDR_QOI_UTILS_HPP
-#define _MDR_QOI_UTILS_HPP
+#ifndef PRODM_UTILS_QOIUTILS_HPP
+#define PRODM_UTILS_QOIUTILS_HPP
 
 #include <string>
 
@@ -12,7 +12,9 @@
 #include <numeric>
 #include <cstdint>
 
-namespace MDR{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
 const std::vector<std::string> names{"V_TOT", "T", "C", "Mach", "PT", "mu"};
 

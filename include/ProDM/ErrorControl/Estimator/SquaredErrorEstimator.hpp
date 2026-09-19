@@ -1,5 +1,5 @@
-#ifndef _MDR_SQUARED_ERROR_ESTIMATOR_HPP
-#define _MDR_SQUARED_ERROR_ESTIMATOR_HPP
+#ifndef PRODM_ERRORCONTROL_ESTIMATOR_SQUAREDERRORESTIMATOR_HPP
+#define PRODM_ERRORCONTROL_ESTIMATOR_SQUAREDERRORESTIMATOR_HPP
 
 #include <vector>
 
@@ -7,10 +7,17 @@
 
 #include "ErrorEstimatorInterface.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     template<class T>
     class SquaredErrorEstimator : public concepts::ErrorEstimatorInterface<T>{};
 
+
+}
+
+// L2 and s-norm estimators with per-level volume tables of the multilevel bases: MDR pipeline only.
+namespace ProDM::MDR {
     // L2 error estimator for hierarchical basis
     template<class T>
     class L2ErrorEstimator_HB : public SquaredErrorEstimator<T> {
@@ -40,7 +47,6 @@ namespace MDR {
     private:
         std::vector<T> s_table;
     };
-
     // S-norm error estimator for orthogonal basis
     template<class T>
     class SNormErrorEstimator : public SquaredErrorEstimator<T> {
@@ -71,4 +77,5 @@ namespace MDR {
         std::vector<T> s_table;
     };
 }
+
 #endif

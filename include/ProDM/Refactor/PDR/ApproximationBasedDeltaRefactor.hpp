@@ -1,5 +1,5 @@
-#ifndef _PDR_APPROXIMATION_BASED_DELTA_REFACTOR_HPP
-#define _PDR_APPROXIMATION_BASED_DELTA_REFACTOR_HPP
+#ifndef PRODM_REFACTOR_PDR_APPROXIMATIONBASEDDELTAREFACTOR_HPP
+#define PRODM_REFACTOR_PDR_APPROXIMATIONBASEDDELTAREFACTOR_HPP
 
 #include <iostream>
 
@@ -10,7 +10,9 @@
 #include "RefactorInterface.hpp"
 #include "ProDM/Decomposer/Approximation/Approximator.hpp"
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
 
     // an approximation-based scientific data refactor: compose an approximation algorithm, encoder, and lossless compressor
     template<class T, class Approximator>

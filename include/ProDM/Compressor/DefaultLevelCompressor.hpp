@@ -1,5 +1,5 @@
-#ifndef _MDR_DEFAULT_LEVEL_COMPRESSOR_HPP
-#define _MDR_DEFAULT_LEVEL_COMPRESSOR_HPP
+#ifndef PRODM_COMPRESSOR_DEFAULTLEVELCOMPRESSOR_HPP
+#define PRODM_COMPRESSOR_DEFAULTLEVELCOMPRESSOR_HPP
 
 #include <cstdlib>
 
@@ -11,7 +11,9 @@
 #include "LosslessCompressor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // compress all layers
     class DefaultLevelCompressor : public concepts::LevelCompressorInterface {
     public:

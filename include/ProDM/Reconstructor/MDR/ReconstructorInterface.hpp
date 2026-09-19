@@ -1,8 +1,10 @@
-#ifndef _MDR_RECONSTRUCTOR_INTERFACE_HPP
-#define _MDR_RECONSTRUCTOR_INTERFACE_HPP
+#ifndef PRODM_RECONSTRUCTOR_MDR_RECONSTRUCTORINTERFACE_HPP
+#define PRODM_RECONSTRUCTOR_MDR_RECONSTRUCTORINTERFACE_HPP
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     namespace concepts {
 
         // reconstructor: a general interface for scientific data reconstructor

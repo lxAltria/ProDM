@@ -1,8 +1,10 @@
-#ifndef _MDR_ERROR_ESTIMATOR_INTERFACE_HPP
-#define _MDR_ERROR_ESTIMATOR_INTERFACE_HPP
+#ifndef PRODM_ERRORCONTROL_ESTIMATOR_ERRORESTIMATORINTERFACE_HPP
+#define PRODM_ERRORCONTROL_ESTIMATOR_ERRORESTIMATORINTERFACE_HPP
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
 
         // Error estimator: estimate impact of data error on result error

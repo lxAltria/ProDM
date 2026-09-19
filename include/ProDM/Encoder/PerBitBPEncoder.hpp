@@ -1,5 +1,5 @@
-#ifndef _MDR_PERBIT_BP_ENCODER_HPP
-#define _MDR_PERBIT_BP_ENCODER_HPP
+#ifndef PRODM_ENCODER_PERBITBPENCODER_HPP
+#define PRODM_ENCODER_PERBITBPENCODER_HPP
 
 #include <cstdlib>
 
@@ -13,7 +13,9 @@
 #include <cmath>
 #include <algorithm>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
     class BitEncoder{
     public:

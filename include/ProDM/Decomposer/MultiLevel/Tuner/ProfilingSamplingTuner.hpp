@@ -1,5 +1,5 @@
-#ifndef _MDR_PROFILING_SAMPLING_TUNER_HPP
-#define _MDR_PROFILING_SAMPLING_TUNER_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_TUNER_PROFILINGSAMPLINGTUNER_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_TUNER_PROFILINGSAMPLINGTUNER_HPP
 
 #include <cstdlib>
 
@@ -20,7 +20,9 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/sample.hpp"
 #include "ProDM/Utils/QoIUtils.hpp"
 
-namespace MDR{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     template<class T, class Level_Decomposer, class Layer_Decomposer, class Encoder, class Compressor, class Level_SizeInterpreter, class Layer_SizeInterpreter, class Level_ErrorEstimator, class Layer_ErrorEstimator>
     class ProfilingSamplingTuner : public concepts::TunerInterface<T> {
     public:
@@ -56,10 +58,10 @@ namespace MDR{
             if(block_size > min_dim) block_size = min_dim - 1;
             // std::cout << "block_size = " << block_size << std::endl;
             std::vector<std::vector<size_t>> starts;
-            MGARD::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 1);
-            MGARD::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
+            ProDM::MGARDx::profiling_blocks<T>(data_, dimensions, starts, block_size, 1e-5, 1);
+            ProDM::MGARDx::sample_blocks_after_profiling<T>(data_, dimensions, sampled_blocks, starts, block_size, 0.01);
             // std::cout << "one sampled_block size = " << sampled_blocks[0].size() << std::endl;
-            // MGARD::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
+            // ProDM::MGARDx::sample_blocks<T>(data_, dimensions, sampled_blocks, (size_t)stride, (size_t)block_size);
             // std::cout << "sampled_blocks.size() = " << sampled_blocks.size() << std::endl;
             std::vector<double> ebs = {1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5};
             // std::vector<double> ebs = {1e-3};
@@ -228,9 +230,9 @@ namespace MDR{
                 block_dims.push_back(block_size);
                 block_dims_uint32.push_back(block_size);
             }
-            auto level_dims = MGARD::compute_level_dims_new(block_dims_uint32, target_level);
+            auto level_dims = ProDM::MGARDx::compute_level_dims_new(block_dims_uint32, target_level);
             std::vector<std::vector<uint32_t>> level_buffer_dims;
-            auto level_elements = MGARD::compute_level_buffers_size_generic(level_dims, target_level, interp_order, level_buffer_dims);
+            auto level_elements = ProDM::MGARDx::compute_level_buffers_size_generic(level_dims, target_level, interp_order, level_buffer_dims);
             // for(int i=0; i<level_dims.size(); i++){
             //     std::cout << "level " << i << ", dimensions = ";
             //     for(int j=0; j<level_dims[i].size(); j++){

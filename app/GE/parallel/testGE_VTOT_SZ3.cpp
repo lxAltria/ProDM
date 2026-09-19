@@ -138,9 +138,9 @@ int main(int argc, char ** argv){
     // read_file
     size_t num_elements = 0;
 	std::string filename = data_file_prefix + "block_" + std::to_string(rank) + "/";
-	Vx_ori = MGARD::readfile<T>((filename + var_name_out[0] + ".dat").c_str(), num_elements);
-    Vy_ori = MGARD::readfile<T>((filename + var_name_out[1] + ".dat").c_str(), num_elements);
-    Vz_ori = MGARD::readfile<T>((filename + var_name_out[2] + ".dat").c_str(), num_elements);
+	Vx_ori = ProDM::readfile<T>((filename + var_name_out[0] + ".dat").c_str(), num_elements);
+    Vy_ori = ProDM::readfile<T>((filename + var_name_out[1] + ".dat").c_str(), num_elements);
+    Vz_ori = ProDM::readfile<T>((filename + var_name_out[2] + ".dat").c_str(), num_elements);
 
     std::vector<double> ebs;
     ebs.push_back(compute_value_range(Vx_ori));
@@ -175,7 +175,7 @@ int main(int argc, char ** argv){
     value_range[2] = compute_value_range(Vz_ori);
     std::string mask_file = rdata_file_prefix + "block_" + std::to_string(rank) + "_refactored/mask.bin";
     size_t num_valid_data = 0;
-    auto mask = MGARD::readfile<unsigned char>(mask_file.c_str(), num_valid_data);
+    auto mask = ProDM::readfile<unsigned char>(mask_file.c_str(), num_valid_data);
 
     int iter = 0;
     int max_iter = 5;
@@ -198,7 +198,7 @@ int main(int argc, char ** argv){
 			if(file_ind > current_ind[i]){
 	            std::string filename = rdir_prefix + "SZ3_eb_" + std::to_string(file_ind) + ".bin";
 	            size_t n = 0;
-	            auto cmpData = MGARD::readfile<char>(filename.c_str(), n);
+	            auto cmpData = ProDM::readfile<char>(filename.c_str(), n);
 	            SZ3_decompress(cmpData.data(), n, reconstructed_data);
 				current_ind[i] = file_ind;
 				total_retrieved_sizes[i] += n;
@@ -243,7 +243,7 @@ int main(int argc, char ** argv){
 		std::string rdir_prefix = data_file_prefix + "block_" + std::to_string(rank) + "_refactored/" + var_name_out[i] + "/";
 		std::string data_filename = rdir_prefix + "SZ3_eb_" + std::to_string(current_ind[i]) + ".bin";
 		size_t n = 0;
-		auto cmpData = MGARD::readfile<char>(data_filename.c_str(), n);
+		auto cmpData = ProDM::readfile<char>(data_filename.c_str(), n);
     	unsigned long long int count = total_retrieved_sizes[i];
 		unsigned long long int offset = 0;
 		unsigned long long int buffer = 0;

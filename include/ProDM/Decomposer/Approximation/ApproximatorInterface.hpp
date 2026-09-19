@@ -1,5 +1,5 @@
-#ifndef _PDR_APPROXIMATOR_INTERFACE_HPP
-#define _PDR_APPROXIMATOR_INTERFACE_HPP
+#ifndef PRODM_DECOMPOSER_APPROXIMATION_APPROXIMATORINTERFACE_HPP
+#define PRODM_DECOMPOSER_APPROXIMATION_APPROXIMATORINTERFACE_HPP
 
 #include <string>
 
@@ -7,7 +7,9 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     namespace concepts {
 
         // inplace data approximator: de-correlates and overwrites original data

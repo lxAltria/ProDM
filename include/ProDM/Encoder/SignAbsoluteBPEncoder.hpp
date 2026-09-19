@@ -1,5 +1,5 @@
-#ifndef _SIGN_ABSOLUTE_BP_ENCODER_HPP
-#define _SIGN_ABSOLUTE_BP_ENCODER_HPP
+#ifndef PRODM_ENCODER_SIGNABSOLUTEBPENCODER_HPP
+#define PRODM_ENCODER_SIGNABSOLUTEBPENCODER_HPP
 
 #include <cstdlib>
 
@@ -11,7 +11,9 @@
 
 #include "BitplaneEncoderInterface.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     template<class T_data, class T_stream>
     class SignAbsoluteBPEncoder : public concepts::BitplaneEncoderInterface<T_data> {
     public:

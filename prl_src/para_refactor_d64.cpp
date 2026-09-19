@@ -14,6 +14,8 @@
 #define PMGARD 2
 #define GE 3
 using namespace MDR;
+using namespace ProDM;
+using namespace ProDM::Legacy;
 
 int main(int argc, char** argv){
 

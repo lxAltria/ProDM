@@ -34,7 +34,7 @@ void test(string filename, const vector<uint32_t>& dims, int num_bitplanes, Appr
     auto refactor = PDR::ApproximationBasedRefactor<T, Approximator, Encoder, Compressor, Writer>(approximator, encoder, compressor, writer);
     refactor.negabinary = negabinary;
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     evaluate(data, dims, num_bitplanes, refactor);
 }
 
@@ -138,10 +138,10 @@ int main(int argc, char ** argv){
             std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
         }
         using T = float;
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
         negabinary = true;
-        auto compressor = MDR::AdaptiveLevelCompressor(64);
-        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        auto compressor = ProDM::AdaptiveLevelCompressor(64);
+        auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
         launch_refactor<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
     } else if (strcmp(dtype.c_str(), "-d") == 0){
         if(num_bitplanes > 64){
@@ -149,10 +149,10 @@ int main(int argc, char ** argv){
             std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
         }
         using T = double;
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+        auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
         negabinary = true;
-        auto compressor = MDR::AdaptiveLevelCompressor(64);
-        auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+        auto compressor = ProDM::AdaptiveLevelCompressor(64);
+        auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
         launch_refactor<T>(filename, dims, num_bitplanes, approximator, encoder, compressor, writer);
     } else {
         std::cerr << "Unknown data type option: " << dtype << " (expected -f or -d); check the argument order" << std::endl;

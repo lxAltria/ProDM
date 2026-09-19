@@ -1,5 +1,5 @@
-#ifndef _MDR_HPSS_WRITER_HPP
-#define _MDR_HPSS_WRITER_HPP
+#ifndef PRODM_WRITER_HPSSFILEWRITER_HPP
+#define PRODM_WRITER_HPSSFILEWRITER_HPP
 
 #include <cstdlib>
 
@@ -14,7 +14,9 @@
 #include "WriterInterface.hpp"
 #include <cstdio>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // A writer that writes the concatenated level components
     // Merge multiple components if size is small
     class HPSSFileWriter : public concepts::WriterInterface {

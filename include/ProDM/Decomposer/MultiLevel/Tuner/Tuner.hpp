@@ -1,5 +1,5 @@
-#ifndef _MDR_TUNER_HPP
-#define _MDR_TUNER_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_TUNER_TUNER_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_TUNER_TUNER_HPP
 
 #include "CoeffNaiveSamplingTuner.hpp"
 #include "CoeffProfilingSamplingTuner.hpp"

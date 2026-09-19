@@ -1,5 +1,5 @@
-#ifndef _MDR_WEIGHTUTILS_HPP
-#define _MDR_WEIGHTUTILS_HPP
+#ifndef PRODM_UTILS_WEIGHTUTILS_HPP
+#define PRODM_UTILS_WEIGHTUTILS_HPP
 
 #include <cstring>
 
@@ -15,7 +15,9 @@
 #include <numeric>
 #include <cstdint>
 
-namespace MDR{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
 using namespace std;
 
@@ -250,13 +252,13 @@ void propagateWeight(const vector<uint32_t>& dims, int target_level, vector<T>& 
     vector<T> buffer(stride);
     T * data_buffer = buffer.data();
     T * data_pos = weight.data();
-    auto level_dims = MDR::compute_level_dims(dims, target_level);
-    // MDR::print_vec("level_dims", level_dims);
+    auto level_dims = ProDM::compute_level_dims(dims, target_level);
+    // ProDM::print_vec("level_dims", level_dims);
     // std::cout << "start propagation\n";
     for(int i=0; i<target_level; i++){
-        // MDR::print_vec(weight);
+        // ProDM::print_vec(weight);
         propagateWeightInLevel(level_dims[target_level - i], strides, weight);
-        // MDR::print_vec(weight);
+        // ProDM::print_vec(weight);
         if(num_dims == 1){
             size_t n = level_dims[target_level - i][0];
             size_t n_nodal = (n >> 1) + 1;
@@ -280,7 +282,7 @@ void propagateWeight(const vector<uint32_t>& dims, int target_level, vector<T>& 
         else{
             std::cout << "dimension high than 4 is not supported\n";
         }
-        // MDR::print_vec(weight);
+        // ProDM::print_vec(weight);
         // std::cout << "level done\n";
     }
 }

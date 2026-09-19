@@ -38,6 +38,18 @@ sh build_script.sh
 
 Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control — the SC'21/SC'26 tools plus the PDR tools with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The QoI walkthrough tools (`test_qoi_refactor`, `test_qoi_reconstructor`) additionally require `PRODM_WITH_HPEZ`; the GE application tools under `app/GE` require all four.
 
+### Namespaces
+
+All library code lives under the umbrella namespace `ProDM`, organized by what the code is for rather than by which paper introduced it:
+
+- `ProDM` holds the machinery shared by both pipelines: bitplane encoders, level compressors, error control (interfaces, error collectors, the linear estimator `LinearMaxErrorEstimator`, size interpreters), retrievers, writers, and the utilities (`ProDM/Utils`, including the file helpers `readfile`, `writefile`, `print_statistics`).
+- `ProDM::MDR` holds the multilevel pipeline (SC'21, SC'26): decomposers, interleavers, tuners, refactors and reconstructors, plus the estimators whose constants come from the multilevel bases (orthogonal basis, cubic interpolation, L2 and s-norm).
+- `ProDM::PDR` holds the approximation-based pipeline (TVCG'23, HPDC'26): approximators, refactors, reconstructors.
+- `ProDM::MGARDx` holds the in-house multilevel decomposition internals.
+- `ProDM::Legacy` holds code kept only to reproduce prior papers: the GE synthesizer recipes (`ProDM/App/GE`), `WeightReconstructor` and `QoIRefactor` (`ProDM/Legacy`).
+
+`ProDM/Namespace.hpp` declares the aliases `MDR` and `PDR` at global scope, so `MDR::ComposedRefactor` or `using namespace MDR;` keep compiling; shared components are spelled `ProDM::NegaBinaryBPEncoder`, `ProDM::AdaptiveLevelCompressor` and so on (the former `MDR::` spelling of these no longer compiles, nor does the former `MGARD::` namespace). New headers reopen a namespace with the nested form `namespace ProDM::MDR { ... }` after including `ProDM/Namespace.hpp`.
+
 ### Examples
 
 **Example: Hurricane ISABEL dataset**

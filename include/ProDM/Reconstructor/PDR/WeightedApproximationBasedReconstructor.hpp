@@ -1,5 +1,5 @@
-#ifndef _PDR_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
-#define _PDR_WEIGHTED_COMPOSED_RECONSTRUCTOR_HPP
+#ifndef PRODM_RECONSTRUCTOR_PDR_WEIGHTEDAPPROXIMATIONBASEDRECONSTRUCTOR_HPP
+#define PRODM_RECONSTRUCTOR_PDR_WEIGHTEDAPPROXIMATIONBASEDRECONSTRUCTOR_HPP
 
 #include <cstdlib>
 
@@ -23,10 +23,9 @@
 #include "ProDM/Utils/RefactorUtils.hpp"
 #include "ProDM/Utils/WeightUtils.hpp"
 
-using namespace MDR;
+#include "ProDM/Namespace.hpp"
 
-namespace PDR
-{
+namespace ProDM::PDR {
     // an approximation-based scientific data reconstructor: inverse operator of approximation-based refactor
     template <class T, class Approximator, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator, class Retriever>
     class WeightedApproximationBasedReconstructor : public concepts::ReconstructorInterface<T>
@@ -188,7 +187,7 @@ namespace PDR
                 free(tmp_data);
             }
 
-            if (compressed_weights.size() != MDR::extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
+            if (compressed_weights.size() != ProDM::extract_fixed_length_bits(compressed_weights.data(), block_weights.size(), reinterpret_cast<unsigned int*>(block_weights.data()), bit_count)){
                 // perror("From WeightedApproximationBasedReconstructor: Error: byteLength != weight_size\n");
             }
             {
@@ -243,6 +242,9 @@ namespace PDR
         size_t get_retrieved_size(){
             return retriever.get_retrieved_size() + approximator_size;
         }
+
+        // (a point with integer weight w is bounded by this value times 2^(max_weight - w));
+        // valid after reconstruct()/progressive_reconstruct(); the approximation bound before.
 
         size_t get_weight_file_size(){
             return weight_file_size;

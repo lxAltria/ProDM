@@ -1,5 +1,5 @@
-#ifndef _MDR_PERBIT_BP_ENCODER_OLD_HPP
-#define _MDR_PERBIT_BP_ENCODER_OLD_HPP
+#ifndef PRODM_ENCODER_PERBITBPENCODER_OLD_HPP
+#define PRODM_ENCODER_PERBITBPENCODER_OLD_HPP
 
 #include <cstdlib>
 
@@ -11,7 +11,9 @@
 
 #include "BitplaneEncoderInterface.hpp"
 #include <bitset>
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     class BitEncoder_old{
     public:
         BitEncoder_old(uint64_t * stream_begin_pos){

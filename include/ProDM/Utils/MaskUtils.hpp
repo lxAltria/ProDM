@@ -1,5 +1,5 @@
-#ifndef _PRODM_MASK_UTILS_HPP
-#define _PRODM_MASK_UTILS_HPP
+#ifndef PRODM_UTILS_MASKUTILS_HPP
+#define PRODM_UTILS_MASKUTILS_HPP
 
 #include <cstdio>
 #include <cstdlib>
@@ -8,7 +8,9 @@
 #include "ProDM/Utils/RefactorUtils.hpp"
 #include "ProDM/Compressor/ZSTD.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
 
 template <class T>
 void writemask(const char *filepath, T *data, size_t num_elements) {
@@ -28,7 +30,7 @@ void writemask(const char *filepath, T *data, size_t num_elements) {
         int_mask[i] = data[i];
     }
     std::vector<unsigned char> compressed_mask(byteLength, 0);
-    if (byteLength != MDR::save_fixed_length_bits(int_mask.data(), num_elements, compressed_mask.data(), bit_count)){}
+    if (byteLength != ProDM::save_fixed_length_bits(int_mask.data(), num_elements, compressed_mask.data(), bit_count)){}
     uint8_t * ZSTD_mask = nullptr;
     uint32_t ZSTD_mask_size = ZSTD::compress(compressed_mask.data(), byteLength, &ZSTD_mask);
     uint32_t mask_size = sizeof(size_t) + sizeof(uint32_t) + ZSTD_mask_size;
@@ -95,7 +97,7 @@ inline std::vector<unsigned char> readmask(const char *filepath, uint32_t & mask
     }
     std::vector<unsigned int> int_mask(num_elements, 0);
     std::vector<unsigned char> mask(num_elements, 0);
-    if (compressed_mask.size() != MDR::extract_fixed_length_bits(compressed_mask.data(), num_elements, int_mask.data(), bit_count)){}
+    if (compressed_mask.size() != ProDM::extract_fixed_length_bits(compressed_mask.data(), num_elements, int_mask.data(), bit_count)){}
     for(int i=0; i<num_elements; i++){
         mask[i] = int_mask[i];
     }

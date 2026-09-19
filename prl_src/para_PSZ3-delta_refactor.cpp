@@ -68,7 +68,7 @@ void PSZ3_delta_refactor(string output_dict, const vector<T>& data, const vector
             string filename = output_dict + "/SZ3_delta_eb_" + std::to_string(i) + ".bin";
             size_t compressed_size = 0;
             auto compressed_data = SZ3_compress_3D(data.size(), size_t(dims[0]), size_t(dims[1]), size_t(dims[2]), data_buffer.data(), rel_ebs[i], compressed_size);
-            MGARD::writefile(filename.c_str(), compressed_data, compressed_size);
+            ProDM::writefile(filename.c_str(), compressed_data, compressed_size);
             SZ3_decompress(compressed_data, compressed_size, dec_data_buffer.data());
             for(int j=0; j<data.size(); j++){
                 data_buffer[j] = data_buffer[j] - dec_data_buffer[j];
@@ -80,7 +80,7 @@ void PSZ3_delta_refactor(string output_dict, const vector<T>& data, const vector
             string filename = output_dict + "/SZ3_delta_eb_" + std::to_string(i) + ".bin";
             size_t compressed_size = 0;
             auto compressed_data = SZ3_compress(data.size(), data_buffer.data(), rel_ebs[i], compressed_size);
-            MGARD::writefile(filename.c_str(), compressed_data, compressed_size);
+            ProDM::writefile(filename.c_str(), compressed_data, compressed_size);
             SZ3_decompress(compressed_data, compressed_size, dec_data_buffer.data());
             for(int j=0; j<data.size(); j++){
                 data_buffer[j] = data_buffer[j] - dec_data_buffer[j];
@@ -112,7 +112,7 @@ void evaluate(string output_dict, const vector<T>& data, const vector<uint32_t>&
 template <class T>
 void test(string filename, string output_dict, const vector<uint32_t>& dims, int num_snapshot){
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     evaluate(output_dict, data, dims, num_snapshot);
 }
 

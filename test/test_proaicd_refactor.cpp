@@ -62,13 +62,13 @@ std::vector<uint32_t> tune_interp_order_initiator(const vector<T>& data, const v
     using T_stream = typename std::conditional<std::is_same<T, float>::value, uint32_t, uint64_t>::type;
     auto level_decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
     auto layer_decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
-    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
     negabinary = true;
-    auto compressor = MDR::AdaptiveLevelCompressor(64);
+    auto compressor = ProDM::AdaptiveLevelCompressor(64);
     auto level_estimator = MDR::MaxErrorEstimatorHBCubic<T>(num_dims);
-    auto level_interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(level_estimator);
+    auto level_interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic<T>>(level_estimator);
     auto layer_estimator = MDR::MaxErrorEstimatorHBCubic_new<T>(1);
-    auto layer_interpreter = MDR::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(layer_estimator);
+    auto layer_interpreter = ProDM::SignExcludeDPBasedSizeInterpreter<MDR::MaxErrorEstimatorHBCubic_new<T>>(layer_estimator);
     return tune_interp_order_launcher<T>(data, dims, target_level, num_bitplanes, mode, level_decomposer, layer_decomposer, encoder, compressor, level_estimator, layer_estimator, level_interpreter, layer_interpreter);
 }
 
@@ -129,41 +129,41 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
             std::cout << "Only less than 32 bitplanes are supported for single-precision floating point" << std::endl;
         }
         size_t num_elements = 0;
-        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
         std::vector<uint32_t> best_interp_order = tune_interp_order_initiator(data, dims, target_level, num_bitplanes, prior_mode);
         if (best_interp_order[0] + best_interp_order[1] + best_interp_order[2] == 0){ // Per level
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto collector = MDR::SquaredErrorCollector<T>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto collector = ProDM::SquaredErrorCollector<T>();
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto writer = MDR::OrderedFileWriter(metadata_file, data_file);
-                // auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::OrderedFileWriter(metadata_file, data_file);
+                // auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_ordered_cp_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_ordered_cp_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_ordered_cp_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
             } else { // no CP
-                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_fuse_composed_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_fuse_composed_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_fuse_composed_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
@@ -172,35 +172,35 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
             decomposer.interp_order = best_interp_order;
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto collector = MDR::SquaredErrorCollector<T>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto collector = ProDM::SquaredErrorCollector<T>();
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_cp_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_cp_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_cp_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
             } else { // no CP
-                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_composed_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_composed_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_composed_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
@@ -214,41 +214,41 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
             std::cout << "Only less than 64 bitplanes are supported for double-precision floating point" << std::endl;
         }
         size_t num_elements = 0;
-        auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+        auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
         std::vector<uint32_t> best_interp_order = tune_interp_order_initiator(data, dims, target_level, num_bitplanes, prior_mode);
         if (best_interp_order[0] + best_interp_order[1] + best_interp_order[2] == 0){ // Per level
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver<T>();
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto collector = MDR::SquaredErrorCollector<T>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto collector = ProDM::SquaredErrorCollector<T>();
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto writer = MDR::OrderedFileWriter(metadata_file, data_file);
-                // auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::OrderedFileWriter(metadata_file, data_file);
+                // auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_ordered_cp_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_ordered_cp_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_ordered_cp_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
             } else { // no CP
-                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_fuse_composed_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_fuse_composed_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_fuse_composed_refactor(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
@@ -257,35 +257,35 @@ void overall_refactoring_initiator(std::string filename, std::string output_path
             auto decomposer = MDR::MGARDHierarchical_Cubic_Decomposer_Interleaver_new<T>();
             decomposer.interp_order = best_interp_order;
             auto interleaver = MDR::DirectInterleaver_new<T>();
-            auto compressor = MDR::AdaptiveLevelCompressor(64);
-            auto collector = MDR::SquaredErrorCollector<T>();
+            auto compressor = ProDM::AdaptiveLevelCompressor(64);
+            auto collector = ProDM::SquaredErrorCollector<T>();
             if(!strcmp(cp.c_str(), "-CP")){ // CP
-                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_cp_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_cp_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_cp_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }
             } else { // no CP
-                auto writer = MDR::ConcatLevelFileWriter(metadata_file, files);
+                auto writer = ProDM::ConcatLevelFileWriter(metadata_file, files);
                 if(!strcmp(encoder_option.c_str(), "-Nega")){
-                    auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_composed_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-XOR")){
-                    auto encoder = MDR::XORNegaBinaryBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::XORNegaBinaryBPEncoder<T, T_stream>();
                     negabinary = true;
                     init_composed_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 } else if (!strcmp(encoder_option.c_str(), "-PerBit")){
-                    auto encoder = MDR::PerBitBPEncoder<T, T_stream>();
+                    auto encoder = ProDM::PerBitBPEncoder<T, T_stream>();
                     negabinary = false;
                     init_composed_refactor_new(data, dims, target_level, num_bitplanes, decomposer, interleaver, encoder, compressor, collector, writer);
                 }

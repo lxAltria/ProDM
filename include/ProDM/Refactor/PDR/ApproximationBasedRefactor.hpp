@@ -1,5 +1,5 @@
-#ifndef _PDR_APPROXIMATION_BASED_REFACTOR_HPP
-#define _PDR_APPROXIMATION_BASED_REFACTOR_HPP
+#ifndef PRODM_REFACTOR_PDR_APPROXIMATIONBASEDREFACTOR_HPP
+#define PRODM_REFACTOR_PDR_APPROXIMATIONBASEDREFACTOR_HPP
 
 #include <cstdlib>
 
@@ -17,9 +17,10 @@
 #include "ProDM/Writer/Writer.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 
-using namespace MDR;
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
 
     // an approximation-based scientific data refactor: compose an approximation algorithm, encoder, and lossless compressor
     template<class T, class Approximator, class Encoder, class Compressor, class Writer>

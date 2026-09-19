@@ -1,5 +1,5 @@
-#ifndef _PDR_MGARD_APPROXIMATOR_HPP
-#define _PDR_MGARD_APPROXIMATOR_HPP
+#ifndef PRODM_DECOMPOSER_APPROXIMATION_MGARDAPPROXIMATOR_HPP
+#define PRODM_DECOMPOSER_APPROXIMATION_MGARDAPPROXIMATOR_HPP
 
 #include <cstdlib>
 
@@ -18,7 +18,9 @@
 #include "mgard/compress_x.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     // MGARD approximator with MGARDx prediction
     template<class T>
     class MGARDApproximator : public concepts::ApproximatorInterface<T> {
@@ -59,7 +61,7 @@ namespace PDR {
                 exit(-1);
             }
             if(filename.size()) approximator_file_name = filename;
-            MGARD::writefile(approximator_file_name.c_str(), static_cast<char*>(cmpData), cmpSize);
+            ProDM::writefile(approximator_file_name.c_str(), static_cast<char*>(cmpData), cmpSize);
             approximator_file_size = cmpSize;
             // std::cout << "Approximator size = " << approximator_file_size << std::endl;
             // std::cout << "num_elements = " << num_elements << std::endl;
@@ -83,7 +85,7 @@ namespace PDR {
             config.lossless = mgard_x::lossless_type::Huffman_Zstd;
             config.dev_type = mgard_x::device_type::SERIAL;
             size_t num = 0;
-            auto cmpData = MGARD::readfile<char>(approximator_file_name.c_str(), num);
+            auto cmpData = ProDM::readfile<char>(approximator_file_name.c_str(), num);
             approximator_file_size = num;
 
             void * void_dec_data = nullptr;

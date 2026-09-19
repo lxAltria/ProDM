@@ -1,5 +1,5 @@
-#ifndef _MDR_QOI_REFACTOR_HPP
-#define _MDR_QOI_REFACTOR_HPP
+#ifndef PRODM_LEGACY_QOIREFACTOR_HPP
+#define PRODM_LEGACY_QOIREFACTOR_HPP
 
 #include <cstdlib>
 
@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "RefactorInterface.hpp"
+#include "ProDM/Refactor/MDR/RefactorInterface.hpp"
 #include "ProDM/Decomposer/MultiLevel/Decomposer.hpp"
 #include "ProDM/Decomposer/MultiLevel/Interleaver/Interleaver.hpp"
 #include "ProDM/Encoder/BitplaneEncoder.hpp"
@@ -20,10 +20,13 @@
 #include "ProDM/Utils/WeightUtils.hpp"
 #include <cstdio>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::Legacy {
+using namespace ProDM::MDR;   // legacy code written against the multilevel pipeline
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector
     template<class T, class Decomposer, class InterleaverT, class InterleaverInt, class Encoder, class Compressor, class ErrorCollector, class Writer>
-    class QoIRefactor : public concepts::RefactorInterface<T> {
+    class QoIRefactor : public MDR::concepts::RefactorInterface<T> {
     public:
         QoIRefactor(Decomposer decomposer, InterleaverT interleaver, InterleaverInt weight_interleaver, Encoder encoder, Compressor compressor, ErrorCollector collector, Writer writer)
             : decomposer(decomposer), interleaver(interleaver), weight_interleaver(weight_interleaver), encoder(encoder), compressor(compressor), collector(collector), writer(writer) {}
@@ -210,7 +213,7 @@ namespace MDR {
             }
             // std::cout << "bit_count = " << static_cast<size_t>(bit_count) << " byte_count = " << static_cast<size_t>(byte_count) << " remainder_bit = " << static_cast<size_t>(remainder_bit) << " byteLength = " << byteLength << " block_weights.size() = " << block_weights.size() << std::endl;
             compressed_weights.resize(byteLength);
-            if (byteLength != MDR::save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
+            if (byteLength != ProDM::save_fixed_length_bits(reinterpret_cast<unsigned int*>(block_weights.data()), block_weights.size(), compressed_weights.data(), bit_count)){
                 // perror("From WeightedApproximationBasedRefactor: Error: byteLength != weight_size\n");
             }
             ZSTD_weight_size = ZSTD::compress(compressed_weights.data(), byteLength, &ZSTD_weights);
@@ -229,7 +232,7 @@ namespace MDR {
             // exit(-1);
             // print_vec(int_weights);
             decomposer.decompose(data.data(), dimensions, target_level);
-            // MGARD::writefile("decomposed_coeff.dat", data.data(), data.size());
+            // ProDM::writefile("decomposed_coeff.dat", data.data(), data.size());
             // timer.end();
             // timer.print("Decompose");
 
@@ -261,7 +264,7 @@ namespace MDR {
                 int level_max_weight = compute_max_abs_value(reinterpret_cast<int*>(buffer_weight), level_elements[i]);
                 // */
                 // std::cout << "\nlevel " << i << " max error = " << level_max_error << std::endl;
-                // MGARD::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
+                // ProDM::writefile(("level_" + std::to_string(i) + "_coeff.dat").c_str(), buffer, level_elements[i]);
                 if(negabinary) level_error_bounds.push_back(level_max_error * 4);
                 else level_error_bounds.push_back(level_max_error);
                 // timer.end();

@@ -1,5 +1,5 @@
-#ifndef _MDR_COMPOSED_RECONSTRUCTOR_HPP
-#define _MDR_COMPOSED_RECONSTRUCTOR_HPP
+#ifndef PRODM_RECONSTRUCTOR_MDR_COMPOSEDRECONSTRUCTOR_HPP
+#define PRODM_RECONSTRUCTOR_MDR_COMPOSEDRECONSTRUCTOR_HPP
 
 #include <cstdlib>
 
@@ -20,7 +20,9 @@
 #include "ProDM/Compressor/LevelCompressor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     // a decomposition-based scientific data reconstructor: inverse operator of composed refactor
     template<class T, class Decomposer, class Interleaver, class Encoder, class Compressor, class SizeInterpreter, class ErrorEstimator, class Retriever>
     class ComposedReconstructor : public concepts::ReconstructorInterface<T> {

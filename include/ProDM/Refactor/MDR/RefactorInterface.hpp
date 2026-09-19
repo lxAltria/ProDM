@@ -1,10 +1,12 @@
-#ifndef _MDR_REFACTOR_INTERFACE_HPP
-#define _MDR_REFACTOR_INTERFACE_HPP
+#ifndef PRODM_REFACTOR_MDR_REFACTORINTERFACE_HPP
+#define PRODM_REFACTOR_MDR_REFACTORINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     namespace concepts {
 
         // refactor: a general interface for scnetific data refactor

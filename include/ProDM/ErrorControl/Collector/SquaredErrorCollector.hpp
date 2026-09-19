@@ -1,5 +1,5 @@
-#ifndef _MDR_SQUARED_ERROR_COLLECTOR_HPP
-#define _MDR_SQUARED_ERROR_COLLECTOR_HPP
+#ifndef PRODM_ERRORCONTROL_COLLECTOR_SQUAREDERRORCOLLECTOR_HPP
+#define PRODM_ERRORCONTROL_COLLECTOR_SQUAREDERRORCOLLECTOR_HPP
 
 #include <vector>
 
@@ -7,7 +7,9 @@
 
 #include "ErrorCollectorInterface.hpp"
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     union FloatingInt32{
         float f;
         uint32_t i;

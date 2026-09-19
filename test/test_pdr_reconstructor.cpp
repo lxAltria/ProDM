@@ -43,7 +43,7 @@ void evaluate(const vector<T>& data, const vector<double>& tolerance, Reconstruc
         cout << "Reconstruct time: " << (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_nsec - start.tv_nsec)/(double)1000000000 << "s" << endl;
         auto dims = reconstructor.get_dimensions();
         cout << "Retrieved data size = " << reconstructor.get_retrieved_size() << endl;
-        MGARD::print_statistics(data.data(), reconstructed_data, data.size());
+        ProDM::print_statistics(data.data(), reconstructed_data, data.size());
         cout << "Bitrate = " << (reconstructor.get_retrieved_size() * 8.0) / data.size() << std::endl;
         cout << endl;
     }
@@ -56,7 +56,7 @@ void test(string filename, const vector<double>& tolerance, Approximator approxi
     reconstructor.load_metadata();
 
     size_t num_elements = 0;
-    auto data = MGARD::readfile<T>(filename.c_str(), num_elements);
+    auto data = ProDM::readfile<T>(filename.c_str(), num_elements);
     std::cout << "read file done: #element = " << num_elements << std::endl;
     fflush(stdout);
     evaluate(data, tolerance, reconstructor);
@@ -143,7 +143,7 @@ int main(int argc, char ** argv){
     {
         // metadata interpreter, otherwise information needs to be provided
         size_t num_bytes = 0;
-        auto metadata = MGARD::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
+        auto metadata = ProDM::readfile<uint8_t>(metadata_file.c_str(), num_bytes);
         if(num_bytes == 0){
             std::cerr << "Cannot read " << metadata_file << "; run the refactor first" << std::endl;
             return -1;
@@ -166,19 +166,19 @@ int main(int argc, char ** argv){
     int approximator = atoi(argv[argv_id++]);
     if (strcmp(dtype.c_str(), "-f") == 0){
         using T = float;
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-        auto compressor = MDR::AdaptiveLevelCompressor(64);
-        auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-        auto estimator = MDR::MaxErrorEstimatorHB<T>();
-        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
+        auto compressor = ProDM::AdaptiveLevelCompressor(64);
+        auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
+        auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
         launch_reconstructor<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
     } else if (strcmp(dtype.c_str(), "-d") == 0){
         using T = double;
-        auto encoder = MDR::NegaBinaryBPEncoder<T, T_stream>();
-        auto compressor = MDR::AdaptiveLevelCompressor(64);
-        auto retriever = MDR::ConcatLevelFileRetriever(metadata_file, files);
-        auto estimator = MDR::MaxErrorEstimatorHB<T>();
-        auto interpreter = MDR::SignExcludeGreedyBasedSizeInterpreter<MDR::MaxErrorEstimatorHB<T>>(estimator);
+        auto encoder = ProDM::NegaBinaryBPEncoder<T, T_stream>();
+        auto compressor = ProDM::AdaptiveLevelCompressor(64);
+        auto retriever = ProDM::ConcatLevelFileRetriever(metadata_file, files);
+        auto estimator = ProDM::MaxErrorEstimatorHB<T>();
+        auto interpreter = ProDM::SignExcludeGreedyBasedSizeInterpreter<ProDM::MaxErrorEstimatorHB<T>>(estimator);
         launch_reconstructor<T>(filename, tolerance, approximator, encoder, compressor, estimator, interpreter, retriever);
     } else {
         std::cerr << "Unknown data type option: " << dtype << " (expected -f or -d); check the argument order" << std::endl;

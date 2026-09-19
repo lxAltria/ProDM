@@ -1,5 +1,5 @@
-#ifndef _PDR_HPEZ_APPROXIMATOR_HPP
-#define _PDR_HPEZ_APPROXIMATOR_HPP
+#ifndef PRODM_DECOMPOSER_APPROXIMATION_HPEZAPPROXIMATOR_HPP
+#define PRODM_DECOMPOSER_APPROXIMATION_HPEZAPPROXIMATOR_HPP
 
 #include <cstdlib>
 
@@ -14,7 +14,9 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 
 
-namespace PDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::PDR {
     // HPEZ approximator with HPEZ (QoZ 2.0) prediction
     template<class T>
     class HPEZApproximator : public concepts::ApproximatorInterface<T> {
@@ -54,7 +56,7 @@ namespace PDR {
                 exit(-1);
             }
             if(filename.size()) approximator_file_name = filename;
-            MGARD::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
+            ProDM::writefile(approximator_file_name.c_str(), cmpData, cmpSize);
             approximator_file_size = cmpSize;
             // std::cout << "Approximator size = " << approximator_file_size << std::endl;
             // std::cout << "num_elements = " << num_elements << std::endl;
@@ -77,7 +79,7 @@ namespace PDR {
             if(filename.size()) approximator_file_name = filename;
         	QoZ::Config conf;
             size_t num = 0;
-            auto cmpData = MGARD::readfile<char>(approximator_file_name.c_str(), num);
+            auto cmpData = ProDM::readfile<char>(approximator_file_name.c_str(), num);
             approximator_file_size = num;
             SZ_decompress<T>(conf, cmpData.data(), num, data);
         }

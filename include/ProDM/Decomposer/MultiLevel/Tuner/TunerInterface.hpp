@@ -1,10 +1,12 @@
-#ifndef _MDR_TUNER_INTERFACE_HPP
-#define _MDR_TUNER_INTERFACE_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_TUNER_TUNERINTERFACE_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_TUNER_TUNERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR{
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     namespace concepts{
 
         // Tuner

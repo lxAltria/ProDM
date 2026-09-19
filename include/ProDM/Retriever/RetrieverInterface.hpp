@@ -1,11 +1,13 @@
-#ifndef _MDR_RETRIEVER_INTERFACE_HPP
-#define _MDR_RETRIEVER_INTERFACE_HPP
+#ifndef PRODM_RETRIEVER_RETRIEVERINTERFACE_HPP
+#define PRODM_RETRIEVER_RETRIEVERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 #include <cassert>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     namespace concepts {
 
         // Error-controlled data retrieval

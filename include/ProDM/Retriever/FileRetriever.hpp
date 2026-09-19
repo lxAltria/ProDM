@@ -1,5 +1,5 @@
-#ifndef _MDR_FILE_RETRIEVER_HPP
-#define _MDR_FILE_RETRIEVER_HPP
+#ifndef PRODM_RETRIEVER_FILERETRIEVER_HPP
+#define PRODM_RETRIEVER_FILERETRIEVER_HPP
 
 #include <cstdlib>
 
@@ -11,7 +11,9 @@
 #include <sstream>
 #include <string>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM {
     // Data retriever for files
     class ConcatLevelFileRetriever : public concepts::RetrieverInterface {
     public:

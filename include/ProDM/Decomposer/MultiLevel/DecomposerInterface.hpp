@@ -1,10 +1,12 @@
-#ifndef _MDR_DECOMPOSER_INTERFACE_HPP
-#define _MDR_DECOMPOSER_INTERFACE_HPP
+#ifndef PRODM_DECOMPOSER_MULTILEVEL_DECOMPOSERINTERFACE_HPP
+#define PRODM_DECOMPOSER_MULTILEVEL_DECOMPOSERINTERFACE_HPP
 
 #include <vector>
 #include <cstdint>
 
-namespace MDR {
+#include "ProDM/Namespace.hpp"
+
+namespace ProDM::MDR {
     namespace concepts {
 
         // inplace data decomposer: de-correlates and overwrites original data
