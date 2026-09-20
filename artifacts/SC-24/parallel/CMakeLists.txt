@@ -1,4 +1,4 @@
-# Parallel GE tools: require MPI, ADIOS2, and the SZ3 baselines.
+# SC'24 parallel GE tools (ADIOS2 I/O): require MPI, ADIOS2, and the SZ3 baselines.
 # Skipped gracefully when any prerequisite is missing 
 if(NOT PRODM_WITH_SZ3)
     message(STATUS "Skipping the parallel GE tools (require PRODM_WITH_SZ3)")

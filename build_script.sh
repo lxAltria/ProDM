@@ -70,7 +70,7 @@ cd ${source_dir}
 mkdir -p build
 mkdir -p install
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=${source_dir}/install -DPRODM_WITH_SZ2=ON -DPRODM_WITH_SZ3=ON -DPRODM_WITH_HPEZ=ON -DPRODM_WITH_MGARD=ON ..
+cmake -DCMAKE_INSTALL_PREFIX=${source_dir}/install -DPRODM_WITH_SZ2=ON -DPRODM_WITH_SZ3=ON -DPRODM_WITH_HPEZ=ON -DPRODM_WITH_MGARD=ON -DPRODM_BUILD_ARTIFACTS=ON ..
 make -j 8
 
 # build ADIOS2

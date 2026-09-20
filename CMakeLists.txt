@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.13)
-project(PROAID VERSION 0.0.0.1 LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.18)
+project(ProDM VERSION 0.0.0.1 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,7 +17,8 @@ option(PRODM_WITH_SZ2 "Enable the SZ2 approximator" OFF)
 option(PRODM_WITH_SZ3 "Enable the SZ3 approximator and SZ3-based tools" OFF)
 option(PRODM_WITH_HPEZ "Enable the HPEZ (QoZ) approximator" OFF)
 option(PRODM_WITH_MGARD "Enable the MGARD approximator" OFF)
-option(PRODM_WITH_MPI "Build the MPI-parallel tools in prl_src (skipped automatically if MPI is not found)" ON)
+option(PRODM_WITH_MPI "Build the MPI-parallel artifact tools (skipped automatically if MPI is not found)" ON)
+option(PRODM_BUILD_ARTIFACTS "Build the paper artifact drivers under artifacts/ (see artifacts/README.md)" OFF)
 
 # zstd (required): taken from the system installation
 find_path(ZSTD_INCLUDE_DIR NAMES zstd.h
@@ -119,6 +120,6 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 add_subdirectory(test)
 add_subdirectory(app)
-if(PRODM_WITH_MPI)
-  add_subdirectory(prl_src)
+if(PRODM_BUILD_ARTIFACTS)
+  add_subdirectory(artifacts)
 endif()

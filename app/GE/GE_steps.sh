@@ -1,11 +1,11 @@
 #!/bin/bash
 # ============================================================================
-# GE reproduction (QPro-N / QPro-NW / QPro, 6 QoIs)
+# GE reproduction (QProR-N / QProR-NW / QProR, 6 QoIs)
 #
 # Requirements:
 #  - ProDM built via build_script.sh (all PRODM_WITH_* options ON; the GE QoI
 #    tools refactor_d64 and qoi_{Vtot,T,C,Mach,PT,mu}_d64 are built under
-#    build/app/GE/sequential)
+#    build/app/GE)
 #  - GE data under ${DATA_DIR}/data (VelocityX/Y/Z.dat, Pressure.dat,
 #    Density.dat, block_sizes.dat); the refactor directory is created
 #    automatically under ${DATA_DIR}/refactor
@@ -21,10 +21,10 @@ build_dir=${PRODM_DIR}/build
 DATA_DIR=${DATA_DIR:-${build_dir}/app/GE}
 RESULT_DIR=${RESULT_DIR:-${build_dir}/Result}
 
-refactor_cmd=${build_dir}/app/GE/sequential/refactor_d64
+refactor_cmd=${build_dir}/app/GE/refactor_d64
 
 qoi_cmd() {
-    echo "${build_dir}/app/GE/sequential/qoi_$1_d64"
+    echo "${build_dir}/app/GE/qoi_$1_d64"
 }
 
 data="GE"
@@ -75,19 +75,19 @@ run_retrievals() {
     done
 }
 
-# 4. QPro-N (unweighted)
+# 4. QProR-N (unweighted)
 ${refactor_cmd} 3 0 $data "${DATA_DIR}" > $tmp_file
 time=$(grep "elapsed_time" $tmp_file | head -n 1)
 echo "$data, Method#4: Refactor: $time" >> $output_file
 run_retrievals 4 0 0
 
-# 5. QPro-NW (weighted refactor, naive eb decrease)
+# 5. QProR-NW (weighted refactor, naive eb decrease)
 ${refactor_cmd} 3 1 $data "${DATA_DIR}" 4 3 0.001 > $tmp_file
 time=$(grep "elapsed_time" $tmp_file | head -n 1)
 echo "$data, Method#5: Refactor: $time" >> $output_file
 run_retrievals 5 1 0
 
-# 6. QPro (weighted refactor, coordinate eb decrease)
+# 6. QProR (weighted refactor, coordinate eb decrease)
 ${refactor_cmd} 3 1 $data "${DATA_DIR}" 4 3 0.001 > $tmp_file
 time=$(grep "elapsed_time" $tmp_file | head -n 1)
 echo "$data, Method#6: Refactor: $time" >> $output_file

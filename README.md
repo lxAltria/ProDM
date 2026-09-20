@@ -26,7 +26,7 @@ ProDM also integrates other existing progressive approaches from researchers and
 
 ## Installation
 
-**Prerequisites:** a C++17 compiler, CMake >= 3.13, and libzstd (e.g., `brew install zstd` or `apt install libzstd-dev`). MPI is optional (the parallel tools are skipped if it is absent), and the example workflow additionally uses python3 with numpy.
+**Prerequisites:** a C++17 compiler, CMake >= 3.18, and libzstd (e.g., `brew install zstd` or `apt install libzstd-dev`). MPI is optional (it is used only by the parallel artifact tools, which are skipped if it is absent), and the example workflow additionally uses python3 with numpy.
 
 One-command compilation using `build_script.sh`. It will automatically build the ProDM library and its dependencies (SZ2, SZ3, QoZ/HPEZ, and MGARD under `external/`), and enables all of them. Compilers default to the system ones and can be overridden, e.g. `CC=gcc-16 CXX=g++-16 sh build_script.sh`.
 
@@ -36,7 +36,7 @@ cd ProDM
 sh build_script.sh
 ```
 
-Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control — the SC'21/SC'26 tools plus the PDR tools with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The QoI walkthrough tools (`test_qoi_refactor`, `test_qoi_reconstructor`) additionally require `PRODM_WITH_HPEZ`; the GE application tools under `app/GE` require all four.
+Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control: the `mdr` and `proaicd` pipelines, and `pdr` / `pdr-delta` with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The command line tools `prodm_refactor` and `prodm_retrieve` (in `test/`) always build, with the approximators that are enabled; the GE application tools under `app/GE` require all four. The evaluation drivers of the published papers live under `artifacts/` (see `artifacts/README.md`) and are built with `-DPRODM_BUILD_ARTIFACTS=ON`, which `build_script.sh` sets.
 
 ### Namespaces
 
@@ -46,6 +46,7 @@ All library code lives under the umbrella namespace `ProDM`, organized by what t
 - `ProDM::MDR` holds the multilevel pipeline (SC'21, SC'26): decomposers, interleavers, tuners, refactors and reconstructors, plus the estimators whose constants come from the multilevel bases (orthogonal basis, cubic interpolation, L2 and s-norm).
 - `ProDM::PDR` holds the approximation-based pipeline (TVCG'23, HPDC'26): approximators, refactors, reconstructors.
 - `ProDM::MGARDx` holds the in-house multilevel decomposition internals.
+- `ProDM::QoI::Hand` holds the QoI registry of the unified command line (`ProDM/QoI/HandQoI.hpp`: QoI values, the hand-derived error bounds of SC'24, the weight recipes of HPDC'26 and the error-bound descents); `ProDM::CLI` the option parsing and file conventions shared by the two tools (`ProDM/Utils/CLI.hpp`).
 - `ProDM::Legacy` holds code kept only to reproduce prior papers: the GE synthesizer recipes (`ProDM/App/GE`), `WeightReconstructor` and `QoIRefactor` (`ProDM/Legacy`).
 
 `ProDM/Namespace.hpp` declares the aliases `MDR` and `PDR` at global scope, so `MDR::ComposedRefactor` or `using namespace MDR;` keep compiling; shared components are spelled `ProDM::NegaBinaryBPEncoder`, `ProDM::AdaptiveLevelCompressor` and so on (the former `MDR::` spelling of these no longer compiles, nor does the former `MGARD::` namespace). New headers reopen a namespace with the nested form `namespace ProDM::MDR { ... }` after including `ProDM/Namespace.hpp`.
@@ -101,31 +102,49 @@ sh test_script.sh
 
 The following demonstrates a step-by-step breakdown.
 
+**Unified command line: `prodm_refactor` and `prodm_retrieve`**
+
+The two tools `prodm_refactor` and `prodm_retrieve` (sources in `test/`, built under `build/test`) are the common entry
+points of all pipelines: `--method` selects the pipeline (`mdr` for multilevel decomposition [SC'21], `proaicd` for
+adaptive interpolation with coefficient decomposition [SC'26], `pdr` for approximation-based refactoring [TVCG'23,
+HPDC'26], `pdr-delta` for residual snapshots), `--approximator` the compressor behind `pdr` / `pdr-delta`
+(`dummy|sz2|sz3|hpez|mgard|ge`, subject to the `PRODM_WITH_*` options), and the remaining options the parameters of
+the method. Variables are read from `<data_dir>/<var><suffix>` (`.dat` for `--dtype d`, `.dat.f32` for `--dtype f`)
+and each is refactored into `<refactor_dir>/<var>_refactored/`. Without `--qoi`, `prodm_retrieve` retrieves each
+variable to tolerances relative to its value range and prints the error statistics; with `--qoi`, the variables of
+the QoI are retrieved together under a QoI tolerance.
+
+The QoIs known to `--qoi` and `--weights` are `Vtot`, `Vtot2`, `T`, `C`, `Mach`, `PT` and `mu` over the variables
+`VelocityX/Y/Z`, `Pressure`, `Density` (the GE set; `--weights hand:GE` weights both the velocity and the
+thermodynamic group, `--max-weight 4,3` gives one maximum weight per group). When the three velocities are refactored
+together, the nonzero-velocity mask of the SC'24 tools is written to `<refactor_dir>/mask.bin` and used at retrieval;
+`--mask none` disables it. `--joint-range` initializes the per-variable bounds from the joint value range of the QoI's
+variables instead of each variable's own range (the convention of the `V_total` tools). The `ge` approximator expects
+the GE layout (`<root>/data`, `<root>/refactor`, `<root>/block_sizes.dat`). Run either tool without arguments for the
+full option list. The sections below walk through each pipeline with these two tools.
+
+
 **Refactoring and Progressive Retrieval with Multilevel Decomposition [SC'21]**
 ```bash
 cd build
-# Refactor
-# ./test/test_mdr_refactor $data_file $refactored_dict $target_level $num_bitplanes $num_dimensions [dimensions] $encoder_option $dtype
-./test/test_mdr_refactor ../example/data/VelocityX.dat.f32 refactored 4 30 3 100 500 500 0 -f
-# Retrieval
-# ./test/test_mdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN $encoder_option $dtype 
-./test/test_mdr_reconstructor ../example/data/VelocityX.dat.f32 refactored 3 0.01 0.001 0.0001 0 -f
+# Refactor: multilevel decomposition (target level 4) with 30 bitplanes, NegaBinary encoding
+./test/prodm_refactor ../example/data refactored --vars VelocityX --dims 100 500 500 --dtype f --method mdr --target-level 4 --bitplanes 30
+# Retrieval: tolerances relative to the value range
+./test/prodm_retrieve ../example/data refactored --vars VelocityX --dtype f --method mdr --tolerance 0.01 0.001 0.0001
 ```
 
 **Refactoring and Progressive Retrieval with Iterative Compression [TVCG'23]**
 ```bash
 cd build
-# Refactor
-# ./test/test_pdr_delta_refactor $data_file $refactored_dict $num_dim $dim0 .. $dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_delta_refactor ../example/data/VelocityX.dat.f32 refactored 3 100 500 500 -f 3
+# Refactor: residual snapshots on the SZ3 approximator (dummy|sz2|sz3|hpez|mgard)
+./test/prodm_refactor ../example/data refactored --vars VelocityX --dims 100 500 500 --dtype f --method pdr-delta --approximator sz3
 # Retrieval
-# ./test/test_pdr_delta_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_delta_reconstructor ../example/data/VelocityX.dat.f32 refactored 3 0.05 0.005 0.0005 -f 3
+./test/prodm_retrieve ../example/data refactored --vars VelocityX --dtype f --method pdr-delta --approximator sz3 --tolerance 0.05 0.005 0.0005
 ```
 
 **Progressive Retrieval with QoI error control [SC'24]**
 
-The following steps demonstrate how to test Hurricane ISABEL using `V_total` as the targeted QoI. If the confidential GE data is available, please check the codes in `app/GE` to reproduce the results in the SC'24 paper.  
+The following steps demonstrate how to test Hurricane ISABEL using `V_total` as the targeted QoI. If the confidential GE data is available, please check the codes in `app/GE` (and `artifacts/SC-24`, `artifacts/HPDC-26`) to reproduce the results of the SC'24 and HPDC'26 papers.  
 
 First convert float data to double for testing:
 ```bash
@@ -135,15 +154,13 @@ python float2double.py data/VelocityY.dat.f32
 python float2double.py data/VelocityZ.dat.f32
 ```
 
-Then perform refactoring and retrieval with mode=0 (BP) to disable weighted bitplane encoding (the technique introduced in the HPDC'26 paper):
+Then refactor the three velocities without weights and retrieve them under a QoI tolerance (relative to the value range of `V_total`); the hand-derived estimator bounds the QoI error from the per-variable bounds, and the coordinate descent tightens the bounds until the estimate meets the tolerance:
 ```bash
 cd build
-# Refactor
-# ./test/test_qoi_refactor $data_dir $refactor_dir $num_bitplanes $num_dim $dim0 .. $dimn -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1]
-./test/test_qoi_refactor ../example/data ../example/refactor 60 3 100 500 500 -d 0 0
-# Retrieval
-# ./test/test_qoi_reconstructor $data_dir $refactor_dir num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1] [decrease_method: uniform-0, coordinate-1]
-./test/test_qoi_reconstructor ../example/data ../example/refactor 1 0.01 -d 0 0 1
+# Refactor (the nonzero-velocity mask is written to ../example/refactor/mask.bin)
+./test/prodm_refactor ../example/data ../example/refactor --vars VelocityX,VelocityY,VelocityZ --dims 100 500 500 --dtype d --method pdr --approximator hpez
+# Retrieval (--vars defaults to the variables of the QoI)
+./test/prodm_retrieve ../example/data ../example/refactor --dtype d --method pdr --approximator hpez --qoi Vtot --estimator hand --inverse coordinate --joint-range --tolerance 0.01
 ```
 
 **QoI-based Refactoring and Progressive Retrieval (QProR) [HPDC'26]**
@@ -151,43 +168,34 @@ cd build
 Precision data refactoring using approximators:
 ```bash
 cd build
-# Refactor
-# ./test/test_pdr_refactor $data_file $refactored_dict $num_bitplanes $num_dim $dim0 .. $dimn -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_refactor ../example/data/VelocityX.dat refactored 30 3 100 500 500 -d 4
+# Refactor: approximation-based refactoring on HPEZ (approximator bound 0.001, 30 bitplanes)
+./test/prodm_refactor ../example/data refactored --vars VelocityX --dims 100 500 500 --dtype d --method pdr --approximator hpez --bitplanes 30
 # Retrieval
-# ./test/test_pdr_reconstructor $data_file $refactored_dict num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [Approximator: Dummy-0, MGARD-1, SZ2-2, SZ3-3, HPEZ-4]
-./test/test_pdr_reconstructor ../example/data/VelocityX.dat refactored 3 0.01 0.001 0.0001 -d 4
+./test/prodm_retrieve ../example/data refactored --vars VelocityX --dtype d --method pdr --approximator hpez --tolerance 0.01 0.001 0.0001
 ```
-QoI-based refactoring and progressive retrieval with weighted bitplanes (setting mode=1 to enable weighted bitplane encoding; the trailing arguments are $approximator_eb $max_weight $block_size):
+QoI-based refactoring and progressive retrieval with weighted bitplanes (`--weights hand:<qoi>` derives per-point weights from the QoI; `--max-weight` and `--block-size` are the weighting parameters, `--eb` the approximator bound):
 
 ```bash
 cd build
 # Refactor
-# ./test/test_qoi_refactor $data_dir $refactor_dir $num_bitplanes $num_dim $dim0 .. $dimn -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1] [$approximator_eb $max_weight $block_size]
-./test/test_qoi_refactor ../example/data ../example/refactor 60 3 100 500 500 -d 1 0 0.001 7 4
-# Retrieval
-# ./test/test_qoi_reconstructor $data_dir $refactor_dir num_tolerance tolerance1 ... toleranceN -[dataType: f/d] [mode: BP-0, WBP-1] [QoI: Vtot-0, Vtot2-1] [decrease_method: uniform-0, coordinate-1]
-./test/test_qoi_reconstructor ../example/data ../example/refactor 1 0.01 -d 1 0 1
+./test/prodm_refactor ../example/data ../example/refactor --vars VelocityX,VelocityY,VelocityZ --dims 100 500 500 --dtype d --method pdr --approximator hpez --weights hand:Vtot --eb 0.001 --max-weight 7 --block-size 4
+# Retrieval (the stored weights are detected; the coordinate descent becomes the proportional update of QProR)
+./test/prodm_retrieve ../example/data ../example/refactor --dtype d --method pdr --approximator hpez --qoi Vtot --estimator hand --inverse coordinate --joint-range --tolerance 0.01
 ```
-Please refer to  `artifacts/HPDC-26/Appendix.pdf` for artifact description and evaluation.
+Please refer to `artifacts/HPDC-26/README.md` for the artifact description and evaluation instructions.
 
 
 **Progressive retrieval with Adaptive Interpolation and Coefficient Decomposition (ProAICD) [SC'26]**
 
 ```bash
 cd build
-# Refactor
-# ./test/test_proaicd_refactor data_file output_path -[dataType: f/d] target_level num_bitplanes num_dims dim1 dim2 ... dimn \
-#   -[encoder_option: Nega/XOR/PerBit] -[prior_mode: eb(default)/PSNR] -[CP_or_not: CP/no_CP] (coeff_interp_direction, default tune)
-./test/test_proaicd_refactor ../example/data/VelocityX.dat refactored -d 4 60 3 100 500 500 -Nega -eb -CP 
-
-# Retrieval
-# ./test/test_proaicd_reconstructor data_file refactored_path -[dataType: f/d] num_of_tolerance tol1 tol2 ... toln \
-#   -[encoder_option: Nega/XOR/PerBit] -[interpreter_option: Greedy/DP/BFS] -[CP_or_not: CP/no_CP] [Optional: Reconstructed data path]
-./test/test_proaicd_reconstructor ../example/data/VelocityX.dat refactored -d 3 0.01 0.001 0.0001 -Nega -DP -CP
+# Refactor: encoder nega|xor|perbit, prior eb|psnr, --cp enables coefficient decomposition
+./test/prodm_refactor ../example/data refactored --vars VelocityX --dims 100 500 500 --dtype d --method proaicd --target-level 4 --bitplanes 60 --encoder nega --prior eb --cp
+# Retrieval: interpreter greedy|dp|bfs; pass the same --encoder and --cp as the refactor
+./test/prodm_retrieve ../example/data refactored --vars VelocityX --dtype d --method proaicd --encoder nega --interpreter dp --cp --tolerance 0.01 0.001 0.0001
 ```
 
-Please follow  `artifacts/SC-26/evaluation.ipynb` to reproduce the results in the paper.
+Please refer to `artifacts/SC-26/README.md` and `artifacts/SC-26/ablation_steps.sh` to reproduce the results in the paper.
 
 ## Acknowledgment
 This project is partially supported by NSF projects under OAC-2628470, OAC-2628472, OAC-2144403, OAC-2311757, OAC-2311758, and DOE RAPIDS-3 SciDAC and Sirius-2 projects. This work used computing resources from Oak Ridge Leadership Computing Facilities (OLCF) and the NSF Advanced Cyberinfrastructure Coordination Ecosystem: Services & Support (ACCESS) program. This work used Claude Code for code refactoring and review. 
