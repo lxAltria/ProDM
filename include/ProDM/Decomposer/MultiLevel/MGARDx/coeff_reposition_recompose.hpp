@@ -52,33 +52,6 @@ public:
 		
         return std::move(data_buffer);
 	}
-	std::vector<T> recompose_test(std::vector<std::vector<T>>& level_buffers_, const vector<size_t>& dims, const size_t direction=0, size_t target_level=1, bool hierarchical=false, bool cubic=false, vector<size_t> strides=vector<size_t>()){
-		if(dims.size() != 3){
-			std::cerr << "Only support 3D dataset" << std::endl;
-			exit(-1);
-		}
-		size_t num_elements = 1;
-		for(const auto& d:dims){
-			num_elements *= d;
-		}
-
-		init(dims, direction, target_level);
-		data_buffer.resize(num_elements);
-		std::fill(data_buffer.begin(), data_buffer.end(), 0);
-
-		level_buffers = level_buffers_;
-		
-		size_t h = 1 << target_level;
-		size_t n1 = dims[0];
-		size_t n2 = dims[1];
-		size_t n3 = dims[2];
-		for(int current_level=0; current_level <= target_level; current_level++){
-			recompose_level_3D_HB_with_direction_test(data_buffer.data(), n1, n2, n3, h, direction, current_level);
-			h >>= 1;
-		}
-		
-        return std::move(data_buffer);
-	}
 	std::vector<std::vector<uint32_t>> get_level_buffer_dims(){
 		return level_buffer_dims;
 	}
@@ -417,7 +390,6 @@ private:
 		// 	}
 		// 	cur_data_pos += n2*n3*h;
 		// }
-
 
 		// new implementation: fast
 		cur_data_pos = data_pos + stride_n1;

@@ -211,39 +211,6 @@ void data_reorder_3D(T * data_pos, T * data_buffer, size_t n1, size_t n2, size_t
     }
 }
 
-template <class T>
-void data_reorder_3D_new(T * data_pos, T * data_buffer, size_t n1, size_t n2, size_t n3, size_t dim0_stride, size_t dim1_stride){
-    size_t n1_nodal = (n1 >> 1) + 1;
-    size_t n1_coeff = n1 - n1_nodal;
-    size_t n2_nodal = (n2 >> 1) + 1;
-    size_t n2_coeff = n2 - n2_nodal;
-    size_t n3_nodal = (n3 >> 1) + 1;
-    size_t n3_coeff = n3 - n3_nodal;
-    T * cur_data_pos = data_pos;
-    // do 2D reorder
-    for(int i=0; i<n1; i+=2){
-        data_reorder_2D_new(cur_data_pos, data_buffer, n2, n3, dim1_stride);
-        cur_data_pos += 2*dim0_stride;
-    }
-    if(!(n1 & 1)){
-        // n1 is even, change the last coeff plane into nodal plane
-        cur_data_pos -= dim0_stride;
-        data_reorder_2D_new(cur_data_pos, data_buffer, n2, n3, dim1_stride);
-        for(int j=0; j<n2; j++){
-            for(int k=0; k<n3; k++){
-                cur_data_pos[k] = 2 * cur_data_pos[k] - cur_data_pos[- dim0_stride + k];
-            }
-            cur_data_pos += dim1_stride;
-        }
-    }
-    cur_data_pos = data_pos;
-    // reorder vertically
-    for(int j=0; j<n2; j++){
-        switch_rows_2D_by_buffer(cur_data_pos, data_buffer, n1, n3, dim0_stride);
-        cur_data_pos += dim1_stride;
-    }
-}
-
 // reorder the data to original order (insert coeffcients between nodal values)
 template <class T>
 void data_reverse_reorder_1D(T * data_pos, int n_nodal, int n_coeff, const T * nodal_buffer, const T * coeff_buffer){
@@ -383,61 +350,6 @@ void data_reverse_reorder_3D(T * data_pos, T * data_buffer, size_t n1, size_t n2
     if(!(n1 & 1)){
         // n1 is even, change the last coeff plane into nodal plane
         cur_data_pos -= dim0_stride;
-        for(int j=0; j<n2; j++){
-            for(int k=0; k<n3; k++){
-                cur_data_pos[k] = (cur_data_pos[k] + cur_data_pos[- dim0_stride + k]) / 2;
-            }
-            cur_data_pos += dim1_stride;
-        }
-    }
-}
-
-template <class T>
-void data_reverse_reorder_3D_for_generating_purpose(T * data_pos, T * data_buffer, size_t n1, size_t n2, size_t n3, size_t dim0_stride, size_t dim1_stride){
-    size_t n1_nodal = (n1 >> 1) + 1;
-    size_t n1_coeff = n1 - n1_nodal;
-    size_t n2_nodal = (n2 >> 1) + 1;
-    size_t n2_coeff = n2 - n2_nodal;
-    size_t n3_nodal = (n3 >> 1) + 1;
-    size_t n3_coeff = n3 - n3_nodal;
-    T * cur_data_pos = data_pos;
-    // reorder vertically
-    for(int j=0; j<n2; j++){
-        switch_rows_2D_by_buffer_reverse(cur_data_pos, data_buffer, n1, n3, dim0_stride);
-        cur_data_pos += dim1_stride;
-    }
-    // do 2D reorder
-    cur_data_pos = data_pos;
-    for(int i=0; i<n1; i++){
-        data_reverse_reorder_2D_for_generating_purpose(cur_data_pos, data_buffer, n2, n3, dim1_stride);
-        cur_data_pos += dim0_stride;
-    }
-}
-
-template <class T>
-void data_reverse_reorder_3D_new(T * data_pos, T * data_buffer, size_t n1, size_t n2, size_t n3, size_t dim0_stride, size_t dim1_stride){
-    size_t n1_nodal = (n1 >> 1) + 1;
-    size_t n1_coeff = n1 - n1_nodal;
-    size_t n2_nodal = (n2 >> 1) + 1;
-    size_t n2_coeff = n2 - n2_nodal;
-    size_t n3_nodal = (n3 >> 1) + 1;
-    size_t n3_coeff = n3 - n3_nodal;
-    T * cur_data_pos = data_pos;
-    // reorder vertically
-    for(int j=0; j<n2; j++){
-        switch_rows_2D_by_buffer_reverse(cur_data_pos, data_buffer, n1, n3, dim0_stride);
-        cur_data_pos += dim1_stride;
-    }
-    // do 2D reorder
-    cur_data_pos = data_pos;
-    for(int i=0; i<n1; i+=2){
-        data_reverse_reorder_2D_new(cur_data_pos, data_buffer, n2, n3, dim1_stride);
-        cur_data_pos += 2*dim0_stride;
-    }
-    if(!(n1 & 1)){
-        // n1 is even, change the last coeff plane into nodal plane
-        cur_data_pos -= dim0_stride;
-        data_reverse_reorder_2D_new(cur_data_pos, data_buffer, n2, n3, dim1_stride);
         for(int j=0; j<n2; j++){
             for(int k=0; k<n3; k++){
                 cur_data_pos[k] = (cur_data_pos[k] + cur_data_pos[- dim0_stride + k]) / 2;
