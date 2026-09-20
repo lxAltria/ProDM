@@ -16,6 +16,7 @@
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/Refactor/MDR/Refactor.hpp"
 #include "SZ3/api/sz.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 
 const std::vector<std::string> var_name{"U_aver", "V_aver", "W_aver", "Pressure", "Rho"};
 const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};

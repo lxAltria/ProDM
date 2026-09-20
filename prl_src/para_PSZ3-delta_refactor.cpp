@@ -8,6 +8,7 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "SZ3/api/sz.hpp"
 #include "mpi.h"
+#include "ProDM/Utils/StatUtils.hpp"
 
 using namespace std;
 

@@ -7,9 +7,10 @@
 #include <string>
 #include <numeric>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "ProDM/Utils/MaskUtils.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 #define BP 0
 #define WBP 1
 #define QoI_Vtot 0
@@ -17,6 +18,7 @@
 
 using namespace std;
 using namespace ProDM;
+using namespace ProDM::Legacy;
 
 const vector<string> var_list = {"VelocityX", "VelocityY", "VelocityZ"};
 

@@ -9,11 +9,12 @@
 #include "mpi.h"
 #include <sstream>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 #define Dummy 0
 #define SZ3 1
 #define PMGARD 2

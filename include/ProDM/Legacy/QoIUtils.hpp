@@ -1,5 +1,5 @@
-#ifndef PRODM_UTILS_QOIUTILS_HPP
-#define PRODM_UTILS_QOIUTILS_HPP
+#ifndef PRODM_LEGACY_QOIUTILS_HPP
+#define PRODM_LEGACY_QOIUTILS_HPP
 
 #include <string>
 
@@ -11,10 +11,19 @@
 #include <bitset>
 #include <numeric>
 #include <cstdint>
+#include <limits>
+#include "ProDM/Utils/StatUtils.hpp"
+// Legacy/QoIUtils.hpp - the hand-derived QoI error bounds of the SC'24 method (Wu et al.) and the GE QoI evaluators
+// they were written for: per-primitive bounds (x^2, sqrt, 1/(x+a), x/y, x*y) with their inverses, the six GE QoIs,
+// and the uniform tightening rules. Kept to reproduce the SC'24 and HPDC'26 experiments and as the hand-bound baseline
+// of later work. Where a bound's precondition fails (a divisor interval containing zero), the forward bounds return
+// +infinity: the error is not controllable at that data bound, so the retrieval must tighten it. (The original
+// implementation returned 0 here, silently accepting the point.) The inverse bounds return 0 in that case, i.e. no
+// positive data bound certifies the tolerance.
 
 #include "ProDM/Namespace.hpp"
 
-namespace ProDM {
+namespace ProDM::Legacy {
 
 const std::vector<std::string> names{"V_TOT", "T", "C", "Mach", "PT", "mu"};
 
@@ -86,7 +95,7 @@ inline double compute_bound_radical(T x, T a, T eb){
 	}
 	else{
 		// std::cout << "Warning: cannot control error in 1/(x+a)\n";
-		return 0;		
+		return std::numeric_limits<double>::infinity();		
 	}
 }
 
@@ -122,13 +131,8 @@ inline double compute_bound_division(T x, T y, T eb_x, T eb_y){
 	}
 	else{
 		// std::cout << "Warning: cannot control error in x/y\n";
-		return 0;
+		return std::numeric_limits<double>::infinity();
 	}
-}
-
-template <class T>
-void print_error(std::string varname, T dec, T ori, T est){
-	std::cout << varname << ": dec = " << dec << ", ori = " << ori << ", error = " << dec - ori << ", est = " << est << std::endl; 
 }
 
 template <class T>
@@ -272,69 +276,6 @@ void compute_PT(const T * Vx, const T * Vy, const T * Vz, const T * P, const T *
 		double Mach_tmp_mi = sqrt(pow(Mach_tmp, 7));
 		double PT = P[i] * Mach_tmp_mi;
 		PT_[i] = PT;
-	}
-}
-
-template <class T>
-T compute_value_range(const std::vector<T>& vec){
-	T min = vec[0];
-	T max = vec[0];
-	for(int i=0; i<vec.size(); i++){
-		if(vec[i] < min) min = vec[i];
-		if(vec[i] > max) max = vec[i];
-	}
-	return max - min;
-}
-
-template <class T>
-T compute_value_range(const T* vec, uint32_t size){
-	T min = vec[0];
-	T max = vec[0];
-	for(int i=0; i<size; i++){
-		if(vec[i] < min) min = vec[i];
-		if(vec[i] > max) max = vec[i];
-	}
-	return max - min;
-}
-
-template <class T>
-void print_info(const std::string& name, const std::vector<T>& vec){
-	T max = vec[0];
-	T min = vec[0];
-	for(int i=1; i<vec.size(); i++){
-		if(max < vec[i]) max = vec[i];
-		if(min > vec[i]) min = vec[i];
-	}
-	std::cout << name << ": min value = " << min << ", max value = " << max << ", value range = " << max - min << std::endl;
-}
-
-// template <class T>
-// void print_max_abs(const std::string& name, const std::vector<T>& vec){
-// 	T max = fabs(vec[0]);
-// 	for(int i=1; i<vec.size(); i++){
-// 		if(max < fabs(vec[i])) max = fabs(vec[i]);
-// 	}
-// 	std::cout << name << ": max absolute value = " << max << std::endl;
-// }
-
-template <class T>
-T print_max_abs(const std::string& name, const std::vector<T>& vec){
-	T max = fabs(vec[0]);
-	for(int i=1; i<vec.size(); i++){
-		if(max < fabs(vec[i])) max = fabs(vec[i]);
-	}
-	// std::cout << name << ": max absolute value = " << max << std::endl;
-	return max;
-}
-
-template <class T>
-inline void normalize_coefficient(T& coeff_0, T& coeff_1){
-	double min_val = std::min(coeff_0, coeff_1);
-	coeff_0 /= min_val;
-	coeff_1 /= min_val;
-	if(coeff_0 + coeff_1 == 2){
-		coeff_0 = 1.5;
-		coeff_1 = 1.5;
 	}
 }
 

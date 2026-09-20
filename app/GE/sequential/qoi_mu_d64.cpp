@@ -8,10 +8,11 @@ typedef unsigned int uint;
 #include <bitset>
 #include <numeric>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 #define Dummy 0
 #define SZ3 1
 #define PMGARD 2
@@ -173,9 +174,10 @@ bool halving_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau
             }
             std::cout << estimate_error_P << " " << estimate_error_D << std::endl;
             const T epsilon = 1e-6;
+            // an infinite minimum means no single tightening certifies the point: tighten every variable
             T min_error = std::min({estimate_error_P, estimate_error_D});
-            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
-            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            bool close_P = !std::isfinite(min_error) || fabs(estimate_error_P - min_error) < epsilon;
+            bool close_D = !std::isfinite(min_error) || fabs(estimate_error_D - min_error) < epsilon;
             estimate_error = min_error;
             if (close_P)  eb_P /= 1.5;
             if (close_D)  eb_D /= 1.5;
@@ -328,6 +330,8 @@ bool halving_error_mu_coordinate(const T * P, const T * D, size_t n, const T tau
             double sum_err = 2 * estimate_error - (estimate_error_P + estimate_error_D);
             double w_P = (estimate_error - estimate_error_P) / sum_err;
             double w_D = (estimate_error - estimate_error_D) / sum_err;
+            // an infinite estimate (a bound whose precondition fails) makes the proportional update undefined: tighten every variable by 1.5x instead
+            if (!std::isfinite(sum_err)) { w_P = 1; w_D = 1; }
             // === Smooth proportional update ===
             double factor_base = 1.5;
             double alpha = 1.0 - (1.0 / factor_base);

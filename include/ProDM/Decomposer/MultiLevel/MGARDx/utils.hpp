@@ -12,6 +12,7 @@
 
 #include "ProDM/Namespace.hpp"
 #include "ProDM/Utils/IOUtils.hpp"   // readfile / writefile / print_statistics (used unqualified below)
+#include "ProDM/Utils/StatUtils.hpp"
 
 namespace ProDM::MGARDx {
 

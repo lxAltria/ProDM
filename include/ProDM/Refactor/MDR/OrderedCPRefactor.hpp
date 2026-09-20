@@ -23,6 +23,7 @@
 #include <queue>
 
 #include "ProDM/Namespace.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 
 namespace ProDM::MDR {
     // a decomposition-based scientific data refactor: compose a refactor using decomposer, interleaver, encoder, and error collector

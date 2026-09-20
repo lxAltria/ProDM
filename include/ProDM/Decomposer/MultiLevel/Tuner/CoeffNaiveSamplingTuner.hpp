@@ -18,7 +18,7 @@
 #include "ProDM/Compressor/LevelCompressor.hpp"
 #include "ProDM/Utils/RefactorUtils.hpp"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/sample.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 
 #include "ProDM/Namespace.hpp"
 

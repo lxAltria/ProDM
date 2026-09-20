@@ -6,10 +6,11 @@
 #include <bitset>
 #include <numeric>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 #define Dummy_Cmp 0
 #define SZ3_Cmp 1
 #define PMGARD 2
@@ -179,10 +180,11 @@ bool halving_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
 			}
 			std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << std::endl;
 			const T epsilon = 1e-6;
+            // an infinite minimum means no single tightening certifies the point: tighten every variable
             T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz});
-            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
-            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
-            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
+            bool close_Vx = !std::isfinite(min_error) || fabs(estimate_error_Vx - min_error) < epsilon;
+            bool close_Vy = !std::isfinite(min_error) || fabs(estimate_error_Vy - min_error) < epsilon;
+            bool close_Vz = !std::isfinite(min_error) || fabs(estimate_error_Vz - min_error) < epsilon;
             estimate_error = min_error;
             if (close_Vx) eb_Vx /= 1.5;
             if (close_Vy) eb_Vy /= 1.5;
@@ -345,6 +347,8 @@ bool halving_error_V_TOT_coordinate(const T * Vx, const T * Vy, const T * Vz, si
             T w_Vx = (estimate_error - estimate_error_Vx) / sum_err;
             T w_Vy = (estimate_error - estimate_error_Vy) / sum_err;
             T w_Vz = (estimate_error - estimate_error_Vz) / sum_err;
+			// an infinite estimate (a bound whose precondition fails) makes the proportional update undefined: tighten every variable by 1.5x instead
+			if (!std::isfinite(sum_err)) { w_Vx = 1; w_Vy = 1; w_Vz = 1; }
             // === Smooth proportional update ===
             T factor_base = 1.5;
             T alpha = 1.0 - (1.0 / factor_base);

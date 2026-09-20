@@ -9,6 +9,7 @@
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
 #include "ProDM/Reconstructor/PDR/ApproximationBasedDeltaReconstructor.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 #define Dummy_Cmp 0
 #define MGARD_Cmp 1
 #define SZ2_Cmp 2

@@ -7,7 +7,7 @@
 #include <bitset>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 
 using namespace std;
 

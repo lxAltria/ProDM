@@ -8,8 +8,9 @@
 #include "mpi.h"
 #include "adios2.h"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "SZ3/api/sz.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 
 using namespace QoI;
 

@@ -9,14 +9,16 @@
 #include "mpi.h"
 #include "adios2.h"
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 
 const std::vector<std::string> var_name_out{"VelocityX", "VelocityY", "VelocityZ", "Pressure", "Density"};
 const int n_vars = 5;
 
 using namespace MDR;
 using namespace ProDM;
+using namespace ProDM::Legacy;
 using namespace QoI;
 
 std::vector<double> P_ori;

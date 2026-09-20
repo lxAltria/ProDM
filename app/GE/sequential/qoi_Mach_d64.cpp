@@ -8,10 +8,11 @@ typedef unsigned int uint;
 #include <bitset>
 #include <numeric>
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
-#include "ProDM/Utils/QoIUtils.hpp"
+#include "ProDM/Legacy/QoIUtils.hpp"
 #include "ProDM/Reconstructor/MDR/Reconstructor.hpp"
 #include "ProDM/App/GE/nomask_Synthesizer4GE.hpp"
 #include "ProDM/Reconstructor/PDR/Reconstructor.hpp"
+#include "ProDM/Utils/StatUtils.hpp"
 #define Dummy 0
 #define SZ3 1
 #define PMGARD 2
@@ -295,12 +296,13 @@ bool halving_error_Mach_coordinate(const T * Vx, const T * Vy, const T * Vz, con
     		}
     		std::cout << estimate_error_Vx << " " << estimate_error_Vy << " " << estimate_error_Vz << " " << estimate_error_P << " " << estimate_error_D << std::endl;
 			const T epsilon = 1e-6;
+            // an infinite minimum means no single tightening certifies the point: tighten every variable
             T min_error = std::min({estimate_error_Vx, estimate_error_Vy, estimate_error_Vz, estimate_error_P, estimate_error_D});
-            bool close_Vx = fabs(estimate_error_Vx - min_error) < epsilon;
-            bool close_Vy = fabs(estimate_error_Vy - min_error) < epsilon;
-            bool close_Vz = fabs(estimate_error_Vz - min_error) < epsilon;
-            bool close_P  = fabs(estimate_error_P - min_error) < epsilon;
-            bool close_D  = fabs(estimate_error_D - min_error) < epsilon;
+            bool close_Vx = !std::isfinite(min_error) || fabs(estimate_error_Vx - min_error) < epsilon;
+            bool close_Vy = !std::isfinite(min_error) || fabs(estimate_error_Vy - min_error) < epsilon;
+            bool close_Vz = !std::isfinite(min_error) || fabs(estimate_error_Vz - min_error) < epsilon;
+            bool close_P = !std::isfinite(min_error) || fabs(estimate_error_P - min_error) < epsilon;
+            bool close_D = !std::isfinite(min_error) || fabs(estimate_error_D - min_error) < epsilon;
             estimate_error = min_error;
             if (close_Vx) eb_Vx /= 1.5;
             if (close_Vy) eb_Vy /= 1.5;
@@ -561,6 +563,8 @@ bool halving_error_Mach_coordinate(const T * Vx, const T * Vy, const T * Vz, con
             T w_Vz = (estimate_error - estimate_error_Vz) / sum_err;
             T w_P  = (estimate_error - estimate_error_P)  / sum_err;
             T w_D  = (estimate_error - estimate_error_D)  / sum_err;
+			// an infinite estimate (a bound whose precondition fails) makes the proportional update undefined: tighten every variable by 1.5x instead
+			if (!std::isfinite(sum_err)) { w_Vx = 1; w_Vy = 1; w_Vz = 1; w_P = 1; w_D = 1; }
             // === Smooth proportional update ===
             T factor_base = 1.5;
             T alpha = 1.0 - (1.0 / factor_base);
