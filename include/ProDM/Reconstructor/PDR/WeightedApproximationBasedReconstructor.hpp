@@ -129,22 +129,28 @@ namespace ProDM::PDR {
             num_elements = stride;
             free(metadata);
             if(fetch_weight){
-                load_weight();
+                if(!load_weight()){
+                    std::cerr << "cannot read " << retriever.get_directory() << "weight.bin (the variable that stored the weights is expected to hold it)" << std::endl;
+                    exit(-1);
+                }
                 span_weight();
             }
         }
 
-        void load_weight(){
+        bool load_weight(){
             // std::cout << "Loading Weight" << std::endl;
             string path = retriever.get_directory() + "weight.bin";
             // std::cout << "Path: " << path << std::endl;
             FILE *file = fopen(path.c_str(), "r");
             if (file == nullptr){
-                perror("Error opening file\n");
-                return;
+                return false;
             }
             fseek(file, 0, SEEK_END);
             uint32_t num_bytes = ftell(file);
+            if (num_bytes < sizeof(int) + sizeof(unsigned int) + sizeof(size_t) + sizeof(uint32_t)){
+                fclose(file);
+                return false;
+            }
             rewind(file);
             uint8_t *weight_data = (uint8_t *)malloc(num_bytes);
             fread(weight_data, 1, num_bytes, file);
@@ -164,9 +170,14 @@ namespace ProDM::PDR {
             weight_data_pos += ZSTD_weight_size;
             free(weight_data);
             block_weights.resize(intArrayLength);
+            return true;
         }
 
         void span_weight(){
+            if (ZSTD_weights == nullptr || block_weights.empty()){
+                std::cerr << "span_weight() called before the weights were loaded (" << retriever.get_directory() << "weight.bin)" << std::endl;
+                exit(-1);
+            }
             size_t byteLength = 0;
             unsigned int byte_count = bit_count / 8;
             unsigned int remainder_bit = bit_count % 8;
@@ -208,6 +219,7 @@ namespace ProDM::PDR {
             }
             // write_weight_dat(block_size);
             free(ZSTD_weights);
+            ZSTD_weights = nullptr;
         }
 
         void write_weight_dat(const int block_size) const {
@@ -373,12 +385,12 @@ namespace ProDM::PDR {
         size_t num_elements;
         size_t approximator_size = 0;
         size_t weight_file_size = 0;
-        uint8_t* ZSTD_weights;
-        uint32_t ZSTD_weight_size;
-        unsigned int bit_count;
+        uint8_t* ZSTD_weights = nullptr;
+        uint32_t ZSTD_weight_size = 0;
+        unsigned int bit_count = 0;
         std::vector<T> data;
-        int block_size;
-        int max_weight;
+        int block_size = 1;
+        int max_weight = 0;
         std::vector<int> int_weights;
         std::vector<unsigned char> compressed_weights;
         std::vector<int> block_weights;

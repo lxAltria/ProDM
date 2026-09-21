@@ -134,17 +134,16 @@ inline Method parse_method(const std::string& s){
     return Method::MDR;
 }
 
-enum class Approximator { DUMMY, SZ2, SZ3, HPEZ, MGARD, GE };
+// the approximators the command line tools compile in (the library also has Dummy, SZ2 and MGARD,
+// reachable through the GE tools; each one adds its refactor and reconstructor instantiations)
+enum class Approximator { SZ3, HPEZ, GE };
 
 inline Approximator parse_approximator(const std::string& s){
-    if(s == "dummy") return Approximator::DUMMY;
-    if(s == "sz2") return Approximator::SZ2;
     if(s == "sz3") return Approximator::SZ3;
     if(s == "hpez") return Approximator::HPEZ;
-    if(s == "mgard") return Approximator::MGARD;
     if(s == "ge") return Approximator::GE;
-    fail("--approximator must be one of dummy|sz2|sz3|hpez|mgard|ge (got '" + s + "')");
-    return Approximator::DUMMY;
+    fail("--approximator must be one of sz3|hpez|ge (got '" + s + "')");
+    return Approximator::HPEZ;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 // prodm_retrieve: the common entry point of ProDM's progressive retrieval pipelines.
 //
 //   prodm_retrieve <data_dir> <refactor_dir> --vars X,Y,Z --dtype f|d --method mdr|proaicd|pdr|pdr-delta
-//                  [--approximator dummy|sz2|sz3|hpez|mgard|ge] [--encoder nega|xor|perbit] [--cp]
-//                  [--interpreter greedy|dp|bfs] --tolerance t1 t2 ...
+//                  [--approximator sz3|hpez|ge] [--encoder nega|xor|perbit] [--cp]
+//                  [--interpreter greedy|dp] --tolerance t1 t2 ...
 //                  [--qoi <name> --estimator hand --inverse uniform|coordinate] [--joint-range] [--max-iter 30]
 //                  [--suffix .dat] [--output <dir>]
 //
@@ -15,6 +15,7 @@
 // HPDC'26) until the estimate meets the tolerance. Weighted refactors (prodm_refactor
 // --weights) are detected from the stored weights and handled as in HPDC'26.
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -22,6 +23,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <type_traits>
 #include <vector>
 #include <sys/stat.h>
 
@@ -56,8 +58,8 @@ struct Settings {
 
 void usage(const char* cmd){
     std::cout << "usage: " << cmd << " <data_dir> <refactor_dir> --vars X,Y,Z --dtype f|d --method mdr|proaicd|pdr|pdr-delta\n"
-              << "         [--approximator dummy|sz2|sz3|hpez|mgard|ge] [--encoder nega|xor|perbit] [--cp]\n"
-              << "         [--interpreter greedy|dp|bfs] --tolerance t1 t2 ...\n"
+              << "         [--approximator sz3|hpez|ge] [--encoder nega|xor|perbit] [--cp]\n"
+              << "         [--interpreter greedy|dp] --tolerance t1 t2 ...\n"
               << "         [--qoi " << Hand::names() << " --estimator hand --inverse uniform|coordinate|coordinate-min|coordinate-proportional]\n"
               << "         [--joint-range] [--max-iter 30] [--suffix .dat] [--output <dir>]\n"
               << "  tolerances are relative to the value range of each variable (raw-data error control)\n"
@@ -91,22 +93,15 @@ Recon<T> erase(std::shared_ptr<R> r){
 template <class T, class F>
 void with_approximator(Approximator a, F&& f){
     switch(a){
-        case Approximator::DUMMY: f(PDR::DummyApproximator<T>()); return;
-#ifdef PRODM_HAVE_SZ2
-        case Approximator::SZ2: f(PDR::SZ2Approximator<T>()); return;
-#endif
 #ifdef PRODM_HAVE_SZ3
         case Approximator::SZ3: f(PDR::SZ3Approximator<T>()); return;
-#endif
-#ifdef PRODM_HAVE_MGARD
-        case Approximator::MGARD: f(PDR::MGARDApproximator<T>()); return;
 #endif
 #ifdef PRODM_HAVE_HPEZ
         case Approximator::HPEZ: f(PDR::HPEZApproximator<T>()); return;
         case Approximator::GE: f(PDR::GEApproximator<T>()); return;
 #endif
         default:
-            fail("the requested approximator is not enabled at build time (see the PRODM_WITH_* CMake options)");
+            fail("the requested approximator is not enabled at build time (see the PRODM_WITH_* CMake options); the command line tools offer sz3, hpez and ge");
     }
 }
 
@@ -114,8 +109,7 @@ template <class Estimator, class F>
 void with_interpreter(const std::string& name, Estimator estimator, F&& f){
     if(name == "greedy") f(ProDM::SignExcludeGreedyBasedSizeInterpreter<Estimator>(estimator));
     else if(name == "dp") f(ProDM::SignExcludeDPBasedSizeInterpreter<Estimator>(estimator));
-    else if(name == "bfs") f(ProDM::SignExcludeBFSBasedSizeInterpreter<Estimator>(estimator));
-    else fail("--interpreter must be one of greedy|dp|bfs");
+    else fail("--interpreter must be one of greedy|dp");
 }
 
 // ------------------------------- mdr (SC'21) --------------------------------
@@ -252,10 +246,13 @@ Recon<T> make_pdr(const Variable& var, const Settings& s, const std::vector<unsi
                     out.max_weight = gs->max_weight;
                     out.int_weights = r->get_int_weights();
                 };
-                if(s.approximator == Approximator::GE){
+#ifdef PRODM_HAVE_HPEZ
+                if constexpr (std::is_same<decltype(approximator), PDR::GEApproximator<T>>::value){
                     using R = PDR::GEReconstructor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(interpreter), decltype(estimator), decltype(retriever)>;
                     setup(std::make_shared<R>(approximator, encoder, compressor, interpreter, retriever));
-                } else {
+                } else
+#endif
+                {
                     using R = PDR::WeightedApproximationBasedReconstructor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(interpreter), decltype(estimator), decltype(retriever)>;
                     setup(std::make_shared<R>(approximator, encoder, compressor, interpreter, retriever));
                 }
@@ -364,22 +361,29 @@ void retrieve_qoi(const std::vector<Variable>& all_vars, const Settings& s, cons
     }
     double tau_base = ProDM::compute_value_range(qoi_ori);
 
-    // the velocity mask written by prodm_refactor (SC'24 tools)
+    // the velocity mask written by prodm_refactor (SC'24 tools); only the pdr reconstructors honor it,
+    // so it is applied to the estimator for that method only
     std::vector<unsigned char> mask;
     uint32_t mask_file_size = 0;
     std::string mask_file = refactor_dir + "/mask.bin";
-    if(q.uses_velocity_mask && file_exists(mask_file)){
+    if(s.method == Method::PDR && q.uses_velocity_mask && file_exists(mask_file)){
         mask = ProDM::readmask(mask_file.c_str(), mask_file_size);
         if(mask.size() != num_elements) fail("mask " + mask_file + " has " + std::to_string(mask.size()) + " elements, expected " + std::to_string(num_elements));
     }
 
-    // weighted data: the group-first variable holds weight.bin
+    // weighted data: one member of each group holds weight.bin (the canonical-first one, VelocityX or
+    // Pressure, for refactors made by prodm_refactor; any member is accepted)
     bool weighted = false;
+    std::vector<int> loader(2, -1);
     if(s.method == Method::PDR){
         int with = 0, without = 0;
         for(auto g : q.groups){
-            int first = group_vars(g)[0];
-            if(file_exists(all_vars[var_index[first]].refactor_dir + "weight.bin")) with++; else without++;
+            for(int v : group_vars(g)){
+                if(var_index[v] < 0 || !file_exists(all_vars[var_index[v]].refactor_dir + "weight.bin")) continue;
+                if(loader[g] >= 0) fail(std::string("both ") + var_name(loader[g]) + " and " + var_name(v) + " carry weight.bin; the weights of a group are stored once");
+                loader[g] = v;
+            }
+            if(loader[g] >= 0) with++; else without++;
         }
         if(with && without) fail("some weight groups of the refactor carry weights and others do not");
         weighted = with > 0;
@@ -396,7 +400,11 @@ void retrieve_qoi(const std::vector<Variable>& all_vars, const Settings& s, cons
     std::vector<std::vector<int>> weights(NUM_VARS);
     GroupState groups[2];
     size_t weight_file_size = 0;
-    for(int v : q.vars){
+    // the variable holding a group's weights is built first, so that the others copy from it
+    std::vector<int> build_order;
+    for(int v : q.vars) if(weighted && loader[v <= VZ ? GROUP_VELOCITY : GROUP_THERMO] == v) build_order.push_back(v);
+    for(int v : q.vars) if(std::find(build_order.begin(), build_order.end(), v) == build_order.end()) build_order.push_back(v);
+    for(int v : build_order){
         GroupState* gs = &groups[v <= VZ ? GROUP_VELOCITY : GROUP_THERMO];
         bool apply_mask = !mask.empty() && v <= VZ;
         recon[v] = make_reconstructor<T, T_stream>(all_vars[var_index[v]], s, mask, apply_mask, weighted, gs);
@@ -466,7 +474,7 @@ int main(int argc, char** argv){
     s.method = parse_method(opt.get("method"));
     s.approximator = parse_approximator(opt.get("approximator", "hpez"));
     s.encoder = opt.choice("encoder", {"nega", "xor", "perbit"}, "nega");
-    s.interpreter = opt.choice("interpreter", {"greedy", "dp", "bfs"}, "greedy");
+    s.interpreter = opt.choice("interpreter", {"greedy", "dp"}, "greedy");
     s.cp = opt.flag("cp");
     if(opt.flag("no-cp")) s.cp = false;
     for(const auto& t : opt.get_list("tolerance")) s.tolerances.push_back(atof(t.c_str()));

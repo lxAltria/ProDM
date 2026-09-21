@@ -1,7 +1,7 @@
 // prodm_refactor: the common entry point of ProDM's refactoring pipelines.
 //
 //   prodm_refactor <data_dir> <refactor_dir> --vars X,Y,Z --dims n1 n2 n3 --dtype f|d
-//                  --method mdr|proaicd|pdr|pdr-delta [--approximator dummy|sz2|sz3|hpez|mgard|ge]
+//                  --method mdr|proaicd|pdr|pdr-delta [--approximator sz3|hpez|ge]
 //                  [--target-level 4] [--bitplanes 60] [--eb 1e-3] [--encoder nega|xor|perbit]
 //                  [--weights none|hand:<qoi>] [--max-weight 4[,4]] [--block-size 1]
 //                  [--prior eb|psnr] [--cp] [--interp-dirs d1 d2 d3] [--mask auto|none] [--suffix .dat]
@@ -18,6 +18,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "ProDM/Decomposer/MultiLevel/MGARDx/utils.hpp"
@@ -55,7 +56,7 @@ struct Settings {
 
 void usage(const char* cmd){
     std::cout << "usage: " << cmd << " <data_dir> <refactor_dir> --vars X,Y,Z --dims n1 n2 n3 --dtype f|d\n"
-              << "         --method mdr|proaicd|pdr|pdr-delta [--approximator dummy|sz2|sz3|hpez|mgard|ge]\n"
+              << "         --method mdr|proaicd|pdr|pdr-delta [--approximator sz3|hpez|ge]\n"
               << "         [--target-level 4] [--bitplanes 60] [--eb 1e-3] [--encoder nega|xor|perbit]\n"
               << "         [--weights none|hand:<qoi>] [--max-weight 4[,4]] [--block-size 1]\n"
               << "         [--prior eb|psnr] [--cp] [--interp-dirs d1 d2 d3] [--mask auto|none] [--suffix .dat]\n"
@@ -69,22 +70,15 @@ void usage(const char* cmd){
 template <class T, class F>
 void with_approximator(Approximator a, F&& f){
     switch(a){
-        case Approximator::DUMMY: f(PDR::DummyApproximator<T>()); return;
-#ifdef PRODM_HAVE_SZ2
-        case Approximator::SZ2: f(PDR::SZ2Approximator<T>()); return;
-#endif
 #ifdef PRODM_HAVE_SZ3
         case Approximator::SZ3: f(PDR::SZ3Approximator<T>()); return;
-#endif
-#ifdef PRODM_HAVE_MGARD
-        case Approximator::MGARD: f(PDR::MGARDApproximator<T>()); return;
 #endif
 #ifdef PRODM_HAVE_HPEZ
         case Approximator::HPEZ: f(PDR::HPEZApproximator<T>()); return;
         case Approximator::GE: f(PDR::GEApproximator<T>()); return;
 #endif
         default:
-            fail("the requested approximator is not enabled at build time (see the PRODM_WITH_* CMake options)");
+            fail("the requested approximator is not enabled at build time (see the PRODM_WITH_* CMake options); the command line tools offer sz3, hpez and ge");
     }
 }
 
@@ -206,7 +200,7 @@ struct GroupState {
 
 template <class T>
 void refactor_pdr(const Variable& var, const std::vector<T>& data, const std::vector<uint32_t>& dims, const Settings& s,
-                  const std::vector<unsigned char>& mask, bool apply_mask, int group, const std::vector<T>& group_weights, GroupState* gs){
+                  const std::vector<unsigned char>& mask, bool apply_mask, const std::vector<T>& group_weights, GroupState* gs){
     std::string metadata_file = var.refactor_dir + "metadata.bin";
     auto files = level_files(var.refactor_dir, 1);
     auto compressor = ProDM::AdaptiveLevelCompressor(64);
@@ -238,13 +232,16 @@ void refactor_pdr(const Variable& var, const std::vector<T>& data, const std::ve
                     gs->stored = true;
                 }
             };
-            if(s.approximator == Approximator::GE){
+#ifdef PRODM_HAVE_HPEZ
+            if constexpr (std::is_same<decltype(approximator), PDR::GEApproximator<T>>::value){
                 // the GE variant derives block weights from the mesh block sizes (block_sizes.dat)
                 auto refactor = PDR::GERefactor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(writer)>(approximator, encoder, compressor, writer);
                 setup(refactor);
                 refactor.refactor(data.data(), dims, target_level, s.num_bitplanes, (T)s.approximator_eb, gs->max_weight);
                 finish(refactor);
-            } else {
+            } else
+#endif
+            {
                 auto refactor = PDR::WeightedApproximationBasedRefactor<T, decltype(approximator), decltype(encoder), decltype(compressor), decltype(writer)>(approximator, encoder, compressor, writer);
                 setup(refactor);
                 refactor.refactor(data.data(), dims, target_level, s.num_bitplanes, (T)s.approximator_eb, gs->max_weight, s.block_size);
@@ -301,7 +298,8 @@ void run(const std::vector<Variable>& vars, const std::vector<uint32_t>& dims, c
         vel_index[k] = find_variable(vars, velocity_names()[k]);
         if(vel_index[k] < 0) have_velocities = false;
     }
-    if(s.auto_mask && have_velocities && s.method != Method::MDR && s.method != Method::PROAICD){
+    // the mask is applied by the pdr encoders only; the other pipelines encode every point
+    if(s.auto_mask && have_velocities && s.method == Method::PDR){
         mask.assign(num_elements, 0);
         size_t valid = 0;
         for(size_t i = 0; i < num_elements; i++){
@@ -342,8 +340,20 @@ void run(const std::vector<Variable>& vars, const std::vector<uint32_t>& dims, c
         }
     }
 
+    // weighted refactoring stores a group's weights with its canonical-first variable (VelocityX, Pressure),
+    // so those are processed first whatever the order of --vars; unweighted runs keep the given order
+    std::vector<size_t> order(vars.size());
+    for(size_t i = 0; i < vars.size(); i++) order[i] = i;
+    if(s.weighted){
+        auto rank = [&](size_t i){
+            for(int v = 0; v < Hand::NUM_VARS; v++) if(vars[i].name == Hand::var_name(v)) return v;
+            return Hand::NUM_VARS + (int)i;
+        };
+        std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b){ return rank(a) < rank(b); });
+    }
+
     double start = now_seconds();
-    for(size_t i = 0; i < vars.size(); i++){
+    for(size_t i : order){
         make_dir(vars[i].refactor_dir);
         std::cout << "Refactoring " << vars[i].name << " -> " << vars[i].refactor_dir << std::endl;
         bool apply_mask = !mask.empty() && is_velocity(vars[i].name);
@@ -352,7 +362,7 @@ void run(const std::vector<Variable>& vars, const std::vector<uint32_t>& dims, c
             case Method::PROAICD: refactor_proaicd<T, T_stream>(vars[i], data[i], dims, s); break;
             case Method::PDR: {
                 int g = var_group[i];
-                refactor_pdr<T>(vars[i], data[i], dims, s, mask, apply_mask, g, g < 0 ? std::vector<T>() : group_weights[g], g < 0 ? nullptr : &groups[g]);
+                refactor_pdr<T>(vars[i], data[i], dims, s, mask, apply_mask, g < 0 ? std::vector<T>() : group_weights[g], g < 0 ? nullptr : &groups[g]);
                 break;
             }
             case Method::PDR_DELTA: refactor_pdr_delta<T>(vars[i], data[i], dims, s); break;

@@ -36,7 +36,7 @@ cd ProDM
 sh build_script.sh
 ```
 
-Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control: the `mdr` and `proaicd` pipelines, and `pdr` / `pdr-delta` with the built-in Dummy approximator). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The command line tools `prodm_refactor` and `prodm_retrieve` (in `test/`) always build, with the approximators that are enabled; the GE application tools under `app/GE` require all four. The evaluation drivers of the published papers live under `artifacts/` (see `artifacts/README.md`) and are built with `-DPRODM_BUILD_ARTIFACTS=ON`, which `build_script.sh` sets.
+Alternatively, a plain `cmake .. && make` in a build directory produces the dependency-free core (multilevel refactoring, bitplane encoding, and error control: the `mdr` and `proaicd` pipelines; `pdr` and `pdr-delta` need at least one of the SZ3 and HPEZ approximators below). The compressor-based approximators are opt-in CMake options: `-DPRODM_WITH_SZ2=ON`, `-DPRODM_WITH_SZ3=ON`, `-DPRODM_WITH_HPEZ=ON`, and `-DPRODM_WITH_MGARD=ON` (each requires the corresponding library under `external/`, see `build_script.sh`). The command line tools `prodm_refactor` and `prodm_retrieve` (in `test/`) always build, with the approximators that are enabled; the GE application tools under `app/GE` require all four. The evaluation drivers of the published papers live under `artifacts/` (see `artifacts/README.md`) and are built with `-DPRODM_BUILD_ARTIFACTS=ON`, which `build_script.sh` sets.
 
 ### Namespaces
 
@@ -108,7 +108,7 @@ The two tools `prodm_refactor` and `prodm_retrieve` (sources in `test/`, built u
 points of all pipelines: `--method` selects the pipeline (`mdr` for multilevel decomposition [SC'21], `proaicd` for
 adaptive interpolation with coefficient decomposition [SC'26], `pdr` for approximation-based refactoring [TVCG'23,
 HPDC'26], `pdr-delta` for residual snapshots), `--approximator` the compressor behind `pdr` / `pdr-delta`
-(`dummy|sz2|sz3|hpez|mgard|ge`, subject to the `PRODM_WITH_*` options), and the remaining options the parameters of
+(`sz3|hpez|ge`, subject to the `PRODM_WITH_*` options), and the remaining options the parameters of
 the method. Variables are read from `<data_dir>/<var><suffix>` (`.dat` for `--dtype d`, `.dat.f32` for `--dtype f`)
 and each is refactored into `<refactor_dir>/<var>_refactored/`. Without `--qoi`, `prodm_retrieve` retrieves each
 variable to tolerances relative to its value range and prints the error statistics; with `--qoi`, the variables of
@@ -117,8 +117,8 @@ the QoI are retrieved together under a QoI tolerance.
 The QoIs known to `--qoi` and `--weights` are `Vtot`, `Vtot2`, `T`, `C`, `Mach`, `PT` and `mu` over the variables
 `VelocityX/Y/Z`, `Pressure`, `Density` (the GE set; `--weights hand:GE` weights both the velocity and the
 thermodynamic group, `--max-weight 4,3` gives one maximum weight per group). When the three velocities are refactored
-together, the nonzero-velocity mask of the SC'24 tools is written to `<refactor_dir>/mask.bin` and used at retrieval;
-`--mask none` disables it. `--joint-range` initializes the per-variable bounds from the joint value range of the QoI's
+together with `--method pdr`, the nonzero-velocity mask of the SC'24 tools is written to `<refactor_dir>/mask.bin` and
+used at retrieval (`--mask none` disables it); the weights and the mask are features of the `pdr` pipeline only. `--joint-range` initializes the per-variable bounds from the joint value range of the QoI's
 variables instead of each variable's own range (the convention of the `V_total` tools). The `ge` approximator expects
 the GE layout (`<root>/data`, `<root>/refactor`, `<root>/block_sizes.dat`). Run either tool without arguments for the
 full option list. The sections below walk through each pipeline with these two tools.
@@ -136,7 +136,7 @@ cd build
 **Refactoring and Progressive Retrieval with Iterative Compression [TVCG'23]**
 ```bash
 cd build
-# Refactor: residual snapshots on the SZ3 approximator (dummy|sz2|sz3|hpez|mgard)
+# Refactor: residual snapshots on the SZ3 approximator (sz3|hpez|ge)
 ./test/prodm_refactor ../example/data refactored --vars VelocityX --dims 100 500 500 --dtype f --method pdr-delta --approximator sz3
 # Retrieval
 ./test/prodm_retrieve ../example/data refactored --vars VelocityX --dtype f --method pdr-delta --approximator sz3 --tolerance 0.05 0.005 0.0005
@@ -191,7 +191,7 @@ Please refer to `artifacts/HPDC-26/README.md` for the artifact description and e
 cd build
 # Refactor: encoder nega|xor|perbit, prior eb|psnr, --cp enables coefficient decomposition
 ./test/prodm_refactor ../example/data refactored --vars VelocityX --dims 100 500 500 --dtype d --method proaicd --target-level 4 --bitplanes 60 --encoder nega --prior eb --cp
-# Retrieval: interpreter greedy|dp|bfs; pass the same --encoder and --cp as the refactor
+# Retrieval: interpreter greedy|dp; pass the same --encoder and --cp as the refactor
 ./test/prodm_retrieve ../example/data refactored --vars VelocityX --dtype d --method proaicd --encoder nega --interpreter dp --cp --tolerance 0.01 0.001 0.0001
 ```
 
